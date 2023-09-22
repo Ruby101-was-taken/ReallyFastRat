@@ -413,10 +413,11 @@ async def main():
         def update(self):
             self.rect.x = self.x-level.levelPosx+475
         def draw(self):
-            if self.tileID == 0:
-                pygame.draw.rect(win, BLACK, self.rect)
-            else:
-                pygame.draw.rect(win, RED, self.rect)
+            if self.rect.x > -20 and self.rect.x < 960:
+                if self.tileID == 0:
+                    pygame.draw.rect(win, BLACK, self.rect)
+                else:
+                    pygame.draw.rect(win, RED, self.rect)
         def checkCollision(self, collider):
             return self.rect.colliderect(collider.charRect)
         def checkCollisionRect(self, collider):
