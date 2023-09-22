@@ -352,26 +352,19 @@ async def main():
         def __init__(self):
             self.levelPosx = 0
             self.changeLevel()
-        def checkCollision(self):
-            # self.offset = (self.levelPosx, player.charRect.y)
-            # self.overlap = self.mask.overlap(pygame.mask.from_surface(pygame.Surface(player.charRect.size)), self.offset)
-            
-            # if self.overlap is not None:
-            #     return True
-            # else:
-            #     return False
+        def checkCollision(self, tileToCheck=0):
             collided = False
             for tile in self.levels:
                 tile.update()
-                if tile.checkCollision(player):
-                    collided = True
+                if tile.tileID == tileToCheck:
+                    if tile.checkCollision(player):
+                        collided = True
+                        break
             return collided
         def draw(self):
             pass
             #win.blit(self.image, (-self.levelPosx+475,0))
         def changeLevel(self):
-            self.image = pygame.image.load(f"levels/solid/{worldX}-{worldY}.png")
-            self.mask = pygame.mask.from_surface(self.image)
             self.levels = []
             with open(f'levels/{worldX}-{worldY}.csv', 'r') as csv_file:
                 # Create a CSV reader object
@@ -386,26 +379,20 @@ async def main():
                             self.levels.append(Tile(x*20, y*20, int(tiles[y][x])))
     class SemiLevel:
         def __init__(self):
-            self.image = pygame.image.load(f"levels/semisolid/{worldX}-{worldY}.png")
-            self.mask = pygame.mask.from_surface(self.image)
-        def checkCollision(self):
-            feetRect = pygame.Rect(level.levelPosx, player.charRect.y+29, 20, 1)
-            self.offset = (feetRect.x, feetRect.y)
-            self.overlap = self.mask.overlap(pygame.mask.from_surface(pygame.Surface(feetRect.size)), self.offset)
-
-            if player.yVel < 0: #ignores platform if moving up
-                return False
-
-            if self.overlap is not None:
-                return True
-            else:
-                return False
-
+            pass
+        def checkCollision(self, tileToCheck=1):
+            collided = False
+            if player.yVel >= 0:
+                for tile in level.levels:
+                    tile.update()
+                    if tile.tileID == tileToCheck:
+                        if tile.checkCollision(player):
+                            collided = True
+                            break
+            return collided
         def draw(self):
-            win.blit(self.image, (-level.levelPosx+475,0))
-        def changeLevel(self):
-            self.image = pygame.image.load(f"levels/semisolid/{worldX}-{worldY}.png")
-            self.mask = pygame.mask.from_surface(self.image)
+            #win.blit(self.image, (-level.levelPosx+475,0))
+            pass
     class SpikeLevel:
         def __init__(self):
             self.image = pygame.image.load(f"levels/spike/{worldX}-{worldY}.png")
