@@ -1,4 +1,4 @@
-import pygame, random, asyncio, os
+import pygame, random, asyncio, os, csv
 
 os.system("cls")
 
@@ -116,7 +116,7 @@ pygame.time.delay(100)
 
 async def main():
     global w, h, window
-    worldX, worldY = 2, 0   
+    worldX, worldY = 1, 0   
 
     defaultKTime = 10
     
@@ -143,7 +143,7 @@ async def main():
             self.y = 0
             self.xVel = 0
             self.yVel = 0
-            self.playerRect = pygame.Rect(self.x, self.y, 20, 30)
+            self.charRect = pygame.Rect(self.x, self.y, 20, 30)
             self.image = pygame.image.load("player.png")
             self.kTime = 0
             self.climbedLastFrame=False
@@ -152,7 +152,7 @@ async def main():
             self.y = 0
             self.xVel = 0
             self.yVel = 0
-            level.levelPosx, self.playerRect.y = self.x, self.y 
+            level.levelPosx, self.charRect.y = self.x, self.y 
             self.kTime = 0                      
         def changeX(self, speed):
             self.x+=speed
@@ -164,7 +164,7 @@ async def main():
                 for i in range(int(self.xVel*10)):
                     self.x+=0.1
                     
-                    level.levelPosx, self.playerRect.y = self.x, self.y
+                    level.levelPosx, self.charRect.y = self.x, self.y
             elif not isRight:
                 self.xVel = -speed
                 for i in range(-int(self.xVel*10)):
@@ -173,17 +173,17 @@ async def main():
             self.changeX(self.xVel)
             
             if self.xVel > 0:
-                level.levelPosx, self.playerRect.y = self.x+0.1, self.y-0.1
+                level.levelPosx, self.charRect.y = self.x+0.1, self.y-0.1
                 if level.checkCollision():
                     movedUp = False
                     for i in range(10):
-                        self.playerRect.y-=1
+                        self.charRect.y-=1
                         if not level.checkCollision() and not movedUp and not (keys[pygame.K_LCTRL] or keys[pygame.K_LSHIFT]):
                             level.levelPosx+=1
                             movedUp = True
 
                     if not movedUp:
-                        self.playerRect.y+=10
+                        self.charRect.y+=10
                         self.xVel=0
                         self.touchGround = level.checkCollision()
                         while self.touchGround:
@@ -195,26 +195,26 @@ async def main():
                             self.climbedLastFrame=True
                             if keys[pygame.K_w] or keys[pygame.K_UP]:
                                 self.yVel = -3
-                                self.playerRect.y -= 30
+                                self.charRect.y -= 30
                                 level.levelPosx += 1
                                 if not level.checkCollision():
                                     self.yVel = -7
-                                self.playerRect.y += 30
+                                self.charRect.y += 30
                                 level.levelPosx -= 1
                             if keys[pygame.K_s] or keys[pygame.K_DOWN]:
                                 self.yVel = 3
                         
             if self.xVel < 0:
-                level.levelPosx, self.playerRect.y = self.x-0.1, self.y-0.1
+                level.levelPosx, self.charRect.y = self.x-0.1, self.y-0.1
                 if level.checkCollision():
                     movedUp = False
                     for i in range(10):
-                        self.playerRect.y-=1
+                        self.charRect.y-=1
                         if not level.checkCollision() and not movedUp:
                             level.levelPosx-=1
                             movedUp = True
                     if not movedUp:
-                        self.playerRect.y+=10
+                        self.charRect.y+=10
                         self.xVel=0
                         self.touchGround = level.checkCollision()
                         while self.touchGround:
@@ -226,29 +226,29 @@ async def main():
                             self.climbedLastFrame=True
                             if keys[pygame.K_w] or keys[pygame.K_UP]:
                                 self.yVel = -3
-                                self.playerRect.y -= 30
+                                self.charRect.y -= 30
                                 level.levelPosx -= 1
                                 if not level.checkCollision():
                                     self.yVel = -7
-                                self.playerRect.y += 30
+                                self.charRect.y += 30
                                 level.levelPosx += 1
                             if keys[pygame.K_s] or keys[pygame.K_DOWN]:
                                 self.yVel = 3
             
         def gravity(self):
-            if self.playerRect.y > h:
+            if self.charRect.y > h:
                 self.die()
 
             for i in range(int(self.yVel*10)):
                 self.y+=0.1
-                level.levelPosx, self.playerRect.y = self.x, self.y
+                level.levelPosx, self.charRect.y = self.x, self.y
                 if level.checkCollision():
                     self.yVel = 0
                     self.y-=0.1
-                    self.playerRect.y = self.y
+                    self.charRect.y = self.y
             for i in range(-int(self.yVel*10)):
                 self.y-=0.1
-                level.levelPosx, self.playerRect.y = self.x, self.y
+                level.levelPosx, self.charRect.y = self.x, self.y
                 self.checkCeiling()
             if not level.checkCollision():
                 self.yVel+=0.5
@@ -256,20 +256,20 @@ async def main():
                 if self.kTime<0:
                     self.kTime=0
             
-            self.playerRect.y+=1
+            self.charRect.y+=1
             self.touchGround = level.checkCollision()
-            self.playerRect.y-=1
+            self.charRect.y-=1
             while self.touchGround:
-                self.playerRect.y = self.y+1
+                self.charRect.y = self.y+1
                 if not level.checkCollision():
                     self.yVel=+1
                     self.y+=1
-                    self.playerRect.y = self.y
+                    self.charRect.y = self.y
                     self.touchGround=False
                     self.kTime = 0
                 else:
                     self.y-=0.1
-                    self.playerRect.y = self.y
+                    self.charRect.y = self.y
                     self.touchGround = level.checkCollision()
                     self.kTime = defaultKTime
 
@@ -280,16 +280,16 @@ async def main():
                 #     for event in pygame.event.get():
                 #         if event.type == pygame.KEYDOWN:
                 #             waiting = False
-                self.playerRect.y-=int(self.yVel)+1
+                self.charRect.y-=int(self.yVel)+1
                 if not semiLevel.checkCollision():
-                    self.playerRect.y+=1
+                    self.charRect.y+=1
                     
                     self.yVel = 0
                     self.touchGround = True
                     toochSemi = self.semied
                     self.semied = True
                     while not toochSemi:
-                        self.playerRect.y+=1
+                        self.charRect.y+=1
                         toochSemi = semiLevel.checkCollision()
                     # waiting = True
                     # redrawScreen()
@@ -298,11 +298,11 @@ async def main():
                     #         if event.type == pygame.KEYDOWN:
                     #             waiting = False
                 else:
-                    self.playerRect.y+=int(self.yVel)
+                    self.charRect.y+=int(self.yVel)
                     if self.semied:
                         self.kTime = defaultKTime
                     self.semied = False
-                self.y = self.playerRect.y
+                self.y = self.charRect.y
             elif self.semied and not keys[pygame.K_SPACE]:
                 self.kTime = defaultKTime
                 self.semied = False
@@ -310,42 +310,42 @@ async def main():
                 self.semied = False
         
         def checkCeiling(self):
-            self.playerRect.y = self.y-1
-            self.playerRect.height = 1
+            self.charRect.y = self.y-1
+            self.charRect.height = 1
             if level.checkCollision():
                 self.yVel=+1
                 self.y+=1
-                self.playerRect.y = self.y
+                self.charRect.y = self.y
                 self.touchGround=False
                 self.kTime = 0
-                self.playerRect.height = 30
+                self.charRect.height = 30
                 return True
             else:
-                self.playerRect.height = 30
+                self.charRect.height = 30
                 return False
         def die(self):
             self.reset()
         def process(self):
-            level.levelPosx, self.playerRect.y = self.x, self.y
+            level.levelPosx, self.charRect.y = self.x, self.y
             if self.x < 0:
                 self.x = 0
                 
             self.gravity()
                 
-            if spikes.checkCollision():
-                self.die()
+            #if spikes.checkCollision():
+                #self.die()
 
             
         def jump(self):
-            self.playerRect.y+=1
+            self.charRect.y+=1
             if self.touchGround or self.kTime>0:
                 self.yVel = -10
                 self.kTime=0
-            self.playerRect.y-=1
+            self.charRect.y-=1
                 
         def draw(self):
-            #pygame.draw.rect(win, RED, self.playerRect)
-            win.blit(self.image, (self.playerRect.x-5, self.y))
+            #pygame.draw.rect(win, RED, self.charRect)
+            win.blit(self.image, (self.charRect.x-5, self.y))
             
         
     class Level:
@@ -353,25 +353,45 @@ async def main():
             self.levelPosx = 0
             self.image = pygame.image.load(f"levels/solid/{worldX}-{worldY}.png")
             self.mask = pygame.mask.from_surface(self.image)
+            self.changeLevel()
         def checkCollision(self):
-            self.offset = (self.levelPosx, player.playerRect.y)
-            self.overlap = self.mask.overlap(pygame.mask.from_surface(pygame.Surface(player.playerRect.size)), self.offset)
+            # self.offset = (self.levelPosx, player.charRect.y)
+            # self.overlap = self.mask.overlap(pygame.mask.from_surface(pygame.Surface(player.charRect.size)), self.offset)
             
-            if self.overlap is not None:
-                return True
-            else:
-                return False
+            # if self.overlap is not None:
+            #     return True
+            # else:
+            #     return False
+            collided = False
+            for tile in self.levels:
+                tile.update()
+                if tile.checkCollision(player):
+                    collided = True
+            return collided
         def draw(self):
-            win.blit(self.image, (-self.levelPosx+475,0))
+            pass
+            #win.blit(self.image, (-self.levelPosx+475,0))
         def changeLevel(self):
             self.image = pygame.image.load(f"levels/solid/{worldX}-{worldY}.png")
             self.mask = pygame.mask.from_surface(self.image)
+            self.levels = []
+            with open(f'levels/{worldX}-{worldY}.csv', 'r') as csv_file:
+                # Create a CSV reader object
+                csv_reader = csv.reader(csv_file)
+                tiles = list(csv_reader)
+
+                # Loop through the rows in the CSV file
+                for y, row in enumerate(tiles):
+                    for x in range(len(row)):
+                        if tiles[y][x] != "-1":
+                            print(f"X: {x} Y: {y}")
+                            self.levels.append(Tile(x*20, y*20, int(tiles[y][x])))
     class SemiLevel:
         def __init__(self):
             self.image = pygame.image.load(f"levels/semisolid/{worldX}-{worldY}.png")
             self.mask = pygame.mask.from_surface(self.image)
         def checkCollision(self):
-            feetRect = pygame.Rect(level.levelPosx, player.playerRect.y+29, 20, 1)
+            feetRect = pygame.Rect(level.levelPosx, player.charRect.y+29, 20, 1)
             self.offset = (feetRect.x, feetRect.y)
             self.overlap = self.mask.overlap(pygame.mask.from_surface(pygame.Surface(feetRect.size)), self.offset)
 
@@ -393,7 +413,7 @@ async def main():
             self.image = pygame.image.load(f"levels/spike/{worldX}-{worldY}.png")
             self.mask = pygame.mask.from_surface(self.image)
         def checkCollision(self):
-            feetRect = pygame.Rect(level.levelPosx, player.playerRect.y+29, 20, 1)
+            feetRect = pygame.Rect(level.levelPosx, player.charRect.y+29, 20, 1)
             self.offset = (feetRect.x, feetRect.y)
             self.overlap = self.mask.overlap(pygame.mask.from_surface(pygame.Surface(feetRect.size)), self.offset)
 
@@ -407,16 +427,33 @@ async def main():
         def changeLevel(self):
             self.image = pygame.image.load(f"levels/spike/{worldX}-{worldY}.png")
             self.mask = pygame.mask.from_surface(self.image)
+
+    class Tile:
+        def __init__(self, x, y, tileID):
+            self.x, self.y = x, y
+            self.tileID = tileID
+            print(x,y)
+            self.rect = pygame.Rect(self.x, self.y, 20, 20)
+        def update(self):
+            self.rect.x = self.x-level.levelPosx+475
+        def draw(self):
+            pygame.draw.rect(win, BLACK, self.rect)
+        def checkCollision(self, collider):
+            return self.rect.colliderect(collider.charRect)
             
     
     def redrawScreen():
-        
+         
         win.fill(WHITE)
         
         player.draw()
         level.draw()    
         semiLevel.draw()  
-        spikes.draw() 
+        #spikes.draw() 
+        win.blit(smallFont.render(str(int(clock.get_fps())), True, (0, 0, 0)), (0,0))
+
+        for tile in level.levels:
+            tile.draw()
 
         window.blit(pygame.transform.scale(win, (w, h)), (0,0))     
         pygame.display.flip()
@@ -424,7 +461,7 @@ async def main():
     player = Player()
     level = Level()
     semiLevel = SemiLevel()
-    spikes = SpikeLevel()
+    #spikes = SpikeLevel()
     speed = 2
 
     spaceHeld = False
@@ -466,6 +503,7 @@ async def main():
 
         if spaceHeld:
             spaceHeld = keys[pygame.K_SPACE]
+
 
         if keys[pygame.K_SPACE] and not spaceHeld:
             player.jump()
@@ -510,6 +548,10 @@ async def main():
                             pygame.quit()
                             run = False
                             quit()
+        
+        
+        for tile in level.levels:
+            tile.update()
             
         
         #redraw win
