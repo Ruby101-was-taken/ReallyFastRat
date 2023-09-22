@@ -351,8 +351,6 @@ async def main():
     class Level:
         def __init__(self):
             self.levelPosx = 0
-            self.image = pygame.image.load(f"levels/solid/{worldX}-{worldY}.png")
-            self.mask = pygame.mask.from_surface(self.image)
             self.changeLevel()
         def checkCollision(self):
             # self.offset = (self.levelPosx, player.charRect.y)
