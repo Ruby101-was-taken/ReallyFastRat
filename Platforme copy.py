@@ -344,11 +344,10 @@ async def main():
             collided = False
             for tile in self.levels:
                 tile.update()
-                if tile.x < self.levelPosx+20 and tile.x > self.levelPosx-20:
-                    if tile.tileID == tileToCheck:
-                        if tile.checkCollision(player):
-                            collided = True
-                            break
+                if tile.tileID == tileToCheck:
+                    if tile.checkCollision(player):
+                        collided = True
+                        break
             return collided
         def draw(self):
             pass
@@ -370,16 +369,14 @@ async def main():
         def __init__(self):
             pass
         def checkCollision(self, tileToCheck=1):
-            feetRect = pygame.Rect(475, player.charRect.y+29, 20, 1)
             collided = False
             if player.yVel >= 0:
                 for tile in level.levels:
                     tile.update()
-                    if tile.x < level.levelPosx+20 and tile.x > level.levelPosx-20:
-                        if tile.tileID == tileToCheck:
-                            if tile.checkCollisionRect(feetRect):
-                                collided = True
-                                break
+                    if tile.tileID == tileToCheck:
+                        if tile.checkCollision(player):
+                            collided = True
+                            break
             return collided
         def draw(self):
             #win.blit(self.image, (-level.levelPosx+475,0))
@@ -413,14 +410,9 @@ async def main():
         def update(self):
             self.rect.x = self.x-level.levelPosx+475
         def draw(self):
-            if self.tileID == 0:
-                pygame.draw.rect(win, BLACK, self.rect)
-            else:
-                pygame.draw.rect(win, RED, self.rect)
+            pygame.draw.rect(win, BLACK, self.rect)
         def checkCollision(self, collider):
             return self.rect.colliderect(collider.charRect)
-        def checkCollisionRect(self, collider):
-            return self.rect.colliderect(collider)
             
     
     def redrawScreen():
@@ -431,7 +423,7 @@ async def main():
         level.draw()    
         semiLevel.draw()  
         #spikes.draw() 
-        win.blit(smallFont.render("FPS: " + str(int(clock.get_fps())), True, (0, 0, 0)), (0,0))
+        win.blit(smallFont.render(str(int(clock.get_fps())), True, (0, 0, 0)), (0,0))
 
         for tile in level.levels:
             tile.draw()
@@ -503,6 +495,7 @@ async def main():
         if keys[pygame.K_r]:
             if keys[pygame.K_LCTRL]:
                 level.changeLevel()
+                semiLevel.changeLevel()
                 player.reset()
                 w, h = 960, 600
                 window = pygame.display.set_mode((960, 600), pygame.RESIZABLE)
