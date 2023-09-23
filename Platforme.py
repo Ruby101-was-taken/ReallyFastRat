@@ -199,7 +199,7 @@ async def main():
                             level.levelPosx = self.x
                             self.touchGround = level.checkCollision()
                         if (keys[pygame.K_LCTRL] or keys[pygame.K_LSHIFT]):
-                            self.yVel= 0
+                            self.yVel = 0
                             self.climbedLastFrame=True
                             if keys[pygame.K_w] or keys[pygame.K_UP]:
                                 self.yVel = -3
@@ -230,7 +230,7 @@ async def main():
                             level.levelPosx = self.x
                             self.touchGround = level.checkCollision()
                         if (keys[pygame.K_LCTRL] or keys[pygame.K_LSHIFT]):
-                            self.yVel= 0
+                            self.yVel = 0
                             self.climbedLastFrame=True
                             if keys[pygame.K_w] or keys[pygame.K_UP]:
                                 self.yVel = -3
@@ -297,6 +297,7 @@ async def main():
                     while not toochSemi:
                         self.charRect.y+=1
                         toochSemi = semiLevel.checkCollision()
+                        self.kTime = defaultKTime
                 else:
                     self.charRect.y+=int(self.yVel)+1
                     if self.semied:
@@ -308,7 +309,6 @@ async def main():
                 self.semied = False
             elif self.semied:
                 self.semied = False
-        
         def checkCeiling(self):
             self.charRect.y = self.y-1
             self.charRect.height = 1
@@ -478,10 +478,6 @@ async def main():
             spaceHeld = keys[pygame.K_SPACE]
 
 
-        if keys[pygame.K_SPACE] and not spaceHeld:
-            player.jump()
-            spaceHeld = True
-        player.process()
         if keys[pygame.K_d] or keys[pygame.K_a] or keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]:
             if keys[pygame.K_a] or keys[pygame.K_LEFT]:
                 player.changeXVel(speed/10, False)
@@ -494,6 +490,10 @@ async def main():
             player.xVel+=0.2
             player.changeXVel(0, False)
     
+        player.process()
+        if keys[pygame.K_SPACE] and not spaceHeld:
+            player.jump()
+            spaceHeld = True
         if keys[pygame.K_r]:
             if keys[pygame.K_LCTRL]:
                 level.changeLevel()
