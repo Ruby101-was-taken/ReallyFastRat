@@ -368,7 +368,7 @@ async def main():
                 
         def draw(self):
             #pygame.draw.rect(win, RED, self.charRect)
-            win.blit(self.image, (self.charRect.x-5, self.charRect.y+1))
+            win.blit(self.image, (self.charRect.x-5, self.charRect.y))
             
         
     class Level:
