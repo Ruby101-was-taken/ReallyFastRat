@@ -162,6 +162,8 @@ async def main():
             self.kTime = 0                      
         def changeX(self, speed):
             self.x+=speed
+            if self.x < 0:
+                self.x = 0
             level.levelPosx=self.x
         def changeXVel(self, speed, isRight):
             if isRight:
@@ -367,8 +369,6 @@ async def main():
             self.reset()
         def process(self):
             level.levelPosx, self.charRect.y = self.x, self.y
-            if self.x < 0:
-                self.x = 0
                 
             self.gravity()
                 
@@ -532,6 +532,8 @@ async def main():
             player.changeXVel(0, False)
             player.boostDirection = 0
             player.canBoost = True
+        
+
     
         player.process()
         if keys[pygame.K_SPACE] and not spaceHeld:
