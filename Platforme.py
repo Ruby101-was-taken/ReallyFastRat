@@ -85,7 +85,13 @@ win.blit(smallFont.render(loadingTexts[0], True, (255, 255, 255)), (0,200+(0*20)
 pygame.display.flip()
 
 #LOAD IMAGES 
-
+playerImages = [
+    pygame.image.load("player/player.png"),
+    pygame.image.load("player/walk1.png"),
+    pygame.image.load("player/walk2.png"),
+    pygame.image.load("player/fall1.png"),
+    pygame.image.load("player/fall2.png")
+]
 
 
 
@@ -153,6 +159,8 @@ async def main():
             self.boostDirection = 0
             self.canBoost = True
             self.decelSpeed = 0.2
+            self.animateFrame = 0
+            self.isRight = True
         def reset(self):
             self.x = 475
             self.y = 300
@@ -162,10 +170,14 @@ async def main():
             self.kTime = 0                      
         def changeX(self, speed):
             self.x+=speed
+            self.animateFrame += abs(self.xVel)/7
+            if self.animateFrame >= 4:
+                self.animateFrame = 0
             if self.x < 0:
                 self.x = 0
             level.levelPosx=self.x
         def changeXVel(self, speed, isRight):
+            self.isRight = isRight
             if isRight:
                 self.xVel += speed
                 if self.xVel > self.maxSpeed and not keys[pygame.K_LSHIFT]:
@@ -348,6 +360,7 @@ async def main():
             else:
                 self.charRect.height = 30
                 return False
+
         def die(self):
             self.reset()
         def process(self):
@@ -365,10 +378,34 @@ async def main():
                 self.yVel = -10
                 self.kTime=0
             level.levelPosy-=1
-                
+        def animate(self):
+            returnImage = pygame.Surface((0,0))
+            animateFrame = int(self.animateFrame)
+            if self.xVel == 0:
+                returnImage = playerImages[0]
+            
+            elif abs(self.xVel) > 0:
+                if animateFrame in [0, 2]:
+                    returnImage = playerImages[0]
+                elif animateFrame == 1:
+                    returnImage = playerImages[1]
+                else:
+                    returnImage = playerImages[2]
+            
+            if int(self.yVel) == 10:
+                returnImage = playerImages[3]
+            elif self.yVel > 10:
+                returnImage = playerImages[4]
+            
+            if not self.isRight:
+                returnImage = pygame.transform.flip(returnImage, True, False)
+
+
+            return returnImage
+
         def draw(self):
             #pygame.draw.rect(win, RED, self.charRect)
-            win.blit(self.image, (self.charRect.x-5, self.charRect.y))
+            win.blit(self.animate(), (self.charRect.x-5, self.charRect.y))
             
         
     class Level:
@@ -450,14 +487,13 @@ async def main():
          
         win.fill(WHITE)
         
-        player.draw()
-        level.draw()    
-        semiLevel.draw()  
         #spikes.draw() 
         win.blit(smallFont.render("FPS: " + str(int(clock.get_fps())), True, (0, 0, 0)), (0,0))
 
         for tile in level.levels:
             tile.draw()
+
+        player.draw()
 
         window.blit(pygame.transform.scale(win, (w, h)), (0,0))     
         pygame.display.flip()
