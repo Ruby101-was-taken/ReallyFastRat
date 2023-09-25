@@ -90,7 +90,9 @@ playerImages = [
     pygame.image.load("player/walk1.png"),
     pygame.image.load("player/walk2.png"),
     pygame.image.load("player/fall1.png"),
-    pygame.image.load("player/fall2.png")
+    pygame.image.load("player/fall2.png"),
+    pygame.image.load("player/jump1.png"),
+    pygame.image.load("player/jump2.png")
 ]
 
 
@@ -159,7 +161,9 @@ async def main():
             self.boostDirection = 0
             self.canBoost = True
             self.decelSpeed = 0.2
-            self.animateFrame = 0
+
+            self.walkAnimateFrame = 0
+            self.jumpAnimateFrame = 0
             self.isRight = True
         def reset(self):
             self.x = 475
@@ -170,9 +174,9 @@ async def main():
             self.kTime = 0                      
         def changeX(self, speed):
             self.x+=speed
-            self.animateFrame += abs(self.xVel)/7
-            if self.animateFrame >= 4:
-                self.animateFrame = 0
+            self.walkAnimateFrame += abs(self.xVel)/7
+            if self.walkAnimateFrame >= 4:
+                self.walkAnimateFrame = 0
             if self.x < 0:
                 self.x = 0
             level.levelPosx=self.x
@@ -220,7 +224,7 @@ async def main():
                     movedUp = False
                     for i in range(10):
                         level.levelPosy-=1
-                        if not level.checkCollision() and not movedUp and not (keys[pygame.K_LCTRL] or keys[pygame.K_LSHIFT]):
+                        if not level.checkCollision() and not movedUp:
                             level.levelPosx+=1
                             movedUp = True
 
@@ -266,6 +270,7 @@ async def main():
                         if (keys[pygame.K_LCTRL]):
                             self.yVel = 0
                             self.climbedLastFrame=True
+                            
                             if keys[pygame.K_w] or keys[pygame.K_UP]:
                                 self.yVel = -3
                                 level.levelPosy -= 30
@@ -380,22 +385,31 @@ async def main():
             level.levelPosy-=1
         def animate(self):
             returnImage = pygame.Surface((0,0))
-            animateFrame = int(self.animateFrame)
+            walkAnimateFrame = int(self.walkAnimateFrame)
             if self.xVel == 0:
                 returnImage = playerImages[0]
             
             elif abs(self.xVel) > 0:
-                if animateFrame in [0, 2]:
+                if walkAnimateFrame in [0, 2]:
                     returnImage = playerImages[0]
-                elif animateFrame == 1:
+                elif walkAnimateFrame == 1:
                     returnImage = playerImages[1]
                 else:
                     returnImage = playerImages[2]
             
-            if int(self.yVel) == 10:
+            if int(self.yVel) == 11:
                 returnImage = playerImages[3]
-            elif self.yVel > 10:
+            elif self.yVel > 11:
                 returnImage = playerImages[4]
+            elif self.yVel < 0:
+                self.jumpAnimateFrame += 0.5
+                if self.jumpAnimateFrame == 8:
+                    self.jumpAnimateFrame = 0
+                if int(self.jumpAnimateFrame)%2 == 0:
+                    returnImage = pygame.transform.rotate(playerImages[5], -90*int(self.jumpAnimateFrame/2))
+                    
+                else:
+                    returnImage = pygame.transform.rotate(playerImages[6], -90*(int((self.jumpAnimateFrame)-1)/2))
             
             if not self.isRight:
                 returnImage = pygame.transform.flip(returnImage, True, False)
@@ -545,10 +559,10 @@ async def main():
             spaceHeld = keys[pygame.K_SPACE]
 
 
-        if keys[pygame.K_d] or keys[pygame.K_a] or keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]:
-            if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+        if ((keys[pygame.K_a] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT])) or ((keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_a] or keys[pygame.K_LEFT])):
+            if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
                 player.changeXVel(speed/10, False)
-            if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            if (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_a] or keys[pygame.K_LEFT]):
                 player.changeXVel(speed/10, True)
         elif player.xVel > 0:
             player.xVel-=player.decelSpeed
