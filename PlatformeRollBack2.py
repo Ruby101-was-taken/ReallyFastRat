@@ -5,16 +5,9 @@ os.system("cls")
 
 # Define colors
 BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 RED = (255, 0, 0)
-BLUE = (0, 0, 255)
-GREEN = (0, 255, 0)
-YELLOW = (255, 255, 0)
-PINK = (255, 192, 203)
-PURPLE = (128, 0, 128)
-ORANGE = (255, 165, 0)
-BROWN = (165, 42, 42)
-GREY = (128, 128, 128)
-WHITE = (255,255,255)
+YELLOW = (255, 216, 0)
 LOGORED = (170, 32, 32)
 
 # Set win dimensions
@@ -96,11 +89,8 @@ playerImages = [
     pygame.image.load("player/player.png"),
     pygame.image.load("player/walk1.png"),
     pygame.image.load("player/walk2.png"),
-    pygame.image.load("player/fall0.png"),
     pygame.image.load("player/fall1.png"),
-    pygame.image.load("player/fall2.png"),
-    pygame.image.load("player/jump1.png"),
-    pygame.image.load("player/jump2.png")
+    pygame.image.load("player/fall2.png")
 ]
 
 
@@ -156,38 +146,33 @@ async def main():
         def __init__(self):
             self.semied = False
             self.x = 475
-            self.y = 0
+            self.y = 300
             self.xVel = 0
             self.yVel = 0
-            self.charRect = pygame.Rect(475, 300, 20, 30)
+            self.charRect = pygame.Rect(self.x, self.y, 20, 30)
             self.image = pygame.image.load("player.png")
             self.kTime = 0
             self.climbedLastFrame=False
             self.maxSpeed = speed
             self.maxBoost = speed*3
-            self.defaultBoost = self.maxBoost
-            self.teminalVelocity = 17
+            self.teminalVelocity = 15
             self.boostDirection = 0
             self.canBoost = True
             self.decelSpeed = 0.2
-            self.bonusXVel = 0
-
-            self.walkAnimateFrame = 0
-            self.jumpAnimateFrame = 0
+            self.animateFrame = 0
             self.isRight = True
         def reset(self):
             self.x = 475
-            self.y = level.lowestPoint-230
+            self.y = 300
             self.xVel = 0
             self.yVel = 0
-            level.changeLevel()
             level.levelPosx, level.levelPosy = self.x, self.y 
             self.kTime = 0                      
-        def changeX(self, speed): 
+        def changeX(self, speed):
             self.x+=speed
-            self.walkAnimateFrame += abs(self.xVel)/7
-            if self.walkAnimateFrame >= 4:
-                self.walkAnimateFrame = 0
+            self.animateFrame += abs(self.xVel)/7
+            if self.animateFrame >= 4:
+                self.animateFrame = 0
             if self.x < 0:
                 self.x = 0
             level.levelPosx=self.x
@@ -226,7 +211,7 @@ async def main():
             self.xVel = round(self.xVel,2)
             if str(abs(self.xVel))[:3] == "0.1" or str(abs(self.xVel))[:3] == "0.0":
                 self.xVel = 0
-
+                    
             self.changeX(self.xVel)
             
             if self.xVel > 0:
@@ -281,7 +266,6 @@ async def main():
                         if (keys[pygame.K_LCTRL]):
                             self.yVel = 0
                             self.climbedLastFrame=True
-                            
                             if keys[pygame.K_w] or keys[pygame.K_UP]:
                                 self.yVel = -3
                                 level.levelPosy -= 30
@@ -362,20 +346,14 @@ async def main():
                 self.semied = False
             elif self.semied:
                 self.semied = False
-            
-
-
-            level.checkCollision([2, 4, 5, 6])
-
-
-
         def checkCeiling(self):
             level.levelPosy = self.y-1
             self.charRect.height = 1
             if level.checkCollision():
+                print("poopie")
                 self.yVel=+1
                 self.y+=1
-                level.levelPosy = self.y 
+                level.levelPosy = self.y
                 self.touchGround=False
                 self.kTime = 0
                 self.charRect.height = 30
@@ -388,13 +366,8 @@ async def main():
             self.reset()
         def process(self):
             level.levelPosx, level.levelPosy = self.x, self.y
-
-            if self.maxBoost > self.defaultBoost:
-                self.maxBoost -= self.decelSpeed
                 
             self.gravity()
-
-
                 
             #if spikes.checkCollision():
                 #self.die()
@@ -403,39 +376,27 @@ async def main():
         def jump(self):
             level.levelPosy+=1
             if self.touchGround or self.kTime>0:
-                self.yVel = -11
+                self.yVel = -10
                 self.kTime=0
             level.levelPosy-=1
         def animate(self):
-            returnImage = playerImages[0]
-            walkAnimateFrame = int(self.walkAnimateFrame)
+            returnImage = pygame.Surface((0,0))
+            animateFrame = int(self.animateFrame)
             if self.xVel == 0:
                 returnImage = playerImages[0]
             
-            elif abs(self.xVel) > 0 and self.touchGround or self.kTime>0:
-                if walkAnimateFrame in [0, 2]:
+            elif abs(self.xVel) > 0:
+                if animateFrame in [0, 2]:
                     returnImage = playerImages[0]
-                elif walkAnimateFrame == 1:
+                elif animateFrame == 1:
                     returnImage = playerImages[1]
                 else:
                     returnImage = playerImages[2]
             
-            if self.yVel > 2:
+            if int(self.yVel) == 10:
                 returnImage = playerImages[3]
-            
-            if int(self.yVel) == 12:
+            elif self.yVel > 10:
                 returnImage = playerImages[4]
-            elif self.yVel > 12:
-                returnImage = playerImages[5]
-            elif self.yVel < 0:
-                self.jumpAnimateFrame += 0.5
-                if self.jumpAnimateFrame == 8:
-                    self.jumpAnimateFrame = 0
-                if int(self.jumpAnimateFrame)%2 == 0:
-                    returnImage = pygame.transform.rotate(playerImages[6], -90*int(self.jumpAnimateFrame/2))
-                    
-                else:
-                    returnImage = pygame.transform.rotate(playerImages[7], -90*(int((self.jumpAnimateFrame)-1)/2))
             
             if not self.isRight:
                 returnImage = pygame.transform.flip(returnImage, True, False)
@@ -454,13 +415,12 @@ async def main():
             self.levelPosy = 0
             self.lowestPoint = 0
             self.changeLevel()
-        def checkCollision(self, tileToCheck=[0]):
+        def checkCollision(self, tileToCheck=0):
             collided = False
             for tile in self.levels:
-                #print(tile.y, self.levelPosy+20)
                 if tile.x < self.levelPosx+20 and tile.x > self.levelPosx-20:
                     tile.update()
-                    if tile.tileID in tileToCheck:
+                    if tile.tileID == tileToCheck:
                         if tile.checkCollision(player):
                             collided = True
                             break
@@ -491,7 +451,7 @@ async def main():
             if player.yVel >= 0:
                 for tile in level.levels:
                     tile.update()
-                    if tile.x < level.levelPosx+20 and tile.x > level.levelPosx-20 and tile.rect.y < player.charRect.y+50 and tile.rect.y > player.charRect.y-20:
+                    if tile.x < level.levelPosx+20 and tile.x > level.levelPosx-20:
                         if tile.tileID == tileToCheck:
                             if tile.checkCollisionRect(feetRect):
                                 collided = True
@@ -506,8 +466,6 @@ async def main():
             self.x, self.y = x, y
             self.tileID = tileID
             self.rect = pygame.Rect(self.x, self.y, 20, 20)
-            if self.tileID == 3:
-                player.x, player.y = self.x, self.y+160
         def update(self):
             self.rect.x = self.x-level.levelPosx+475
             self.rect.y = self.y-level.levelPosy+475
@@ -518,37 +476,10 @@ async def main():
                         pygame.draw.rect(win, BLACK, pygame.Rect(self.rect.x, self.rect.y, 20, 600-self.rect.y))
                     else:
                         pygame.draw.rect(win, BLACK, self.rect)
-                elif self.tileID == 1:
+                else:
                     pygame.draw.rect(win, RED, self.rect)
-                elif self.tileID == 2:
-                    pygame.draw.rect(win, PURPLE, self.rect)
-                elif self.tileID == 4:
-                    pygame.draw.rect(win, BLUE, self.rect)
-                elif self.tileID == 5:
-                    pygame.draw.rect(win, GREEN, self.rect)
-                elif self.tileID == 6:
-                    pygame.draw.rect(win, YELLOW, self.rect)
-                
         def checkCollision(self, collider):
-            collided = self.rect.colliderect(collider.charRect)
-            if collided:
-                if self.tileID == 4:
-                    player.yVel = -20
-                    player.xVel = 0
-                elif self.tileID == 6:
-                    player.yVel = -13
-                    player.xVel = 0
-                elif self.tileID == 2:
-                    player.die()
-                elif self.tileID == 5:
-                    if player.yVel > 0:
-                        player.yVel = 0
-                    player.maxBoost = 20
-                    if player.xVel >= 0:
-                        player.xVel = 13
-                    elif player.xVel < 0:
-                        player.xVel = -13
-            return collided
+            return self.rect.colliderect(collider.charRect)
         def checkCollisionRect(self, collider):
             return self.rect.colliderect(collider)
             
@@ -558,20 +489,15 @@ async def main():
         win.fill(WHITE)
         
         #spikes.draw() 
+        pygame.draw.rect(win, WHITE, pygame.Rect(0,0, 65, 25))
+        win.blit(smallFont.render("FPS: " + str(int(clock.get_fps())), True, (0, 0, 0)), (0,0))
 
         for tile in level.levels:
             tile.draw()
 
         player.draw()
 
-
-        pygame.draw.rect(win, WHITE, pygame.Rect(0,0, 65, 25))
-        win.blit(smallFont.render("FPS: " + str(int(clock.get_fps())), True, (0, 0, 0)), (0,0))
-        pygame.draw.rect(win, WHITE, pygame.Rect(0,30, 65, 25))
-        win.blit(smallFont.render("yvel: " + str(player.yVel), True, (0, 0, 0)), (0,30))
-
-        #window.blit(pygame.transform.scale(win, (w, h)), (0,0))     
-        window.blit(win, (0,0))     
+        window.blit(pygame.transform.scale(win, (w, h)), (0,0))     
         pygame.display.flip()
     
     speed = 3
@@ -620,15 +546,11 @@ async def main():
         if spaceHeld:
             spaceHeld = keys[pygame.K_SPACE]
 
-        player.process()
-        if keys[pygame.K_SPACE] and not spaceHeld:
-            player.jump()
-            spaceHeld = True
 
-        if ((keys[pygame.K_a] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT])) or ((keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_a] or keys[pygame.K_LEFT])):
-            if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
+        if keys[pygame.K_d] or keys[pygame.K_a] or keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]:
+            if keys[pygame.K_a] or keys[pygame.K_LEFT]:
                 player.changeXVel(speed/10, False)
-            if (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_a] or keys[pygame.K_LEFT]):
+            if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
                 player.changeXVel(speed/10, True)
         elif player.xVel > 0:
             player.xVel-=player.decelSpeed
@@ -642,6 +564,10 @@ async def main():
         
 
     
+        player.process()
+        if keys[pygame.K_SPACE] and not spaceHeld:
+            player.jump()
+            spaceHeld = True
         if keys[pygame.K_r]:
             if keys[pygame.K_LCTRL]:
                 level.changeLevel()
