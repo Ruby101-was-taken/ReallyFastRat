@@ -132,9 +132,6 @@ pygame.time.delay(100)
 
 async def main():
     global w, h, window
-
-    deltaTime = 1
-
     worldX, worldY = 1, 0   
 
     defaultKTime = 10
@@ -174,7 +171,6 @@ async def main():
             self.canBoost = True
             self.decelSpeed = 0.2
             self.bonusXVel = 0
-
             self.jumpsLeft = 2
 
             self.walkAnimateFrame = 0
@@ -343,6 +339,7 @@ async def main():
                     self.touchGround = level.checkCollision()
                     self.kTime = defaultKTime
                     self.jumpsLeft = 2
+            print(self.touchGround)
             
 
             if semiLevel.checkCollision():
@@ -364,7 +361,6 @@ async def main():
                     if self.semied:
                         self.kTime = defaultKTime
                     self.semied = False
-                level.levelPosy-=1
                 self.y = level.levelPosy
             elif self.semied and not keys[pygame.K_SPACE]:
                 self.kTime = defaultKTime
@@ -374,7 +370,7 @@ async def main():
             
 
 
-            level.checkCollision([2, 4, 5, 6, 7])
+            level.checkCollision([2, 4, 5, 6])
 
 
 
@@ -402,6 +398,12 @@ async def main():
                 self.maxBoost -= self.decelSpeed
                 
             self.gravity()
+
+
+                
+            #if spikes.checkCollision():
+                #self.die()
+
             
         def jump(self):
             level.levelPosy+=1
@@ -463,7 +465,7 @@ async def main():
             collided = False
             for tile in self.trimmedLevel:
                 #print(tile.y, self.levelPosy+20)
-                if tile.x < self.levelPosx+20 and tile.x > self.levelPosx-20 and tile.rect.y < player.charRect.y+300 and tile.rect.y > player.charRect.y-300:
+                if tile.x < self.levelPosx+20 and tile.x > self.levelPosx-20:
                     tile.update()
                     if tile.tileID in tileToCheck:
                         if tile.checkCollision(player):
@@ -500,7 +502,7 @@ async def main():
             feetRect = pygame.Rect(475, player.charRect.y+29, 20, 1)
             collided = False
             if player.yVel >= 0:
-                for tile in level.trimmedLevel:
+                for tile in level.levels:
                     tile.update()
                     if tile.x < level.levelPosx+20 and tile.x > level.levelPosx-20 and tile.rect.y < player.charRect.y+50 and tile.rect.y > player.charRect.y-20:
                         if tile.tileID == tileToCheck:
@@ -539,8 +541,6 @@ async def main():
                     pygame.draw.rect(win, GREEN, self.rect)
                 elif self.tileID == 6:
                     pygame.draw.rect(win, YELLOW, self.rect)
-                elif self.tileID == 7:
-                    pygame.draw.rect(win, BROWN, self.rect)
                 
         def checkCollision(self, collider):
             collided = self.rect.colliderect(collider.charRect)
@@ -557,12 +557,10 @@ async def main():
                     if player.yVel > 0:
                         player.yVel = 0
                     player.maxBoost = 20
-                    player.xVel = 13
-                elif self.tileID == 7:
-                    if player.yVel > 0:
-                        player.yVel = 0
-                    player.maxBoost = 20
-                    player.xVel = -13
+                    if player.xVel >= 0:
+                        player.xVel = 13
+                    elif player.xVel < 0:
+                        player.xVel = -13
             return collided
         def checkCollisionRect(self, collider):
             return self.rect.colliderect(collider)
@@ -600,7 +598,6 @@ async def main():
     stallFrames = False
     #stallFrames = True
 
-
     run = True
     # Main game loop
     while run:
@@ -625,12 +622,12 @@ async def main():
                 # This event is triggered when the window is resized
                 w, h = event.w, event.h
 
-        
+        level.trimLevel()
+
         #mouse getters
         clicked = pygame.mouse.get_pressed(num_buttons=3)
         posx, posy = pygame.mouse.get_pos()
 
-        level.trimLevel()
         
         keys = pygame.key.get_pressed()
 
@@ -692,11 +689,11 @@ async def main():
         for tile in level.levels:
             tile.update()
             
-
+        
         #redraw win
         redrawScreen()
         await asyncio.sleep(0)
         # Set the framerate
-        deltaTime = clock.tick(60)/10
+        clock.tick(60)
 
 asyncio.run(main())
