@@ -374,7 +374,7 @@ async def main():
             
 
 
-            level.checkCollision([2, 4, 5, 6, 7])
+            level.checkCollision([2, 4, 5, 6, 7, 8])
 
 
 
@@ -535,6 +535,8 @@ async def main():
                     pygame.draw.rect(win, PURPLE, self.rect)
                 elif self.tileID == 4:
                     pygame.draw.rect(win, BLUE, self.rect)
+                elif self.tileID == 8:
+                    pygame.draw.rect(win, GREY, self.rect)
                 elif self.tileID == 5:
                     pygame.draw.rect(win, GREEN, self.rect)
                 elif self.tileID == 6:
@@ -547,6 +549,9 @@ async def main():
             if collided:
                 if self.tileID == 4:
                     player.yVel = -20
+                    player.xVel = 0
+                if self.tileID == 8:
+                    player.yVel = 20
                     player.xVel = 0
                 elif self.tileID == 6:
                     player.yVel = -13
