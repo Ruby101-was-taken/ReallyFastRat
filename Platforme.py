@@ -177,6 +177,8 @@ async def main():
 
             self.jumpsLeft = 2
 
+            self.stomp = False
+
             self.walkAnimateFrame = 0
             self.jumpAnimateFrame = 0
             self.isRight = True
@@ -230,6 +232,9 @@ async def main():
                     self.x-=1
             self.xVel = round(self.xVel,2)
             if str(abs(self.xVel))[:3] == "0.1" or str(abs(self.xVel))[:3] == "0.0":
+                self.xVel = 0
+
+            if self.stomp:
                 self.xVel = 0
 
             self.changeX(self.xVel)
@@ -309,6 +314,7 @@ async def main():
                 if level.checkCollision():
                     self.yVel = 0
                     self.jumpsLeft = 2
+                    self.stomp = False
                     player.decelSpeed = 0.2
                     #self.y-=0.1
                     level.levelPosy = self.y
@@ -342,6 +348,7 @@ async def main():
                     level.levelPosy = self.y
                     self.touchGround = level.checkCollision()
                     self.kTime = defaultKTime
+                    self.stomp = False
                     self.jumpsLeft = 2
             
 
@@ -352,6 +359,7 @@ async def main():
                     player.decelSpeed = 0.2
                     self.yVel = 0
                     self.touchGround = True
+                    self.stomp = False
                     toochSemi = self.semied
                     self.semied = True
                     while not toochSemi:
@@ -400,7 +408,12 @@ async def main():
 
             if self.maxBoost > self.defaultBoost:
                 self.maxBoost -= self.decelSpeed
-                
+            
+            if self.stomp:
+                self.teminalVelocity = 25
+            else:
+                self.teminalVelocity = 17
+
             self.gravity()
             
         def jump(self):
@@ -467,6 +480,7 @@ async def main():
                     tile.update()
                     if tile.tileID in tileToCheck:
                         if tile.checkCollision(player):
+                            player.stomp = False
                             collided = True
                             break
             return collided
@@ -588,10 +602,9 @@ async def main():
         pygame.draw.rect(win, WHITE, pygame.Rect(0,0, 65, 25))
         win.blit(smallFont.render("FPS: " + str(int(clock.get_fps())), True, (0, 0, 0)), (0,0))
         pygame.draw.rect(win, WHITE, pygame.Rect(0,30, 65, 25))
-        win.blit(smallFont.render("yvel: " + str(player.yVel), True, (0, 0, 0)), (0,30))
+        win.blit(smallFont.render("kTime: " + str(player.kTime), True, (0, 0, 0)), (0,30))
 
-        #window.blit(pygame.transform.scale(win, (w, h)), (0,0))     
-        window.blit(win, (0,0))     
+        window.blit(pygame.transform.scale(win, (w, h)), (0,0))    
         pygame.display.flip()
     
     speed = 3
@@ -601,6 +614,7 @@ async def main():
     #spikes = SpikeLevel()
 
     spaceHeld = False
+    stompHeld = False
     
     stallFrames = False
     #stallFrames = True
@@ -641,6 +655,8 @@ async def main():
 
         if spaceHeld:
             spaceHeld = keys[pygame.K_SPACE]
+        if stompHeld:
+            stompHeld = keys[pygame.K_DOWN] or keys[pygame.K_s]
 
         player.process()
         if keys[pygame.K_SPACE] and not spaceHeld:
@@ -662,7 +678,11 @@ async def main():
             player.boostDirection = 0
             player.canBoost = True
         
-
+        if not player.climbedLastFrame and player.kTime < 8:
+            if (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not stompHeld:
+                player.stomp = True
+                player.yVel = 20
+                stompHeld = True
     
         if keys[pygame.K_r]:
             if keys[pygame.K_LCTRL]:
