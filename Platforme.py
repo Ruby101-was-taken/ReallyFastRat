@@ -601,8 +601,8 @@ async def main():
 
         pygame.draw.rect(win, WHITE, pygame.Rect(0,0, 65, 25))
         win.blit(smallFont.render("FPS: " + str(int(clock.get_fps())), True, (0, 0, 0)), (0,0))
-        pygame.draw.rect(win, WHITE, pygame.Rect(0,30, 65, 25))
-        win.blit(smallFont.render("kTime: " + str(player.kTime), True, (0, 0, 0)), (0,30))
+        pygame.draw.rect(win, WHITE, pygame.Rect(0,30, 120, 25))
+        win.blit(smallFont.render("YVEL: " + str(player.yVel), True, (0, 0, 0)), (0,30))
 
         window.blit(pygame.transform.scale(win, (w, h)), (0,0))    
         pygame.display.flip()
@@ -678,11 +678,11 @@ async def main():
             player.boostDirection = 0
             player.canBoost = True
         
-        if not player.climbedLastFrame and player.kTime < 8:
-            if (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not stompHeld:
-                player.stomp = True
-                player.yVel = 20
-                stompHeld = True
+        # if not player.climbedLastFrame and player.kTime < 8:
+        #     if (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not stompHeld:
+        #         player.stomp = True
+        #         player.yVel = 20
+        #         stompHeld = True
     
         if keys[pygame.K_r]:
             if keys[pygame.K_LCTRL]:
