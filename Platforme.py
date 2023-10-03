@@ -100,7 +100,15 @@ playerImages = [
     pygame.image.load("player/fall1.png"),
     pygame.image.load("player/fall2.png"),
     pygame.image.load("player/jump1.png"),
-    pygame.image.load("player/jump2.png")
+    pygame.image.load("player/jump2.png"),
+    pygame.image.load("player/run0.png"),
+    pygame.image.load("player/run1.png"),
+    pygame.image.load("player/run2.png")
+]
+boostImages = [
+    pygame.image.load("player/boost0.png"),
+    pygame.image.load("player/boost1.png"),
+    pygame.image.load("player/boost2.png")
 ]
 
 
@@ -436,6 +444,14 @@ async def main():
                     returnImage = playerImages[1]
                 else:
                     returnImage = playerImages[2]
+
+            if abs(self.xVel) > self.maxSpeed*2 and (self.touchGround or self.kTime>0):
+                if walkAnimateFrame in [0, 2]:
+                    returnImage = playerImages[8]
+                elif walkAnimateFrame == 1:
+                    returnImage = playerImages[9]
+                else:
+                    returnImage = playerImages[10]
             
             if self.yVel > 2:
                 returnImage = playerImages[3]
@@ -463,6 +479,12 @@ async def main():
         def draw(self):
             #pygame.draw.rect(win, RED, self.charRect)
             win.blit(self.animate(), (self.charRect.x-5, self.charRect.y))
+
+            # if abs(self.xVel) >= self.maxBoost-1 and (self.touchGround or self.kTime>0):
+            #     if not self.isRight:
+            #         win.blit(pygame.transform.flip(random.choice(boostImages), True, False), (self.charRect.x-5, self.charRect.y))
+            #     else:
+            #         win.blit(random.choice(boostImages), (self.charRect.x-5, self.charRect.y))
             
         
     class Level:
