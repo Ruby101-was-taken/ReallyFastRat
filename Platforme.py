@@ -1,4 +1,5 @@
 import pygame, random, asyncio, os, csv
+import math as maths
 
 os.system("cls")
 
@@ -16,6 +17,7 @@ BROWN = (165, 42, 42)
 GREY = (128, 128, 128)
 WHITE = (255,255,255)
 LOGORED = (170, 32, 32)
+CYAN = (0, 159, 159)
 
 # Set win dimensions
 w = 960
@@ -190,6 +192,11 @@ async def main():
             self.walkAnimateFrame = 0
             self.jumpAnimateFrame = 0
             self.isRight = True
+
+            self.homingRange = pygame.Rect(self.charRect.x-120, self.charRect.y-120, 250, 260)
+            self.canHomingAttck = True
+
+            self.homeTo = (0,0)
         def reset(self):
             self.x = 475
             self.y = level.lowestPoint-230
@@ -249,22 +256,22 @@ async def main():
             
             if self.xVel > 0:
                 level.levelPosx, level.levelPosy = self.x+0.1, self.y-0.1
-                if level.checkCollision():
+                if level.checkCollision(self.charRect):
                     movedUp = False
                     for i in range(10):
                         level.levelPosy-=1
-                        if not level.checkCollision() and not movedUp and not keys[pygame.K_LCTRL]:
+                        if not level.checkCollision(self.charRect) and not movedUp and not keys[pygame.K_LCTRL]:
                             level.levelPosx+=1
                             movedUp = True
 
                     if not movedUp:
                         level.levelPosy+=10
                         self.xVel=0
-                        self.touchGround = level.checkCollision()
+                        self.touchGround = level.checkCollision(self.charRect)
                         while self.touchGround:
                             self.x-=0.1
                             level.levelPosx = self.x
-                            self.touchGround = level.checkCollision()
+                            self.touchGround = level.checkCollision(self.charRect)
                         if (keys[pygame.K_LCTRL]):
                             self.yVel = 0
                             self.climbedLastFrame=True
@@ -272,7 +279,7 @@ async def main():
                                 self.yVel = -3
                                 level.levelPosy -= 30
                                 level.levelPosx += 1
-                                if not level.checkCollision():
+                                if not level.checkCollision(self.charRect):
                                     self.yVel = -7
                                 level.levelPosy += 30
                                 level.levelPosx -= 1
@@ -281,21 +288,21 @@ async def main():
                         
             if self.xVel < 0:
                 level.levelPosx, level.levelPosy = self.x-0.1, self.y-0.1
-                if level.checkCollision():
+                if level.checkCollision(self.charRect):
                     movedUp = False
                     for i in range(10):
                         level.levelPosy-=1
-                        if not level.checkCollision() and not movedUp and not keys[pygame.K_LCTRL]:
+                        if not level.checkCollision(self.charRect) and not movedUp and not keys[pygame.K_LCTRL]:
                             level.levelPosx-=1
                             movedUp = True
                     if not movedUp:
                         level.levelPosy+=10
                         self.xVel=0
-                        self.touchGround = level.checkCollision()
+                        self.touchGround = level.checkCollision(self.charRect)
                         while self.touchGround:
                             self.x+=0.1
                             level.levelPosx = self.x
-                            self.touchGround = level.checkCollision()
+                            self.touchGround = level.checkCollision(self.charRect)
                         if (keys[pygame.K_LCTRL]):
                             self.yVel = 0
                             self.climbedLastFrame=True
@@ -304,7 +311,7 @@ async def main():
                                 self.yVel = -3
                                 level.levelPosy -= 30
                                 level.levelPosx -= 1
-                                if not level.checkCollision():
+                                if not level.checkCollision(self.charRect):
                                     self.yVel = -7
                                 level.levelPosy += 30
                                 level.levelPosx += 1
@@ -319,7 +326,7 @@ async def main():
             for i in range(int(self.yVel)):
                 self.y+=1
                 level.levelPosx, level.levelPosy = self.x, self.y
-                if level.checkCollision():
+                if level.checkCollision(self.charRect):
                     self.yVel = 0
                     self.jumpsLeft = 2
                     self.stomp = False
@@ -331,7 +338,7 @@ async def main():
                 self.y-=1
                 level.levelPosx, level.levelPosy = self.x, self.y
                 self.checkCeiling()
-            if not level.checkCollision():
+            if not level.checkCollision(self.charRect):
                 self.yVel+=0.5
                 if self.yVel > self.teminalVelocity:
                     self.yVel = self.teminalVelocity
@@ -341,11 +348,11 @@ async def main():
                     self.decelSpeed = 0.05
             
             level.levelPosy+=1
-            self.touchGround = level.checkCollision()
+            self.touchGround = level.checkCollision(self.charRect)
             level.levelPosy-=1
             while self.touchGround:
                 level.levelPosy = self.y+1
-                if not level.checkCollision():
+                if not level.checkCollision(self.charRect):
                     self.yVel=+1
                     self.y+=1
                     level.levelPosy = self.y
@@ -354,15 +361,15 @@ async def main():
                 else:
                     self.y-=0.1
                     level.levelPosy = self.y
-                    self.touchGround = level.checkCollision()
+                    self.touchGround = level.checkCollision(self.charRect)
                     self.kTime = defaultKTime
                     self.stomp = False
                     self.jumpsLeft = 2
             
 
-            if semiLevel.checkCollision():
+            if semiLevel.checkCollision(self.charRect):
                 level.levelPosy-=int(self.yVel)+1
-                if not semiLevel.checkCollision():
+                if not semiLevel.checkCollision(self.charRect):
                     level.levelPosy+=1
                     player.decelSpeed = 0.2
                     self.yVel = 0
@@ -372,7 +379,7 @@ async def main():
                     self.semied = True
                     while not toochSemi:
                         level.levelPosy+=1
-                        toochSemi = semiLevel.checkCollision()
+                        toochSemi = semiLevel.checkCollision(self.charRect)
                         self.kTime = defaultKTime
                         self.jumpsLeft = 2
                 else:
@@ -388,16 +395,17 @@ async def main():
             elif self.semied:
                 self.semied = False
             
+            if self.canHomingAttck:
+                level.checkCollision(self.homingRange, [9])
 
-
-            level.checkCollision([2, 4, 5, 6, 7, 8])
-
+            level.checkCollision(self.charRect, [2, 4, 5, 6, 7, 8, 9])
+            
 
 
         def checkCeiling(self):
             level.levelPosy = self.y-1
             self.charRect.height = 1
-            if level.checkCollision():
+            if level.checkCollision(self.charRect):
                 self.yVel=+1
                 self.y+=1
                 level.levelPosy = self.y 
@@ -422,7 +430,20 @@ async def main():
             else:
                 self.teminalVelocity = 17
 
-            self.gravity()
+            if self.homeTo == (0,0):
+                self.gravity()
+            else:
+                self.homingTo()
+
+        def homingTo(self):
+            if level.levelPosx < self.homeTo[0]:
+                self.changeXVel(1, True)
+            elif level.levelPosx > self.homeTo[0]:
+                self.changeXVel(-1, False)
+            if level.levelPosy < self.homeTo[1]:
+                level.levelPosy += 1
+            elif level.levelPosy > self.homeTo[1]:
+                level.levelPosy -= 1
             
         def jump(self):
             level.levelPosy+=1
@@ -430,7 +451,10 @@ async def main():
                 self.yVel = -11
                 self.kTime=0
                 self.jumpsLeft-=1
+            else:
+                level.checkCollision(self.homingRange, [9])
             level.levelPosy-=1
+
         def animate(self):
             returnImage = playerImages[0]
             walkAnimateFrame = int(self.walkAnimateFrame)
@@ -478,6 +502,7 @@ async def main():
 
         def draw(self):
             #pygame.draw.rect(win, RED, self.charRect)
+            #pygame.draw.rect(win, RED, self.homingRange)
             win.blit(self.animate(), (self.charRect.x-5, self.charRect.y))
 
             # if abs(self.xVel) >= self.maxBoost-1 and (self.touchGround or self.kTime>0):
@@ -494,14 +519,14 @@ async def main():
             self.lowestPoint = 0
             self.changeLevel()
             self.trimLevel()
-        def checkCollision(self, tileToCheck=[0]):
+        def checkCollision(self, rectToCheck, tileToCheck=[0]):
             collided = False
             for tile in self.trimmedLevel:
                 #print(tile.y, self.levelPosy+20)
-                if tile.x < self.levelPosx+20 and tile.x > self.levelPosx-20 and tile.rect.y < player.charRect.y+300 and tile.rect.y > player.charRect.y-300:
+                if tile.x < self.levelPosx+rectToCheck.width and tile.x > self.levelPosx-rectToCheck.width and tile.rect.y < player.charRect.y+300 and tile.rect.y > player.charRect.y-300:
                     tile.update()
                     if tile.tileID in tileToCheck:
-                        if tile.checkCollision(player):
+                        if tile.checkCollision(rectToCheck):
                             player.stomp = False
                             collided = True
                             break
@@ -529,17 +554,17 @@ async def main():
                 #print(tile.y, self.levelPosy+20)
                 if tile.rect.x > -20 and tile.rect.x < 960 and tile.rect.y > -20 and tile.rect.y < 600:
                     self.trimmedLevel.append(tile)
-    class SemiLevel:
+    class semiLevel:
         def __init__(self):
             pass
-        def checkCollision(self, tileToCheck=1):
+        def checkCollision(self, rectToCheck, tileToCheck=1):
             feetRect = pygame.Rect(475, player.charRect.y+29, 20, 1)
             collided = False
             if player.yVel >= 0:
                 for tile in level.trimmedLevel:
                     tile.update()
                     if tile.x < level.levelPosx+20 and tile.x > level.levelPosx-20 and tile.rect.y < player.charRect.y+50 and tile.rect.y > player.charRect.y-20:
-                        if tile.tileID == tileToCheck:
+                        if tile.tileID == tileToCheck and not collided:
                             if tile.checkCollisionRect(feetRect):
                                 collided = True
                                 break
@@ -579,14 +604,17 @@ async def main():
                     pygame.draw.rect(win, YELLOW, self.rect)
                 elif self.tileID == 7:
                     pygame.draw.rect(win, BROWN, self.rect)
+                elif self.tileID == 9:
+                    pygame.draw.rect(win, CYAN, self.rect)
                 
         def checkCollision(self, collider):
-            collided = self.rect.colliderect(collider.charRect)
-            if collided:
+            collided = self.rect.colliderect(collider)
+            if collided and collider == player.charRect:
+                player.canHomingAttck = True
                 if self.tileID == 4:
                     player.yVel = -20
                     player.xVel = 0
-                if self.tileID == 8:
+                elif self.tileID == 8:
                     player.yVel = 20
                     player.xVel = 0
                 elif self.tileID == 6:
@@ -604,6 +632,17 @@ async def main():
                         player.yVel = 0
                     player.maxBoost = 20
                     player.xVel = -13
+                elif self.tileID == 9:
+                    player.yVel = -10
+                    player.xVel = 0
+                    player.homeTo = (0,0)
+                    level.levels.remove(self)
+            elif collided and collider == player.homingRange:
+                if self.tileID == 9:
+                    player.homeTo = (self.x, self.y)
+
+                    
+
             return collided
         def checkCollisionRect(self, collider):
             return self.rect.colliderect(collider)
@@ -625,6 +664,8 @@ async def main():
         win.blit(smallFont.render("FPS: " + str(int(clock.get_fps())), True, (0, 0, 0)), (0,0))
         pygame.draw.rect(win, WHITE, pygame.Rect(0,30, 120, 25))
         win.blit(smallFont.render("YVEL: " + str(player.yVel), True, (0, 0, 0)), (0,30))
+        pygame.draw.rect(win, WHITE, pygame.Rect(0,60, 120, 25))
+        win.blit(smallFont.render("XVEL: " + str(player.xVel), True, (0, 0, 0)), (0,60))
 
         window.blit(pygame.transform.scale(win, (w, h)), (0,0))    
         pygame.display.flip()
@@ -632,7 +673,7 @@ async def main():
     speed = 3
     player = Player()
     level = Level()
-    semiLevel = SemiLevel()
+    semiLevel = semiLevel()
     #spikes = SpikeLevel()
 
     spaceHeld = False
