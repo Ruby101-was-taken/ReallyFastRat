@@ -193,10 +193,13 @@ async def main():
             self.jumpAnimateFrame = 0
             self.isRight = True
 
-            self.homingRange = pygame.Rect(self.charRect.x-120, self.charRect.y-120, 250, 260)
+            self.homingRange = pygame.Rect(self.charRect.x-240, self.charRect.y-240, 490, 500)
             self.canHomingAttck = True
 
             self.homeTo = (0,0)
+            self.homeRight = False
+            self.homeDown = False
+            self.homeSpeed = 3
         def reset(self):
             self.x = 475
             self.y = level.lowestPoint-230
@@ -217,11 +220,11 @@ async def main():
             self.isRight = isRight
             if isRight:
                 self.xVel += speed
-                if self.xVel > self.maxSpeed and not keys[pygame.K_LSHIFT]:
+                if self.xVel > self.maxSpeed and not (keys[pygame.K_LSHIFT] or self.homeTo!=(0,0)):
                     self.xVel -= speed
                     if self.xVel > self.maxSpeed:
                         self.xVel-=self.decelSpeed
-                elif self.xVel > self.maxBoost and keys[pygame.K_LSHIFT]:
+                elif self.xVel > self.maxBoost and (keys[pygame.K_LSHIFT] or self.homeTo!=(0,0)):
                     self.xVel = self.maxBoost
                     if not self.canBoost:
                         self.xVel -= speed
@@ -233,11 +236,11 @@ async def main():
                     level.levelPosx, level.levelPosy = self.x, self.y
             elif not isRight:
                 self.xVel -= speed
-                if self.xVel < -self.maxSpeed and not keys[pygame.K_LSHIFT]:
+                if self.xVel < -self.maxSpeed and not (keys[pygame.K_LSHIFT] or self.homeTo!=(0,0)):
                     self.xVel += speed
                     if self.xVel < -self.maxSpeed:
                         self.xVel+=self.decelSpeed
-                elif self.xVel < -self.maxBoost and keys[pygame.K_LSHIFT]:
+                elif self.xVel < -self.maxBoost and (keys[pygame.K_LSHIFT] or self.homeTo!=(0,0)):
                     self.xVel = -self.maxBoost
                     if not self.canBoost:
                         self.xVel += speed
@@ -319,10 +322,11 @@ async def main():
                                 self.yVel = 3
             
         def gravity(self):
+
             level.levelPosy = round(level.levelPosy, 2)
             if level.levelPosy > level.lowestPoint:
                 self.die()
-
+            #if self.homeTo == (0,0):
             for i in range(int(self.yVel)):
                 self.y+=1
                 level.levelPosx, level.levelPosy = self.x, self.y
@@ -346,57 +350,56 @@ async def main():
                 if self.kTime<0:
                     self.kTime=0
                     self.decelSpeed = 0.05
-            
-            level.levelPosy+=1
-            self.touchGround = level.checkCollision(self.charRect)
-            level.levelPosy-=1
-            while self.touchGround:
-                level.levelPosy = self.y+1
-                if not level.checkCollision(self.charRect):
-                    self.yVel=+1
-                    self.y+=1
-                    level.levelPosy = self.y
-                    self.touchGround=False
-                    self.kTime = 0
-                else:
-                    self.y-=0.1
-                    level.levelPosy = self.y
-                    self.touchGround = level.checkCollision(self.charRect)
-                    self.kTime = defaultKTime
-                    self.stomp = False
-                    self.jumpsLeft = 2
+            if self.homeTo == (0,0):
+                level.levelPosy+=1
+                self.touchGround = level.checkCollision(self.charRect)
+                level.levelPosy-=1
+                while self.touchGround:
+                    level.levelPosy = self.y+1
+                    if not level.checkCollision(self.charRect):
+                        self.yVel=+1
+                        self.y+=1
+                        level.levelPosy = self.y
+                        self.touchGround=False
+                        self.kTime = 0
+                    else:
+                        self.y-=0.1
+                        level.levelPosy = self.y
+                        self.touchGround = level.checkCollision(self.charRect)
+                        self.kTime = defaultKTime
+                        self.stomp = False
+                        self.jumpsLeft = 2
             
 
-            if semiLevel.checkCollision(self.charRect):
-                level.levelPosy-=int(self.yVel)+1
-                if not semiLevel.checkCollision(self.charRect):
-                    level.levelPosy+=1
-                    player.decelSpeed = 0.2
-                    self.yVel = 0
-                    self.touchGround = True
-                    self.stomp = False
-                    toochSemi = self.semied
-                    self.semied = True
-                    while not toochSemi:
+                if semiLevel.checkCollision(self.charRect):
+                    level.levelPosy-=int(self.yVel)+1
+                    if not semiLevel.checkCollision(self.charRect):
                         level.levelPosy+=1
-                        toochSemi = semiLevel.checkCollision(self.charRect)
-                        self.kTime = defaultKTime
-                        self.jumpsLeft = 2
-                else:
-                    level.levelPosy+=int(self.yVel)+1
-                    if self.semied:
-                        self.kTime = defaultKTime
+                        player.decelSpeed = 0.2
+                        self.yVel = 0
+                        self.touchGround = True
+                        self.stomp = False
+                        toochSemi = self.semied
+                        self.semied = True
+                        while not toochSemi:
+                            level.levelPosy+=1
+                            toochSemi = semiLevel.checkCollision(self.charRect)
+                            self.kTime = defaultKTime
+                            self.jumpsLeft = 2
+                    else:
+                        level.levelPosy+=int(self.yVel)+1
+                        if self.semied:
+                            self.kTime = defaultKTime
+                        self.semied = False
+                    level.levelPosy-=1
+                    self.y = level.levelPosy
+                elif self.semied and not keys[pygame.K_SPACE]:
+                    self.kTime = defaultKTime
                     self.semied = False
-                level.levelPosy-=1
-                self.y = level.levelPosy
-            elif self.semied and not keys[pygame.K_SPACE]:
-                self.kTime = defaultKTime
-                self.semied = False
-            elif self.semied:
-                self.semied = False
+                elif self.semied:
+                    self.semied = False
             
-            if self.canHomingAttck:
-                level.checkCollision(self.homingRange, [9])
+               
 
             level.checkCollision(self.charRect, [2, 4, 5, 6, 7, 8, 9])
             
@@ -422,7 +425,7 @@ async def main():
         def process(self):
             level.levelPosx, level.levelPosy = self.x, self.y
 
-            if self.maxBoost > self.defaultBoost:
+            if self.maxBoost > self.defaultBoost and self.homeTo == (0,0):
                 self.maxBoost -= self.decelSpeed
             
             if self.stomp:
@@ -430,20 +433,35 @@ async def main():
             else:
                 self.teminalVelocity = 17
 
-            if self.homeTo == (0,0):
-                self.gravity()
-            else:
+            self.gravity()
+            if self.homeTo != (0,0):
                 self.homingTo()
 
         def homingTo(self):
             if level.levelPosx < self.homeTo[0]:
-                self.changeXVel(1, True)
+                if self.homeRight:
+                    self.changeXVel(self.homeSpeed, True)
+                else:
+                    self.xVel = 0
+                    self.changeX(self.homeTo[0] - level.levelPosx)
             elif level.levelPosx > self.homeTo[0]:
-                self.changeXVel(-1, False)
+                if not self.homeRight:
+                    self.changeXVel(self.homeSpeed, False)
+                else:
+                    self.xVel = 0
+                    self.changeX((level.levelPosx - self.homeTo[0])*-1)
             if level.levelPosy < self.homeTo[1]:
-                level.levelPosy += 1
+                if self.homeDown:
+                     self.yVel += self.homeSpeed
+                else:
+                    self.yVel = 0
+                    self.yVel -= level.levelPosy - self.homeTo[1]
             elif level.levelPosy > self.homeTo[1]:
-                level.levelPosy -= 1
+                if not self.homeDown:
+                    self.yVel -= self.homeSpeed
+                else:
+                    self.yVel = 0
+                    self.yVel += self.homeTo[1] - level.levelPosy
             
         def jump(self):
             level.levelPosy+=1
@@ -451,8 +469,10 @@ async def main():
                 self.yVel = -11
                 self.kTime=0
                 self.jumpsLeft-=1
-            else:
-                level.checkCollision(self.homingRange, [9])
+            elif self.homeTo == (0,0):
+                if level.checkCollision(self.homingRange, [9]):
+                    self.xVel = 0
+                    self.yVel = 0
             level.levelPosy-=1
 
         def animate(self):
@@ -484,7 +504,7 @@ async def main():
                 returnImage = playerImages[4]
             elif self.yVel > 12:
                 returnImage = playerImages[5]
-            elif self.yVel < 0:
+            elif self.yVel < 0 or self.homeTo != (0,0):
                 self.jumpAnimateFrame += 0.5
                 if self.jumpAnimateFrame == 8:
                     self.jumpAnimateFrame = 0
@@ -521,7 +541,7 @@ async def main():
             self.trimLevel()
         def checkCollision(self, rectToCheck, tileToCheck=[0]):
             collided = False
-            for tile in self.trimmedLevel:
+            for tile in self.trimmedLevel[::-1]:
                 #print(tile.y, self.levelPosy+20)
                 if tile.x < self.levelPosx+rectToCheck.width and tile.x > self.levelPosx-rectToCheck.width and tile.rect.y < player.charRect.y+300 and tile.rect.y > player.charRect.y-300:
                     tile.update()
@@ -605,7 +625,10 @@ async def main():
                 elif self.tileID == 7:
                     pygame.draw.rect(win, BROWN, self.rect)
                 elif self.tileID == 9:
-                    pygame.draw.rect(win, CYAN, self.rect)
+                    if player.homeTo == (self.x, self.y+160):
+                        pygame.draw.rect(win, RED, self.rect)
+                    else:
+                        pygame.draw.rect(win, CYAN, self.rect)
                 
         def checkCollision(self, collider):
             collided = self.rect.colliderect(collider)
@@ -639,7 +662,17 @@ async def main():
                     level.levels.remove(self)
             elif collided and collider == player.homingRange:
                 if self.tileID == 9:
-                    player.homeTo = (self.x, self.y)
+                    player.homeTo = (self.x, self.y+160)
+                    player.maxBoost = 20
+                    
+                    if level.levelPosx < player.homeTo[0]:
+                        player.homeRight = True
+                    elif level.levelPosx > player.homeTo[0]:
+                        player.homeRight = False
+                    if level.levelPosy < player.homeTo[1]:
+                        player.homeDown = True
+                    elif level.levelPosy > player.homeTo[1]:
+                        player.homeDown = False
 
                     
 
