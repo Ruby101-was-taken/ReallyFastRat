@@ -699,6 +699,8 @@ async def main():
         win.blit(smallFont.render("YVEL: " + str(player.yVel), True, (0, 0, 0)), (0,30))
         pygame.draw.rect(win, WHITE, pygame.Rect(0,60, 120, 25))
         win.blit(smallFont.render("XVEL: " + str(player.xVel), True, (0, 0, 0)), (0,60))
+        pygame.draw.rect(win, WHITE, pygame.Rect(0,90, 120, 25))
+        win.blit(smallFont.render("HOMETO: " + str(player.homeTo), True, (0, 0, 0)), (0,90))
 
         window.blit(pygame.transform.scale(win, (w, h)), (0,0))    
         pygame.display.flip()
