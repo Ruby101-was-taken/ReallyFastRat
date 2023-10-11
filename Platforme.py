@@ -33,7 +33,7 @@ pygame.mixer.init()
 # Set up the display
 window = pygame.display.set_mode((w, h), pygame.RESIZABLE)
 win = pygame.Surface((w, h))
-pygame.display.set_caption("A Solar Trip: Rock Destruction")
+pygame.display.set_caption("Really Fast Rat")
 pygame.display.set_icon(pygame.image.load('icon.png'))
 
 logo=[pygame.image.load('logo/logosubless.png'), pygame.image.load('logo/logoSUB.png'), pygame.image.load('logo/logoBGless.png')]
@@ -112,6 +112,17 @@ boostImages = [
     pygame.image.load("player/boost1.png"),
     pygame.image.load("player/boost2.png")
 ]
+tile_width = 20
+tile_height = 20  # Replace with your tile height
+
+tileSheet = pygame.image.load("tilemap/sampleTiles.png")
+
+tileImages = []  # This list will hold your individual tiles
+
+for y in range(0, tileSheet.get_height(), tile_height):
+    for x in range(0, tileSheet.get_width(), tile_width):
+        tile = tileSheet.subsurface(pygame.Rect(x, y, tile_width, tile_height))
+        tileImages.append(tile)
 
 
 
@@ -401,7 +412,7 @@ async def main():
             
                
 
-            level.checkCollision(self.charRect, [2, 4, 5, 6, 7, 8, 9])
+            level.checkCollision(self.charRect, True, [2, 4, 5, 6, 7, 8, 9])
             
 
 
@@ -470,7 +481,8 @@ async def main():
                 self.kTime=0
                 self.jumpsLeft-=1
             elif self.homeTo == (0,0):
-                if level.checkCollision(self.homingRange, [9]):
+                print(level.checkCollision(self.homingRange, False, [9]))
+                if level.checkCollision(self.homingRange, False, [9]):
                     self.xVel = 0
                     self.yVel = 0
             level.levelPosy-=1
@@ -537,43 +549,131 @@ async def main():
             self.levelPosx = 0
             self.levelPosy = 0
             self.lowestPoint = 0
+            self.worldXLast, self.worldYLast = -1, -1
+            self.levelVis = pygame.Surface((0,0), pygame.SRCALPHA)
             self.changeLevel()
             self.trimLevel()
-        def checkCollision(self, rectToCheck, tileToCheck=[0]):
+            self.offset = 1540
+        def checkCollision(self, rectToCheck, useTrim=True, tileToCheck=[0]):
             collided = False
-            for tile in self.trimmedLevel[::-1]:
-                #print(tile.y, self.levelPosy+20)
-                if tile.x < self.levelPosx+rectToCheck.width and tile.x > self.levelPosx-rectToCheck.width and tile.rect.y < player.charRect.y+300 and tile.rect.y > player.charRect.y-300:
-                    tile.update()
-                    if tile.tileID in tileToCheck:
-                        if tile.checkCollision(rectToCheck):
-                            player.stomp = False
-                            collided = True
-                            break
+            if useTrim:
+                for tile in self.trimmedLevel[::-1]:
+                    #print(tile.y, self.levelPosy+20)
+                    if tile.x < self.levelPosx+rectToCheck.width and tile.x > self.levelPosx-rectToCheck.width and tile.rect.y < player.charRect.y+300 and tile.rect.y > player.charRect.y-300:
+                        tile.update()
+                        if tile.tileID in tileToCheck:
+                            if tile.checkCollision(rectToCheck):
+                                player.stomp = False
+                                collided = True
+                                break
+            else:
+                for tile in self.onScreenLevel[::-1]:
+                    #print(tile.y, self.levelPosy+20)
+                    if tile.x < self.levelPosx+rectToCheck.width and tile.x > self.levelPosx-rectToCheck.width and tile.rect.y < player.charRect.y+300 and tile.rect.y > player.charRect.y-300:
+                        tile.update()
+                        if tile.tileID in tileToCheck:
+                            if tile.checkCollision(rectToCheck):
+                                player.stomp = False
+                                collided = True
+                                break
             return collided
         def draw(self):
-            pass
-            #win.blit(self.image, (-self.levelPosx+475,0))
-        def changeLevel(self):
-            self.levels = []
-            with open(f'levels/{worldX}-{worldY}.csv', 'r') as csv_file:
-                # Create a CSV reader object
-                csv_reader = csv.reader(csv_file)
-                tiles = list(csv_reader)
+            win.blit(self.levelVis, (-self.levelPosx+475,-self.levelPosy+475))
+        def changeLevel(self, resetPlayerPos=True):
+            if self.worldXLast != worldX:
+                self.worldXLast, self.worldYLast = worldX, worldY
+                t, f = True, False
+                self.levels = []
+                with open(f'levels/{worldX}-{worldY}.csv', 'r') as csv_file:
+                    # Create a CSV reader object
+                    csv_reader = csv.reader(csv_file)
+                    tiles = list(csv_reader)
 
-                # Loop through the rows in the CSV file
+                    # Loop through the rows in the CSV file
+                    for y, row in enumerate(tiles):
+                        for x in range(len(row)):
+                            if tiles[y][x] != "-1":
+                                self.levels.append(Tile(x*20, y*20, int(tiles[y][x])))
+                                if y*20+185 > self.lowestPoint:
+                                    self.lowestPoint = y*20+185
+                self.levelVis = pygame.Surface((len(tiles[0])*20, len(tiles)*20))
+                self.levelVis.fill(WHITE)
+                tilesLoaded = 0
                 for y, row in enumerate(tiles):
-                    for x in range(len(row)):
-                        if tiles[y][x] != "-1":
-                            self.levels.append(Tile(x*20, y*20, int(tiles[y][x])))
-                            if y*20+185 > self.lowestPoint:
-                                self.lowestPoint = y*20+185
+                    for x, tile in enumerate(row):
+                        if tile == "3":
+                            player.x, player.y = self.levels[tilesLoaded].x, self.levels[tilesLoaded].y+160
+                        if tile != "-1":
+                            win.fill(BLACK)
+                            win.blit(bigFont.render(f"Loading Level: {str(int((tilesLoaded/len(self.levels))*100))}% - {tilesLoaded}/{len(self.levels)}", True, WHITE), (0,90))
+                            for event in pygame.event.get():
+                                if event.type == pygame.QUIT:
+                                    pygame.quit()
+                                    run = False
+                                    quit()
+                                elif event.type == pygame.VIDEORESIZE:
+                                    # This event is triggered when the window is resized
+                                    w, h = event.w, event.h
+                            window.blit(win, (0,0))
+                            pygame.display.flip()
+                            above, below, left, right = False, False, False, False
+                            # Define a dictionary to map neighbor patterns to tile images
+                            neighbor_image_map = {
+                                (False, True, False, True): 0,
+                                (False, True, True, True): 1,
+                                (False, True, True, False): 2,
+                                (False, True, False, False): 4,
+                                (False, False, False, False): 6,
+                                (True, True, False, True): 9,
+                                (True, True, True, True): 10,
+                                (True, True, True, False): 11,
+                                (True, True, False, False): 13,
+                                (True, False, False, True): 18,
+                                (True, False, True, True): 19,
+                                (True, False, True, False): 20,
+                                (True, False, False, False): 22,
+                                (False, False, False, True): 24,
+                                (False, False, True, True): 25,
+                                (False, False, True, False): 26,
+                            }
+
+                            # Check neighbors
+                            if y!=0:
+                                if tiles[y-1][x] == "0":
+                                    above = True
+                            if y!=len(tiles)-1:
+                                if tiles[y+1][x] == "0":
+                                    below = True
+                            if x!=0:
+                                if tiles[y][x-1] == "0":
+                                    left = True
+                            if x!=len(row)-1:
+                                if tiles[y][x+1] == "0":
+                                    right = True
+
+                            # Get the corresponding image based on neighbor pattern
+                            neighbors = (above, below, left, right)
+                            self.levels[tilesLoaded].image = tileImages[neighbor_image_map.get(neighbors, 6)]
+                            if tiles[y][x] == "0":
+                                self.levelVis.blit(tileImages[neighbor_image_map.get(neighbors, 6)], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            tilesLoaded+=1
+            else:
+                for tile in self.levels:
+                    tile.reload()
+                    if tile.tileID == 3 and resetPlayerPos:
+                        print(resetPlayerPos)
+                        player.x, player.y = tile.x, tile.y+160
+
         def trimLevel(self):
             self.trimmedLevel = []
+            self.onScreenLevel = []
             for tile in self.levels:
                 #print(tile.y, self.levelPosy+20)
-                if tile.rect.x > -20 and tile.rect.x < 960 and tile.rect.y > -20 and tile.rect.y < 600:
+                if tile.rect.x > 400 and tile.rect.x < 550 and tile.rect.y > 200 and tile.rect.y < 400:
                     self.trimmedLevel.append(tile)
+                    self.onScreenLevel.append(tile)
+                elif tile.rect.x > -20 and tile.rect.x < 980 and tile.rect.y > -20 and tile.rect.y < 620:
+                    self.onScreenLevel.append(tile)
     class semiLevel:
         def __init__(self):
             pass
@@ -598,18 +698,23 @@ async def main():
             self.x, self.y = x, y
             self.tileID = tileID
             self.rect = pygame.Rect(self.x, self.y, 20, 20)
-            if self.tileID == 3:
-                player.x, player.y = self.x, self.y+160
+            self.image = pygame.Surface((0,0))
+            self.popped = False
         def update(self):
             self.rect.x = self.x-level.levelPosx+475
             self.rect.y = self.y-level.levelPosy+475
+        def isInSpace(self, x, y):
+            return self.x == x and self.y == y
+        def reload(self):
+            self.popped = False
         def draw(self):
             if self.rect.x > -20 and self.rect.x < 960 and self.rect.y > -20 and self.rect.y < 600:
                 if self.tileID == 0:
                     if self.y == level.lowestPoint-185:
                         pygame.draw.rect(win, BLACK, pygame.Rect(self.rect.x, self.rect.y, 20, 600-self.rect.y))
                     else:
-                        pygame.draw.rect(win, BLACK, self.rect)
+                        if self.image != tileImages[10]:
+                            pass
                 elif self.tileID == 1:
                     pygame.draw.rect(win, RED, self.rect)
                 elif self.tileID == 2:
@@ -624,7 +729,7 @@ async def main():
                     pygame.draw.rect(win, YELLOW, self.rect)
                 elif self.tileID == 7:
                     pygame.draw.rect(win, BROWN, self.rect)
-                elif self.tileID == 9:
+                elif self.tileID == 9 and not self.popped:
                     if player.homeTo == (self.x, self.y+160):
                         pygame.draw.rect(win, RED, self.rect)
                     else:
@@ -655,12 +760,12 @@ async def main():
                         player.yVel = 0
                     player.maxBoost = 20
                     player.xVel = -13
-                elif self.tileID == 9:
+                elif self.tileID == 9 and not self.popped:
                     player.yVel = -10
                     player.xVel = 0
                     player.homeTo = (0,0)
-                    level.levels.remove(self)
-            elif collided and collider == player.homingRange:
+                    self.popped = True
+            elif collided and collider == player.homingRange and not self.popped:
                 if self.tileID == 9:
                     player.homeTo = (self.x, self.y+160)
                     player.maxBoost = 20
@@ -684,10 +789,11 @@ async def main():
     def redrawScreen():
          
         win.fill(WHITE)
+        level.draw()
         
         #spikes.draw() 
 
-        for tile in level.levels:
+        for tile in level.onScreenLevel:
             tile.draw()
 
         player.draw()
@@ -695,12 +801,17 @@ async def main():
 
         pygame.draw.rect(win, WHITE, pygame.Rect(0,0, 65, 25))
         win.blit(smallFont.render("FPS: " + str(int(clock.get_fps())), True, (0, 0, 0)), (0,0))
-        pygame.draw.rect(win, WHITE, pygame.Rect(0,30, 120, 25))
-        win.blit(smallFont.render("YVEL: " + str(player.yVel), True, (0, 0, 0)), (0,30))
-        pygame.draw.rect(win, WHITE, pygame.Rect(0,60, 120, 25))
-        win.blit(smallFont.render("XVEL: " + str(player.xVel), True, (0, 0, 0)), (0,60))
+        # pygame.draw.rect(win, WHITE, pygame.Rect(0,30, 120, 25))
+        # win.blit(smallFont.render("YVEL: " + str(player.yVel), True, (0, 0, 0)), (0,30))
+        # pygame.draw.rect(win, WHITE, pygame.Rect(0,60, 120, 25))
+        # win.blit(smallFont.render("XVEL: " + str(player.xVel), True, (0, 0, 0)), (0,60))
         pygame.draw.rect(win, WHITE, pygame.Rect(0,90, 120, 25))
         win.blit(smallFont.render("HOMETO: " + str(player.homeTo), True, (0, 0, 0)), (0,90))
+
+        # for i, image in enumerate(tileImages):
+        #     win.blit(image, (0 + i*20, 0))
+        #     win.blit(smallFont.render(str(i), True, RED), (0 + i*20, 0))
+
 
         window.blit(pygame.transform.scale(win, (w, h)), (0,0))    
         pygame.display.flip()
@@ -789,7 +900,8 @@ async def main():
                 w, h = 960, 600
                 window = pygame.display.set_mode((960, 600), pygame.RESIZABLE)
             else:
-                player.reset()
+                level.changeLevel(False)
+            
         
         
         if keys[pygame.K_LCTRL]:
