@@ -78,6 +78,8 @@ for i in range(500):
     window.blit(pygame.transform.scale(win, (w, h)), (0,0)) 
     pygame.display.flip()
 
+
+
 loadingTexts = ["LOADING IMAGES", "LOADING UI", "LOADING SOUNDS"]
 
 
@@ -211,6 +213,7 @@ async def main():
             self.homeRight = False
             self.homeDown = False
             self.homeSpeed = 3
+            self.homingCoolDown = 0
         def reset(self):
             self.x = 475
             self.y = level.lowestPoint-230
@@ -333,7 +336,10 @@ async def main():
                                 self.yVel = 3
             
         def gravity(self):
-
+            if self.homeTo != (0,0):
+                self.homingCoolDown-=1
+                if self.homingCoolDown==0:
+                    self.homeTo=(0,0)
             level.levelPosy = round(level.levelPosy, 2)
             if level.levelPosy > level.lowestPoint:
                 self.die()
@@ -348,6 +354,7 @@ async def main():
                     player.decelSpeed = 0.2
                     #self.y-=0.1
                     level.levelPosy = self.y
+                    self.homeTo = (0,0)
                     break
             for i in range(-int(self.yVel)):
                 self.y-=1
@@ -551,6 +558,7 @@ async def main():
             self.lowestPoint = 0
             self.worldXLast, self.worldYLast = -1, -1
             self.levelVis = pygame.Surface((0,0), pygame.SRCALPHA)
+            self.quickDraw = keys[pygame.K_SPACE]
             self.changeLevel()
             self.trimLevel()
             self.offset = 1540
@@ -600,72 +608,73 @@ async def main():
                 self.levelVis.fill(WHITE)
                 tilesLoaded = 0
                 groundTiles = ["0", "2"]
-                for tile in self.levels:
-                    if tile == "3":
-                        player.x, player.y = self.levels[tilesLoaded].x, self.levels[tilesLoaded].y+160
-                    if tile != "-1":
-                        win.fill(BLACK)
-                        win.blit(bigFont.render(f"Loading Level: {str(int((tilesLoaded/len(self.levels))*100))}% - {tilesLoaded}/{len(self.levels)}", True, WHITE), (0,90))
-                        for event in pygame.event.get():
-                            if event.type == pygame.QUIT:
-                                pygame.quit()
-                                run = False
-                                quit()
-                            elif event.type == pygame.VIDEORESIZE:
-                                # This event is triggered when the window is resized
-                                w, h = event.w, event.h
-                        window.blit(win, (0,0))
-                        pygame.display.flip()
-                        above, below, left, right = False, False, False, False
-                        # Define a dictionary to map neighbor patterns to tile images
-                        neighbor_image_map = {
-                            (False, True, False, True): 0,
-                            (False, True, True, True): 1,
-                            (False, True, True, False): 2,
-                            (False, True, False, False): 4,
-                            (False, False, False, False): 6,
-                            (True, True, False, True): 9,
-                            (True, True, True, True): 10,
-                            (True, True, True, False): 11,
-                            (True, True, False, False): 13,
-                            (True, False, False, True): 18,
-                            (True, False, True, True): 19,
-                            (True, False, True, False): 20,
-                            (True, False, False, False): 22,
-                            (False, False, False, True): 24,
-                            (False, False, True, True): 25,
-                            (False, False, True, False): 26,
-                        }
+                if not self.quickDraw:
+                    for tile in self.levels:
+                        if tile == "3":
+                            player.x, player.y = self.levels[tilesLoaded].x, self.levels[tilesLoaded].y+160
+                        if tile != "-1":
+                            win.fill(BLACK)
+                            win.blit(bigFont.render(f"Loading Level: {str(int((tilesLoaded/len(self.levels))*100))}% - {tilesLoaded}/{len(self.levels)}", True, WHITE), (0,90))
+                            for event in pygame.event.get():
+                                if event.type == pygame.QUIT:
+                                    pygame.quit()
+                                    run = False
+                                    quit()
+                                elif event.type == pygame.VIDEORESIZE:
+                                    # This event is triggered when the window is resized
+                                    w, h = event.w, event.h
+                            window.blit(win, (0,0))
+                            pygame.display.flip()
+                            above, below, left, right = False, False, False, False
+                            # Define a dictionary to map neighbor patterns to tile images
+                            neighbor_image_map = {
+                                (False, True, False, True): 0,
+                                (False, True, True, True): 1,
+                                (False, True, True, False): 2,
+                                (False, True, False, False): 4,
+                                (False, False, False, False): 6,
+                                (True, True, False, True): 9,
+                                (True, True, True, True): 10,
+                                (True, True, True, False): 11,
+                                (True, True, False, False): 13,
+                                (True, False, False, True): 18,
+                                (True, False, True, True): 19,
+                                (True, False, True, False): 20,
+                                (True, False, False, False): 22,
+                                (False, False, False, True): 24,
+                                (False, False, True, True): 25,
+                                (False, False, True, False): 26,
+                            }
 
-                        # Check neighbors
-                        if tile.y!=0:
-                            if tiles[int(tile.y/20)-1][int(tile.x/20)] in groundTiles:
-                                above = True
-                        if tile.y/20!=len(tiles)-1:
-                            if tiles[int(tile.y/20)+1][int(tile.x/20)] in groundTiles:
-                                below = True
-                        if tile.x!=0:
-                            if tiles[int(tile.y/20)][int(tile.x/20)-1] in groundTiles:
-                                left = True
-                        if tile.x/20!=len(row)-1:
-                            if tiles[int(tile.y/20)][int(tile.x/20)+1] in groundTiles:
-                                right = True
-                        if tiles[int(tile.y/20)][int(tile.x/20)] == "0":
-                            # Get the corresponding image based on neighbor pattern
-                            neighbors = (above, below, left, right)
-                            self.levels[tilesLoaded].image = tileImages[neighbor_image_map.get(neighbors, 6)]
-                            self.levelVis.blit(tileImages[neighbor_image_map.get(neighbors, 6)], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
-                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "6":
-                            self.levelVis.blit(tileImages[7], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
-                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "4":
-                            self.levelVis.blit(tileImages[8], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
-                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "5":
-                            self.levelVis.blit(tileImages[16], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
-                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "7":
-                            self.levelVis.blit(tileImages[17], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
-                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "8":
-                            self.levelVis.blit(tileImages[15], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
-                        tilesLoaded+=1
+                            # Check neighbors
+                            if tile.y!=0:
+                                if tiles[int(tile.y/20)-1][int(tile.x/20)] in groundTiles:
+                                    above = True
+                            if tile.y/20!=len(tiles)-1:
+                                if tiles[int(tile.y/20)+1][int(tile.x/20)] in groundTiles:
+                                    below = True
+                            if tile.x!=0:
+                                if tiles[int(tile.y/20)][int(tile.x/20)-1] in groundTiles:
+                                    left = True
+                            if tile.x/20!=len(row)-1:
+                                if tiles[int(tile.y/20)][int(tile.x/20)+1] in groundTiles:
+                                    right = True
+                            if tiles[int(tile.y/20)][int(tile.x/20)] == "0":
+                                # Get the corresponding image based on neighbor pattern
+                                neighbors = (above, below, left, right)
+                                self.levels[tilesLoaded].image = tileImages[neighbor_image_map.get(neighbors, 6)]
+                                self.levelVis.blit(tileImages[neighbor_image_map.get(neighbors, 6)], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            elif tiles[int(tile.y/20)][int(tile.x/20)] == "6":
+                                self.levelVis.blit(tileImages[7], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            elif tiles[int(tile.y/20)][int(tile.x/20)] == "4":
+                                self.levelVis.blit(tileImages[8], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            elif tiles[int(tile.y/20)][int(tile.x/20)] == "5":
+                                self.levelVis.blit(tileImages[16], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            elif tiles[int(tile.y/20)][int(tile.x/20)] == "7":
+                                self.levelVis.blit(tileImages[17], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            elif tiles[int(tile.y/20)][int(tile.x/20)] == "8":
+                                self.levelVis.blit(tileImages[15], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            tilesLoaded+=1
             else:
                 for tile in self.levels:
                     tile.reload()
@@ -718,10 +727,24 @@ async def main():
             self.popped = False
         def draw(self):
             if self.rect.x > -20 and self.rect.x < 960 and self.rect.y > -20 and self.rect.y < 600:
-                if self.tileID == 0:
-                    if self.y == level.lowestPoint-185:
-                        pygame.draw.rect(win, BLACK, pygame.Rect(self.rect.x, self.rect.y, 20, 600-self.rect.y))
-                elif self.tileID == 1:
+                if level.quickDraw:
+                    if self.tileID == 0:
+                        if self.y == level.lowestPoint-185:
+                            pygame.draw.rect(win, BLACK, pygame.Rect(self.rect.x, self.rect.y, 20, 600-self.rect.y))
+                        else:
+                            pygame.draw.rect(win, BLACK, self.rect)
+                    elif self.tileID == 4:
+                        pygame.draw.rect(win, BLUE, self.rect)
+                    elif self.tileID == 8:
+                        pygame.draw.rect(win, GREY, self.rect)
+                    elif self.tileID == 5:
+                        pygame.draw.rect(win, GREEN, self.rect)
+                    elif self.tileID == 6:
+                        pygame.draw.rect(win, YELLOW, self.rect)
+                    elif self.tileID == 7:
+                        pygame.draw.rect(win, BROWN, self.rect)
+                
+                if self.tileID == 1:
                     pygame.draw.rect(win, RED, self.rect)
                 elif self.tileID == 2:
                     pygame.draw.rect(win, PURPLE, self.rect)
@@ -737,6 +760,8 @@ async def main():
         def checkCollision(self, collider):
             collided = self.rect.colliderect(collider)
             if collided and collider == player.charRect:
+                # if not self.popped:
+                #     player.homeTo = (0,0)
                 player.canHomingAttck = True
                 if self.tileID == 4:
                     player.yVel = -20
@@ -762,12 +787,13 @@ async def main():
                 elif self.tileID == 9 and not self.popped:
                     player.yVel = -10
                     player.xVel = 0
-                    player.homeTo = (0,0)
                     self.popped = True
+                    player.homeTo = (0,0)
             elif collided and collider == player.homingRange and not self.popped:
                 if self.tileID == 9:
                     player.homeTo = (self.x, self.y+160)
                     player.maxBoost = 20
+                    player.homingCoolDown = 30
                     
                     if level.levelPosx < player.homeTo[0]:
                         player.homeRight = True
@@ -785,6 +811,20 @@ async def main():
             return collided
         def checkCollisionRect(self, collider):
             return self.rect.colliderect(collider)
+
+    class DebugLogText:
+        def __init__(self, text, showTime = 60):
+            self.text = text
+            self.showTime = showTime
+            self.bg = pygame.Surface((960, 26), pygame.SRCALPHA)
+            self.bg.fill((255,255,255,200))
+        
+        def draw(self, y):
+            win.blit(self.bg, (0, (y*26)))
+            win.blit(smallFont.render(self.text, True, BLACK), (0, ((y*26)+3)))
+            self.showTime-=1
+            if self.showTime<=0:
+                debugLog.remove(self)
             
     
     def redrawScreen():
@@ -813,18 +853,25 @@ async def main():
             for i, image in enumerate(tileImages):
                 win.blit(image, (0 + i*20, 0))
                 win.blit(smallFont.render(str(i), True, RED), (0 + i*20, 0))
+        if level.quickDraw:
+            win.blit(smallFont.render("QUICK LOAD MODE ENABLED - LCTRL + T to reload", True, RED), (0, 540))
 
+        for y, log in enumerate(debugLog):
+            log.draw(y)
 
         window.blit(pygame.transform.scale(win, (w, h)), (0,0))    
         pygame.display.flip()
     
     speed = 3
     player = Player()
+    keys = pygame.key.get_pressed()
     level = Level()
     player.reset()
     semiLevel = semiLevel()
-    #spikes = SpikeLevel()
 
+    debugLog = [DebugLogText("TEST", 120)]
+
+    
     spaceHeld = False
     stompHeld = False
     
@@ -900,14 +947,25 @@ async def main():
             if keys[pygame.K_LCTRL]:
                 if keys[pygame.K_LSHIFT]:
                     level.changeLevel(True, True)
+                    debugLog.append(DebugLogText("Full Reload"))
+                elif keys[pygame.K_LALT]:
+                    debugLog.append(DebugLogText("QuickDraw Load"))
+                    level.quickDraw = True
+                    level.changeLevel(True, True)
                 else:
-                    level.changeLevel(False)
+                    debugLog.append(DebugLogText("Advanced Reload"))
+                    level.changeLevel(False, True)
                 player.reset()
                 w, h = 960, 600
                 window = pygame.display.set_mode((960, 600), pygame.RESIZABLE)
             else:
+                debugLog.append(DebugLogText("Basic Reload"))
                 level.changeLevel(False)
-            
+        
+        if keys[pygame.K_t] and keys[pygame.K_LCTRL]:
+                level.quickDraw = False
+                level.changeLevel(True, True)
+
         
         
         if keys[pygame.K_LCTRL]:
