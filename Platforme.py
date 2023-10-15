@@ -202,6 +202,8 @@ async def main():
 
             self.stomp = False
 
+            self.conveyorBonus = 0
+
             self.walkAnimateFrame = 0
             self.jumpAnimateFrame = 0
             self.isRight = True
@@ -219,6 +221,7 @@ async def main():
             self.y = level.lowestPoint-230
             self.xVel = 0
             self.yVel = 0
+            self.homeTo = (0,0)
             level.changeLevel()
             level.levelPosx, level.levelPosy = self.x, self.y 
             self.kTime = 0                      
@@ -269,7 +272,17 @@ async def main():
             if self.stomp:
                 self.xVel = 0
 
+            self.xVel+=self.conveyorBonus
+
+
             self.changeX(self.xVel)
+            
+            if self.conveyorBonus > 0:
+                self.conveyorBonus-=self.decelSpeed
+            elif self.conveyorBonus < 0:
+                self.conveyorBonus+=self.decelSpeed
+            if self.conveyorBonus > -0.1 and self.conveyorBonus < 0.1:
+                self.conveyorBonus = 0
             
             if self.xVel > 0:
                 level.levelPosx, level.levelPosy = self.x+0.1, self.y-0.1
@@ -335,6 +348,9 @@ async def main():
                             if keys[pygame.K_s] or keys[pygame.K_DOWN]:
                                 self.yVel = 3
             
+            #removes bonus before next frame to ensure that it is not over added
+            self.xVel-=self.conveyorBonus
+
         def gravity(self):
             if self.homeTo != (0,0):
                 self.homingCoolDown-=1
@@ -562,7 +578,7 @@ async def main():
             self.changeLevel()
             self.trimLevel()
             self.offset = 1540
-        def checkCollision(self, rectToCheck, useTrim=True, tileToCheck=[0]):
+        def checkCollision(self, rectToCheck, useTrim=True, tileToCheck=[0, 10, 11]):
             collided = False
             if useTrim:
                 for tile in self.trimmedLevel[::-1]:
@@ -756,6 +772,10 @@ async def main():
                 elif self.tileID == 9 and self.popped:
                     if player.homeTo == (self.x, self.y+160):
                         pygame.draw.rect(win, PINK, self.rect)
+                elif self.tileID == 10:
+                    pygame.draw.rect(win, PINK, self.rect)
+                elif self.tileID == 11:
+                    pygame.draw.rect(win, ORANGE, self.rect)
                 
         def checkCollision(self, collider):
             collided = self.rect.colliderect(collider)
@@ -789,6 +809,8 @@ async def main():
                     player.xVel = 0
                     self.popped = True
                     player.homeTo = (0,0)
+                elif self.tileID == 10:
+                    player.conveyorBonus = -6
             elif collided and collider == player.homingRange and not self.popped:
                 if self.tileID == 9:
                     player.homeTo = (self.x, self.y+160)
@@ -936,6 +958,10 @@ async def main():
             player.changeXVel(0, False)
             player.boostDirection = 0
             player.canBoost = True
+        elif player.conveyorBonus != 0:
+            print(player.conveyorBonus)
+            print(player.conveyorBonus>0)
+            player.changeXVel(0, player.conveyorBonus>0)
         
         # if not player.climbedLastFrame and player.kTime < 8:
         #     if (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not stompHeld:
