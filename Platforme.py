@@ -19,9 +19,9 @@ WHITE = (255,255,255)
 LOGORED = (170, 32, 32)
 CYAN = (0, 159, 159)
 GOLD = (255, 215, 0)
-
 MAGENTA = (255, 0, 255)
-LIME = (0, 255, 0)
+LIME = (181, 255, 81)
+
 TEAL = (0, 128, 128)
 SILVER = (192, 192, 192)
 
@@ -185,8 +185,11 @@ pygame.display.flip()
 
 class GameManager:
     def __init__(self):
+        self.reset()
+    def reset(self):
         self.speed = 3
         self.collectables = 0
+        self.rareCollectables = 0
 
 class PowerUp:
     def __init__(self, powerType, time = 120):
@@ -242,6 +245,7 @@ class Player:
 
         self.powerUps = []
     def reset(self):
+        gameManager.reset()
         self.x = 475
         self.y = level.lowestPoint-230
         self.xVel = 0
@@ -450,7 +454,7 @@ class Player:
         
             
 
-        level.checkCollision(self.charRect, True, [2, 4, 5, 6, 7, 8, 9, 11])
+        level.checkCollision(self.charRect, True, [2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14])
 
         
 
@@ -784,6 +788,8 @@ class Tile:
                     pygame.draw.rect(win, YELLOW, self.rect)
                 elif self.tileID == 7:
                     pygame.draw.rect(win, BROWN, self.rect)
+                elif self.tileID == 14:
+                    pygame.draw.rect(win, LIME, self.rect)
             
             if self.tileID == 1:
                 pygame.draw.rect(win, RED, self.rect)
@@ -803,6 +809,8 @@ class Tile:
                 pygame.draw.rect(win, ORANGE, self.rect)
             elif self.tileID == 12 and not self.popped:
                 pygame.draw.rect(win, GOLD, self.rect)
+            elif self.tileID == 13 and not self.popped:
+                pygame.draw.rect(win, MAGENTA, self.rect)
             
     def checkCollision(self, collider):
         collided = self.rect.colliderect(collider)
@@ -846,6 +854,20 @@ class Tile:
             elif self.tileID == 12 and not self.popped:
                 gameManager.collectables+=1
                 self.popped = True
+            elif self.tileID == 13 and not self.popped:
+                gameManager.rareCollectables+=1
+                self.popped = True
+            elif self.tileID == 14:
+                if player.xVel > 0:
+                    player.yVel=-abs(player.xVel)*1.5
+                else:
+                    playerInTile = True
+                    player.xVel=0
+                    while playerInTile:
+                        player.changeX(1)
+                        self.update()
+                        playerInTile = self.checkCollision(player.charRect)
+
 
         elif collided and collider == player.homingRange and not self.popped:
             if self.tileID == 9:
@@ -1022,6 +1044,10 @@ while run:
             player.reset()
             w, h = 960, 600
             window = pygame.display.set_mode((960, 600), pygame.RESIZABLE)
+        elif keys[pygame.K_p]:
+            debugLog.append(DebugLogText("Player Reload"))
+            level.changeLevel(True, False)
+            player.reset()
         else:
             debugLog.append(DebugLogText("Basic Reload"))
             level.changeLevel(False)
