@@ -761,11 +761,16 @@ class Tile:
         self.image = pygame.Surface((0,0))
         self.popped = False
         self.toBeDeleted = False
+        self.popTimer = 0
     def update(self):
         self.rect.x = self.x-level.levelPosx+475
         self.rect.y = self.y-level.levelPosy+475
         if self.toBeDeleted:
             level.levels.remove(self)
+        if self.popped and self.tileID in [9]:
+            if not self in level.onScreenLevel:
+                self.popped = False
+        
     def isInSpace(self, x, y):
         return self.x == x and self.y == y
     def reload(self):
@@ -788,8 +793,6 @@ class Tile:
                     pygame.draw.rect(win, YELLOW, self.rect)
                 elif self.tileID == 7:
                     pygame.draw.rect(win, BROWN, self.rect)
-                elif self.tileID == 14:
-                    pygame.draw.rect(win, LIME, self.rect)
             
             if self.tileID == 1:
                 pygame.draw.rect(win, RED, self.rect)
@@ -811,6 +814,14 @@ class Tile:
                 pygame.draw.rect(win, GOLD, self.rect)
             elif self.tileID == 13 and not self.popped:
                 pygame.draw.rect(win, MAGENTA, self.rect)
+            elif self.tileID == 14:
+                pygame.draw.rect(win, LIME, self.rect)
+
+        
+        if self.popped and self.popTimer>0:
+            self.popTimer-=1
+            if self.popTimer==0:
+                self.popped = False
             
     def checkCollision(self, collider):
         collided = self.rect.colliderect(collider)
@@ -844,6 +855,7 @@ class Tile:
                 player.xVel = 0
                 self.popped = True
                 player.homeTo = (0,0)
+                self.popTimer = 360
             elif self.tileID == 10:
                 gameManager.speed = 0
                 player.xVel=0
