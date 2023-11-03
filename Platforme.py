@@ -244,14 +244,15 @@ class Player:
         self.homingCoolDown = 0
 
         self.powerUps = []
-    def reset(self):
+    def reset(self, resetPlayerPos=True):
         gameManager.reset()
-        self.x = 475
-        self.y = level.lowestPoint-230
+        if resetPlayerPos:
+            self.x = 475
+            self.y = level.lowestPoint-230
         self.xVel = 0
         self.yVel = 0
         self.homeTo = (0,0)
-        level.changeLevel()
+        level.changeLevel(resetPlayerPos)
         level.levelPosx, level.levelPosy = self.x, self.y 
         self.kTime = 0      
         self.powerUps = []                
@@ -625,8 +626,6 @@ class Level:
                             collided = True
                             break
         return collided
-    def draw(self):
-        win.blit(self.levelVis, (-self.levelPosx+475,-self.levelPosy+475))
     def changeLevel(self, resetPlayerPos=True, reloadLevel=False):
         if self.worldXLast != worldX or reloadLevel:
             self.worldXLast, self.worldYLast = worldX, worldY
@@ -650,8 +649,9 @@ class Level:
             groundTiles = ["0", "2"]
             if not self.quickDraw:
                 for tile in self.levels:
-                    if tile.tileID == "3":
-                        player.x, player.y = self.levels[tilesLoaded].x, self.levels[tilesLoaded].y+160
+                    if tile.tileID == "3" and resetPlayerPos:
+                        spawnPos = self.getSpawn()
+                        player.x, player.y = spawnPos[0], spawnPos[1]
                     if tile.tileID != "-1":
                         win.fill(BLACK)
                         win.blit(bigFont.render(f"Loading Level: {str(int((tilesLoaded/len(self.levels))*100))}% - {tilesLoaded}/{len(self.levels)}", True, WHITE), (0,90))
@@ -720,9 +720,9 @@ class Level:
         else:
             for tile in self.levels:
                 tile.reload()
-                if tile.tileID == 3 and resetPlayerPos:
-                    print(resetPlayerPos)
-                    player.x, player.y = tile.x, tile.y+160
+            if resetPlayerPos:
+                spawnPos = self.getSpawn()
+                player.x, player.y = spawnPos[0], spawnPos[1]
 
     def trimLevel(self):
         self.trimmedLevel = []
@@ -734,6 +734,16 @@ class Level:
                 self.onScreenLevel.append(tile)
             elif tile.rect.x > -20 and tile.rect.x < 980 and tile.rect.y > -20 and tile.rect.y < 620:
                 self.onScreenLevel.append(tile)
+    
+    def getSpawn(self):
+        for tilesLoaded, tile in enumerate(self.levels):
+            if tile.tileID == 3:
+                return (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y+160)
+        return (0,0)
+
+    def draw(self):
+        win.blit(self.levelVis, (-self.levelPosx+475,-self.levelPosy+475))
+
 class semiLevel:
     def __init__(self):
         pass
@@ -1046,14 +1056,18 @@ while run:
             if keys[pygame.K_LSHIFT]:
                 level.changeLevel(True, True)
                 debugLog.append(DebugLogText("Full Reload"))
+                player.reset()
             elif keys[pygame.K_LALT]:
                 debugLog.append(DebugLogText("QuickDraw Load"))
                 level.quickDraw = True
                 level.changeLevel(True, True)
+                player.reset()
             else:
                 debugLog.append(DebugLogText("Advanced Reload"))
                 level.changeLevel(False, True)
-            player.reset()
+                print(f"1 {player.x}")
+                player.reset(False)
+                print(f"2 {player.x}")
             w, h = 960, 600
             window = pygame.display.set_mode((960, 600), pygame.RESIZABLE)
         elif keys[pygame.K_p]:
