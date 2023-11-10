@@ -525,7 +525,6 @@ class Player:
             self.kTime=0
             self.jumpsLeft-=1
         elif self.homeTo == (0,0):
-            print(level.checkCollision(self.homingRange, False, [9]))
             if level.checkCollision(self.homingRange, False, [9]):
                 self.xVel = 0
                 self.yVel = 0
@@ -977,23 +976,14 @@ debugLog = [DebugLogText("TEST", 120)]
 spaceHeld = False
 stompHeld = False
 
-stallFrames = False
-#stallFrames = True
+stallFrames = 0
+frameAdvance = False
+slashHeld = False
 
 
 run = True
 # Main game loop
 while run:
-    waiting = True
-    while waiting  and stallFrames:
-        redrawScreen()
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                waiting = False
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                run = False
-                quit()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -1084,25 +1074,6 @@ while run:
 
     
     
-    if keys[pygame.K_LCTRL]:
-        if keys[pygame.K_q]:
-            worldX -= 1
-            if worldX < 0:
-                worldX = 2
-            level.changeLevel()
-            semiLevel.changeLevel()
-            player.reset()
-            waiting = True
-            while waiting:
-                redrawScreen()
-                for event in pygame.event.get():
-                    if event.type == pygame.KEYUP:
-                        waiting = False
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        run = False
-                        quit()
-    
     gameManager.speed = 3
     
     for tile in level.levels:
@@ -1114,3 +1085,33 @@ while run:
     # Set the framerate
     deltaTime = clock.tick(60)/10
 
+    
+    
+    if (keys[pygame.K_BACKSLASH] and not slashHeld) or frameAdvance:
+        slashHeld = True
+        waiting = True
+        while waiting:
+            redrawScreen()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    run = False
+                    quit()
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_BACKSLASH] and not slashHeld:
+                waiting = False
+            if waiting:
+                slashHeld = keys[pygame.K_BACKSLASH]
+            if keys[pygame.K_z] and not frameAdvance:
+                waiting = False
+                frameAdvance = True
+            if not keys[pygame.K_z]:
+                frameAdvance = False
+            if keys[pygame.K_x]:
+                frameAdvance = True
+                stallFrames+=1
+                if stallFrames == 5:
+                    waiting = False
+                    stallFrames = 0
+
+    slashHeld = keys[pygame.K_BACKSLASH]
