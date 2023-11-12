@@ -496,25 +496,25 @@ class Player:
         if level.levelPosx < self.homeTo[0]:
             if self.homeRight:
                 self.changeXVel(self.homeSpeed, True)
-            else:
+            if level.levelPosx > self.homeTo[0]:
                 self.xVel = 0
                 self.changeX(self.homeTo[0] - level.levelPosx)
         elif level.levelPosx > self.homeTo[0]:
             if not self.homeRight:
                 self.changeXVel(self.homeSpeed, False)
-            else:
+            if level.levelPosx < self.homeTo[0]:
                 self.xVel = 0
                 self.changeX((level.levelPosx - self.homeTo[0])*-1)
         if level.levelPosy < self.homeTo[1]:
             if self.homeDown:
                     self.yVel += self.homeSpeed
-            else:
+            if level.levelPosy > self.homeTo[1]:
                 self.yVel = 0
                 self.yVel -= level.levelPosy - self.homeTo[1]
         elif level.levelPosy > self.homeTo[1]:
             if not self.homeDown:
                 self.yVel -= self.homeSpeed
-            else:
+            if level.levelPosy < self.homeTo[1]:
                 self.yVel = 0
                 self.yVel += self.homeTo[1] - level.levelPosy
         
@@ -716,6 +716,26 @@ class Level:
                         elif tiles[int(tile.y/20)][int(tile.x/20)] == "8":
                             self.levelVis.blit(tileImages[15], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
                         tilesLoaded+=1
+            else:
+                for tile in self.levels:
+                    above, below, left, right = False, False, False, False
+                    if tile.tileID == 0:# Check neighbors
+                        if tile.y!=0:
+                            if tiles[int(tile.y/20)-1][int(tile.x/20)] in groundTiles:
+                                above = True
+                        if tile.y/20!=len(tiles)-1:
+                            if tiles[int(tile.y/20)+1][int(tile.x/20)] in groundTiles:
+                                below = True
+                        if tile.x!=0:
+                            if tiles[int(tile.y/20)][int(tile.x/20)-1] in groundTiles:
+                                left = True
+                        if tile.x/20!=len(row)-1:
+                            if tiles[int(tile.y/20)][int(tile.x/20)+1] in groundTiles:
+                                right = True
+
+                        if above and below and left and right:
+                            tile.toBeDeleted = True
+
         else:
             for tile in self.levels:
                 tile.reload()
