@@ -493,30 +493,38 @@ class Player:
             self.homingTo()
 
     def homingTo(self):
-        if level.levelPosx < self.homeTo[0]:
-            if self.homeRight:
-                self.changeXVel(self.homeSpeed, True)
-            if level.levelPosx > self.homeTo[0]:
-                self.xVel = 0
-                self.changeX(self.homeTo[0] - level.levelPosx)
-        elif level.levelPosx > self.homeTo[0]:
-            if not self.homeRight:
-                self.changeXVel(self.homeSpeed, False)
+        if self.homeRight:
             if level.levelPosx < self.homeTo[0]:
+                print(1)
+                self.changeXVel(self.homeSpeed, True)
+            if level.levelPosx >= self.homeTo[0]:
+                print(2)
                 self.xVel = 0
-                self.changeX((level.levelPosx - self.homeTo[0])*-1)
-        if level.levelPosy < self.homeTo[1]:
-            if self.homeDown:
-                    self.yVel += self.homeSpeed
-            if level.levelPosy > self.homeTo[1]:
-                self.yVel = 0
-                self.yVel -= level.levelPosy - self.homeTo[1]
-        elif level.levelPosy > self.homeTo[1]:
-            if not self.homeDown:
-                self.yVel -= self.homeSpeed
+                self.changeX((level.levelPosx-self.homeTo[0])*-1)
+        elif not self.homeRight:
+            if level.levelPosx > self.homeTo[0]:
+                print(3)
+                self.changeXVel(self.homeSpeed, False)
+            if level.levelPosx <= self.homeTo[0]:
+                print(4)
+                self.xVel = 0
+                self.changeX(self.homeTo[0]-level.levelPosx)
+                print(level.levelPosx-self.homeTo[0])
+                
+        if self.homeDown:
             if level.levelPosy < self.homeTo[1]:
-                self.yVel = 0
-                self.yVel += self.homeTo[1] - level.levelPosy
+                print(5)
+                self.yVel += self.homeSpeed
+            if level.levelPosy >= self.homeTo[1]:
+                print(6)
+                self.yVel = (level.levelPosy-self.homeTo[1])*-1
+        elif not self.homeDown:
+            if level.levelPosy > self.homeTo[1]:
+                print(7)
+                self.yVel -= self.homeSpeed
+            if level.levelPosy <= self.homeTo[1]:
+                print(8)
+                self.yVel = self.homeTo[1]-level.levelPosy
         
     def jump(self):
         level.levelPosy+=1
@@ -1036,7 +1044,7 @@ while run:
     
     player.jumpPower = 11
 
-    if ((keys[pygame.K_a] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT])) or ((keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_a] or keys[pygame.K_LEFT])):
+    if ((keys[pygame.K_a] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT])) or ((keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_a] or keys[pygame.K_LEFT])) and player.homeTo == (0,0):
         if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT]):
             player.changeXVel(gameManager.speed/10, False)
         if (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_a] or keys[pygame.K_LEFT]):
