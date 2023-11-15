@@ -120,6 +120,9 @@ boostImages = [
     pygame.image.load("player/boost1.png"),
     pygame.image.load("player/boost2.png")
 ]
+
+slope = pygame.image.load("objects/slope.png")
+
 tile_width = 20
 tile_height = 20  # Replace with your tile height
 
@@ -210,6 +213,8 @@ class Player:
         self.xVel = 0
         self.yVel = 0
         self.charRect = pygame.Rect(475, 300, 20, 30)
+        self.rectAsSurface = pygame.Surface((20,20))
+        self.rectAsSurface.fill((255,0,0))
         self.image = pygame.image.load("player.png")
         self.kTime = 0
         self.climbedLastFrame=False
@@ -311,14 +316,20 @@ class Player:
             if level.checkCollision(self.charRect):
                 movedUp = False
                 for i in range(10):
-                    level.levelPosy-=1
+                    if not movedUp:
+                        level.levelPosy-=1
                     if not level.checkCollision(self.charRect) and not movedUp and not keys[pygame.K_LCTRL]:
                         level.levelPosx+=1
                         movedUp = True
 
                 if not movedUp:
-                    level.levelPosy+=10
+                    level.levelPosx, level.levelPosy = self.x, self.y
+                    for i in range(10):
+                        if not level.checkCollision(self.charRect):
+                            level.levelPosy+=1
+
                     self.xVel=0
+                    print("oh no")
                     self.touchGround = level.checkCollision(self.charRect)
                     while self.touchGround:
                         self.x-=0.1
@@ -379,7 +390,6 @@ class Player:
         level.levelPosy = round(level.levelPosy, 2)
         if level.levelPosy > level.lowestPoint:
             self.die()
-        #if self.homeTo == (0,0):
         for i in range(int(self.yVel)):
             self.y+=1
             level.levelPosx, level.levelPosy = self.x, self.y
@@ -388,7 +398,6 @@ class Player:
                 self.jumpsLeft = 2
                 self.stomp = False
                 player.decelSpeed = 0.2
-                #self.y-=0.1
                 level.levelPosy = self.y
                 self.homeTo = (0,0)
                 break
@@ -610,7 +619,7 @@ class Level:
         self.trimLevel()
         self.offset = 1540
         self.switch = False
-    def checkCollision(self, rectToCheck, useTrim=True, tileToCheck=[0, 10]):
+    def checkCollision(self, rectToCheck, useTrim=True, tileToCheck=[0, 10, 14]):
         collided = False
         if useTrim:
             for tile in self.trimmedLevel[::-1]:
@@ -799,6 +808,8 @@ class Tile:
         self.popped = False
         self.toBeDeleted = False
         self.popTimer = 0
+        if self.tileID == 14:
+            self.mask = pygame.mask.from_surface(slope)
     def update(self):
         self.rect.x = self.x-level.levelPosx+475
         self.rect.y = self.y-level.levelPosy+475
@@ -852,7 +863,7 @@ class Tile:
             elif self.tileID == 13 and not self.popped:
                 pygame.draw.rect(win, MAGENTA, self.rect)
             elif self.tileID == 14:
-                pygame.draw.rect(win, LIME, self.rect)
+                win.blit(slope, (self.rect.x, self.rect.y))
 
         
         if self.popped and self.popTimer>0:
@@ -907,16 +918,9 @@ class Tile:
                 gameManager.rareCollectables+=1
                 self.popped = True
             elif self.tileID == 14:
-                if player.xVel > 0:
-                    player.yVel=-abs(player.xVel)*1.5
-                else:
-                    playerInTile = True
-                    player.xVel=0
-                    while playerInTile:
-                        player.changeX(1)
-                        self.update()
-                        playerInTile = self.checkCollision(player.charRect)
-
+                offset = ((collider.x - self.rect.x), (collider.y - self.rect.y)+10)
+                collided = self.mask.overlap(pygame.mask.from_surface(player.rectAsSurface), offset) is not None
+              
 
         elif collided and collider == player.homingRange and not self.popped:
             if self.tileID == 9:
@@ -936,7 +940,6 @@ class Tile:
             collided = False
 
                 
-
         return collided
     def checkCollisionRect(self, collider):
         return self.rect.colliderect(collider)
@@ -1059,8 +1062,6 @@ while run:
         player.boostDirection = 0
         player.canBoost = True
     elif player.conveyorBonus != 0:
-        print(player.conveyorBonus)
-        print(player.conveyorBonus>0)
         player.changeXVel(0, player.conveyorBonus>0)
     
     # if not player.climbedLastFrame and player.kTime < 8:
