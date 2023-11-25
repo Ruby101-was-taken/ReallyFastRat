@@ -44,45 +44,45 @@ pygame.display.set_icon(pygame.image.load('icon.png'))
 
 logo=[pygame.image.load('logo/logosubless.png'), pygame.image.load('logo/logoSUB.png'), pygame.image.load('logo/logoBGless.png')]
 
-for i in range(500):
-    win.fill(LOGORED)
-    if i<=100:
-        win.blit(logo[0], (int(960/2)-168, int(600/2)-48))
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                run = False
-                quit()
-            elif event.type == pygame.VIDEORESIZE:
-                # This event is triggered when the window is resized
-                w, h = event.w, event.h
-    elif i<200:
-        subLength = int(960/2)-168+40
-        subHeight = int(600/2)-40
-        win.blit(logo[0], (int(960/2)-168, int(600/2)-48))
-        win.blit(logo[1], (subLength, (subHeight*i / 100)-subHeight))
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                run = False
-                quit()
-            elif event.type == pygame.VIDEORESIZE:
-                # This event is triggered when the window is resized
-                w, h = event.w, event.h
-    elif i<500:
-        win.blit(logo[0], (int(960/2)-168, int(600/2)-48))
-        win.blit(logo[1], (subLength, (subHeight*200 / 100)-subHeight))
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                run = False
-                quit()
-            elif event.type == pygame.VIDEORESIZE:
-                # This event is triggered when the window is resized
-                w, h = event.w, event.h
+# for i in range(500):
+#     win.fill(LOGORED)
+#     if i<=100:
+#         win.blit(logo[0], (int(960/2)-168, int(600/2)-48))
+#         for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 pygame.quit()
+#                 run = False
+#                 quit()
+#             elif event.type == pygame.VIDEORESIZE:
+#                 # This event is triggered when the window is resized
+#                 w, h = event.w, event.h
+#     elif i<200:
+#         subLength = int(960/2)-168+40
+#         subHeight = int(600/2)-40
+#         win.blit(logo[0], (int(960/2)-168, int(600/2)-48))
+#         win.blit(logo[1], (subLength, (subHeight*i / 100)-subHeight))
+#         for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 pygame.quit()
+#                 run = False
+#                 quit()
+#             elif event.type == pygame.VIDEORESIZE:
+#                 # This event is triggered when the window is resized
+#                 w, h = event.w, event.h
+#     elif i<500:
+#         win.blit(logo[0], (int(960/2)-168, int(600/2)-48))
+#         win.blit(logo[1], (subLength, (subHeight*200 / 100)-subHeight))
+#         for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 pygame.quit()
+#                 run = False
+#                 quit()
+#             elif event.type == pygame.VIDEORESIZE:
+#                 # This event is triggered when the window is resized
+#                 w, h = event.w, event.h
     
-    window.blit(pygame.transform.scale(win, (w, h)), (0,0)) 
-    pygame.display.flip()
+#     window.blit(pygame.transform.scale(win, (w, h)), (0,0)) 
+#     pygame.display.flip()
 
 
 
@@ -312,7 +312,7 @@ class Player:
         self.changeX(self.xVel)
         
         if self.xVel > 0:
-            level.levelPosx, level.levelPosy = self.x+0.1, self.y-0.1
+            level.levelPosx, level.levelPosy = self.x-0.1, self.y-0.1
             if level.checkCollision(self.charRect):
                 movedUp = False
                 for i in range(10):
@@ -329,7 +329,6 @@ class Player:
                             level.levelPosy+=1
 
                     self.xVel=0
-                    print("oh no")
                     self.touchGround = level.checkCollision(self.charRect)
                     while self.touchGround:
                         self.x-=0.1
@@ -504,35 +503,27 @@ class Player:
     def homingTo(self):
         if self.homeRight:
             if level.levelPosx < self.homeTo[0]:
-                print(1)
                 self.changeXVel(self.homeSpeed, True)
             if level.levelPosx >= self.homeTo[0]:
-                print(2)
                 self.xVel = 0
                 self.changeX((level.levelPosx-self.homeTo[0])*-1)
         elif not self.homeRight:
             if level.levelPosx > self.homeTo[0]:
-                print(3)
                 self.changeXVel(self.homeSpeed, False)
             if level.levelPosx <= self.homeTo[0]:
-                print(4)
                 self.xVel = 0
                 self.changeX(self.homeTo[0]-level.levelPosx)
                 print(level.levelPosx-self.homeTo[0])
                 
         if self.homeDown:
             if level.levelPosy < self.homeTo[1]:
-                print(5)
                 self.yVel += self.homeSpeed
             if level.levelPosy >= self.homeTo[1]:
-                print(6)
                 self.yVel = (level.levelPosy-self.homeTo[1])*-1
         elif not self.homeDown:
             if level.levelPosy > self.homeTo[1]:
-                print(7)
                 self.yVel -= self.homeSpeed
             if level.levelPosy <= self.homeTo[1]:
-                print(8)
                 self.yVel = self.homeTo[1]-level.levelPosy
         
     def jump(self):
@@ -664,13 +655,18 @@ class Level:
             tilesLoaded = 0
             groundTiles = ["0", "2"]
             if not self.quickDraw:
+                loadingText = ""
                 for tile in self.levels:
                     if tile.tileID == "3" and resetPlayerPos:
                         spawnPos = self.getSpawn()
                         player.x, player.y = spawnPos[0], spawnPos[1]
                     if tile.tileID != "-1":
-                        win.fill(BLACK)
-                        win.blit(bigFont.render(f"Loading Level: {str(int((tilesLoaded/len(self.levels))*100))}% - {tilesLoaded}/{len(self.levels)}", True, WHITE), (0,90))
+                        if loadingText !=  f"{str(int((tilesLoaded/len(self.levels))*100))}%":
+                            win.fill(BLACK)
+                            win.blit(bigFont.render(f"Loading Level: {str(int((tilesLoaded/len(self.levels))*100))}%", True, WHITE), (0,90))
+                            window.blit(win, (0,0))
+                            pygame.display.flip()
+                            loadingText = f"{str(int((tilesLoaded/len(self.levels))*100))}%"
                         for event in pygame.event.get():
                             if event.type == pygame.QUIT:
                                 pygame.quit()
@@ -679,8 +675,6 @@ class Level:
                             elif event.type == pygame.VIDEORESIZE:
                                 # This event is triggered when the window is resized
                                 w, h = event.w, event.h
-                        window.blit(win, (0,0))
-                        pygame.display.flip()
                         above, below, left, right = False, False, False, False
                         # Define a dictionary to map neighbor patterns to tile images
                         neighbor_image_map = {
@@ -719,20 +713,42 @@ class Level:
                             # Get the corresponding image based on neighbor pattern
                             neighbors = (above, below, left, right)
                             self.levels[tilesLoaded].image = tileImages[neighbor_image_map.get(neighbors, 6)]
-                            self.levelVis.blit(tileImages[neighbor_image_map.get(neighbors, 6)], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            tile.image = tileImages[neighbor_image_map.get(neighbors, 6)]
+                            if neighbor_image_map.get(neighbors, 6) == 10:
+                                newImage = pygame.Surface((20,20))
+                                newImage.blit(tile.image, (0,0))
+                                #right side
+                                if tile.y!=0 and tile.x/20!=len(row)-1:
+                                    if not tiles[int(tile.y/20)-1][int(tile.x/20)+1] in groundTiles:
+                                        newImage.blit(tileImages[5], (0,0))
+                                if tile.y/20!=len(tiles)-1 and tile.x/20!=len(row)-1:
+                                    if not tiles[int(tile.y/20)+1][int(tile.x/20)+1] in groundTiles:
+                                        newImage.blit(pygame.transform.rotate(tileImages[5], -90), (0,0))
+
+                                #left side
+                                if tile.y!=0 and tile.x!=0:
+                                    if not tiles[int(tile.y/20)-1][int(tile.x/20)-1] in groundTiles:
+                                        newImage.blit(pygame.transform.rotate(tileImages[5], 90), (0,0))
+                                if tile.y/20!=len(tiles)-1 and tile.x!=0:
+                                    if not tiles[int(tile.y/20)+1][int(tile.x/20)-1] in groundTiles:
+                                        newImage.blit(pygame.transform.rotate(tileImages[5], 180), (0,0))
+                                
+                                tile.image = newImage
+                            #self.levelVis.blit(tileImages[neighbor_image_map.get(neighbors, 6)], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
                             if neighbor_image_map.get(neighbors, 6) == 10:
                                 tile.toBeDeleted = True
                         elif tiles[int(tile.y/20)][int(tile.x/20)] == "6":
-                            self.levelVis.blit(tileImages[7], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            tile.image = tileImages[7]
                         elif tiles[int(tile.y/20)][int(tile.x/20)] == "4":
-                            self.levelVis.blit(tileImages[8], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            tile.image = tileImages[8]
                         elif tiles[int(tile.y/20)][int(tile.x/20)] == "5":
-                            self.levelVis.blit(tileImages[16], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            tile.image = tileImages[16]
                         elif tiles[int(tile.y/20)][int(tile.x/20)] == "7":
-                            self.levelVis.blit(tileImages[17], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            tile.image = tileImages[17]
                         elif tiles[int(tile.y/20)][int(tile.x/20)] == "8":
-                            self.levelVis.blit(tileImages[15], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
+                            tile.image = tileImages[15]
                         tilesLoaded+=1
+                    
             else:
                 for tile in self.levels:
                     above, below, left, right = False, False, False, False
@@ -778,6 +794,16 @@ class Level:
         return (0,0)
 
     def draw(self):
+        # imageRect = self.levelVis.get_rect()
+        # screenX, screenY = 960, 600
+        # if self.levelVis.get_height()-self.levelPosy-475 < 600:
+        #     screenY = self.levelVis.get_height()-self.levelPosy-475
+        #     print( self.levelVis.get_height()-self.levelPosy-475)
+
+        # win.blit(self.levelVis.subsurface((self.levelPosx-475, self.levelPosy-475, screenX, screenY)), (0,0))
+        # win.blit(pygame.transform.scale(self.levelVis, (100,100)), (0,0))
+
+
         win.blit(self.levelVis, (-self.levelPosx+475,-self.levelPosy+475))
 
 class semiLevel:
@@ -800,16 +826,17 @@ class semiLevel:
         pass
 
 class Tile:
-    def __init__(self, x, y, tileID):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0,0))):
         self.x, self.y = x, y
         self.tileID = tileID
         self.rect = pygame.Rect(self.x, self.y, 20, 20)
-        self.image = pygame.Surface((0,0))
+        self.image = image
         self.popped = False
         self.toBeDeleted = False
         self.popTimer = 0
         if self.tileID == 14:
             self.mask = pygame.mask.from_surface(slope)
+        self.hasBeenDrawn = self.tileID in [1,2,9,10,11,12,13,14] #this list is the tiles that draw on the fly rather than being static
     def update(self):
         self.rect.x = self.x-level.levelPosx+475
         self.rect.y = self.y-level.levelPosy+475
@@ -818,6 +845,10 @@ class Tile:
         if self.popped and self.tileID in [9]:
             if not self in level.onScreenLevel:
                 self.popped = False
+
+        if not self.hasBeenDrawn:
+            level.levelVis.blit(self.image, (self.x, self.y))
+            self.hasBeenDrawn = True
         
     def isInSpace(self, x, y):
         return self.x == x and self.y == y
