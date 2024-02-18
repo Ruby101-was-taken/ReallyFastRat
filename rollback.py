@@ -80,7 +80,7 @@ logo=[pygame.image.load('logo/logosubless.png'), pygame.image.load('logo/logoSUB
 #             elif event.type == pygame.VIDEORESIZE:
 #                 # This event is triggered when the window is resized
 #                 w, h = event.w, event.h
-    
+
 #     window.blit(pygame.transform.scale(win, (w, h)), (0,0)) 
 #     pygame.display.flip()
 
@@ -285,7 +285,7 @@ class Player:
                         self.xVel-=self.decelSpeed
             for i in range(int(self.xVel)):
                 self.x+=1
-                
+
                 level.levelPosx, level.levelPosy = self.x, self.y
         elif not isRight:
             self.xVel -= speed
@@ -310,7 +310,7 @@ class Player:
 
 
         self.changeX(self.xVel)
-        
+
         if self.xVel > 0:
             level.levelPosx, level.levelPosy = self.x-0.1, self.y-0.1
             if level.checkCollision(self.charRect):
@@ -347,7 +347,7 @@ class Player:
                             level.levelPosx -= 1
                         if keys[pygame.K_s] or keys[pygame.K_DOWN]:
                             self.yVel = 3
-                    
+
         if self.xVel < 0:
             level.levelPosx, level.levelPosy = self.x-0.1, self.y-0.1
             if level.checkCollision(self.charRect):
@@ -368,7 +368,7 @@ class Player:
                     if (keys[pygame.K_LCTRL]):
                         self.yVel = 0
                         self.climbedLastFrame=True
-                        
+
                         if keys[pygame.K_w] or keys[pygame.K_UP]:
                             self.yVel = -3
                             level.levelPosy -= 30
@@ -379,7 +379,7 @@ class Player:
                             level.levelPosx += 1
                         if keys[pygame.K_s] or keys[pygame.K_DOWN]:
                             self.yVel = 3
-        
+
 
     def gravity(self):
         if self.homeTo != (0,0):
@@ -431,7 +431,7 @@ class Player:
                     self.kTime = defaultKTime
                     self.stomp = False
                     self.jumpsLeft = 2
-        
+
 
             if semiLevel.checkCollision(self.charRect):
                 level.levelPosy-=int(self.yVel)+1
@@ -460,12 +460,12 @@ class Player:
                 self.semied = False
             elif self.semied:
                 self.semied = False
-        
-            
+
+
 
         level.checkCollision(self.charRect, True, [2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14])
 
-        
+
 
 
     def checkCeiling(self):
@@ -490,7 +490,7 @@ class Player:
 
         if self.maxBoost > self.defaultBoost and self.homeTo == (0,0):
             self.maxBoost -= self.decelSpeed
-        
+
         if self.stomp:
             self.teminalVelocity = 25
         else:
@@ -514,7 +514,7 @@ class Player:
                 self.xVel = 0
                 self.changeX(self.homeTo[0]-level.levelPosx)
                 print(level.levelPosx-self.homeTo[0])
-                
+
         if self.homeDown:
             if level.levelPosy < self.homeTo[1]:
                 self.yVel += self.homeSpeed
@@ -525,7 +525,7 @@ class Player:
                 self.yVel -= self.homeSpeed
             if level.levelPosy <= self.homeTo[1]:
                 self.yVel = self.homeTo[1]-level.levelPosy
-        
+
     def jump(self):
         level.levelPosy+=1
         if (self.touchGround or self.kTime>0) and self.jumpsLeft > 0:
@@ -543,7 +543,7 @@ class Player:
         walkAnimateFrame = int(self.walkAnimateFrame)
         if self.xVel == 0:
             returnImage = playerImages[0]
-        
+
         elif abs(self.xVel) > 0 and self.touchGround or self.kTime>0:
             if walkAnimateFrame in [0, 2]:
                 returnImage = playerImages[0]
@@ -559,10 +559,10 @@ class Player:
                 returnImage = playerImages[9]
             else:
                 returnImage = playerImages[10]
-        
+
         if self.yVel > 2:
             returnImage = playerImages[3]
-        
+
         if int(self.yVel) == 12:
             returnImage = playerImages[4]
         elif self.yVel > 12:
@@ -573,10 +573,10 @@ class Player:
                 self.jumpAnimateFrame = 0
             if int(self.jumpAnimateFrame)%2 == 0:
                 returnImage = pygame.transform.rotate(playerImages[6], -90*int(self.jumpAnimateFrame/2))
-                
+
             else:
                 returnImage = pygame.transform.rotate(playerImages[7], -90*(int((self.jumpAnimateFrame)-1)/2))
-        
+
         if not self.isRight:
             returnImage = pygame.transform.flip(returnImage, True, False)
 
@@ -596,8 +596,8 @@ class Player:
         #         win.blit(pygame.transform.flip(random.choice(boostImages), True, False), (self.charRect.x-5, self.charRect.y))
         #     else:
         #         win.blit(random.choice(boostImages), (self.charRect.x-5, self.charRect.y))
-        
-    
+
+
 class Level:
     def __init__(self):
         self.levelPosx = 0
@@ -732,7 +732,7 @@ class Level:
                                 if tile.y/20!=len(tiles)-1 and tile.x!=0:
                                     if not tiles[int(tile.y/20)+1][int(tile.x/20)-1] in groundTiles:
                                         newImage.blit(pygame.transform.rotate(tileImages[5], 180), (0,0))
-                                
+
                                 tile.image = newImage
                             #self.levelVis.blit(tileImages[neighbor_image_map.get(neighbors, 6)], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
                             if neighbor_image_map.get(neighbors, 6) == 10:
@@ -748,7 +748,7 @@ class Level:
                         elif tiles[int(tile.y/20)][int(tile.x/20)] == "8":
                             tile.image = tileImages[15]
                         tilesLoaded+=1
-                    
+
             else:
                 for tile in self.levels:
                     above, below, left, right = False, False, False, False
@@ -786,7 +786,7 @@ class Level:
                 self.onScreenLevel.append(tile)
             elif tile.rect.x > -20 and tile.rect.x < 980 and tile.rect.y > -20 and tile.rect.y < 620:
                 self.onScreenLevel.append(tile)
-    
+
     def getSpawn(self):
         for tilesLoaded, tile in enumerate(self.levels):
             if tile.tileID == 3:
@@ -849,7 +849,7 @@ class Tile:
         if not self.hasBeenDrawn:
             level.levelVis.blit(self.image, (self.x, self.y))
             self.hasBeenDrawn = True
-        
+
     def isInSpace(self, x, y):
         return self.x == x and self.y == y
     def reload(self):
@@ -872,7 +872,7 @@ class Tile:
                     pygame.draw.rect(win, YELLOW, self.rect)
                 elif self.tileID == 7:
                     pygame.draw.rect(win, BROWN, self.rect)
-            
+
             if self.tileID == 1:
                 pygame.draw.rect(win, RED, self.rect)
             elif self.tileID == 2:
@@ -896,12 +896,12 @@ class Tile:
             elif self.tileID == 14:
                 win.blit(slope, (self.rect.x, self.rect.y))
 
-        
+
         if self.popped and self.popTimer>0:
             self.popTimer-=1
             if self.popTimer==0:
                 self.popped = False
-            
+
     def checkCollision(self, collider):
         collided = self.rect.colliderect(collider)
         if collided and collider == player.charRect:
@@ -951,14 +951,14 @@ class Tile:
             elif self.tileID == 14:
                 offset = ((collider.x - self.rect.x), (collider.y - self.rect.y)+10)
                 collided = self.mask.overlap(pygame.mask.from_surface(player.rectAsSurface), offset) is not None
-              
+
 
         elif collided and collider == player.homingRange and not self.popped:
             if self.tileID == 9:
                 player.homeTo = (self.x, self.y+160)
                 player.maxBoost = 20
                 player.homingCoolDown = 30
-                
+
                 if level.levelPosx < player.homeTo[0]:
                     player.homeRight = True
                 elif level.levelPosx > player.homeTo[0]:
@@ -970,7 +970,7 @@ class Tile:
         elif collided and collider == player.homingRange and self.popped:
             collided = False
 
-                
+
         return collided
     def checkCollisionRect(self, collider):
         return self.rect.colliderect(collider)
@@ -981,20 +981,20 @@ class DebugLogText:
         self.showTime = showTime
         self.bg = pygame.Surface((960, 26), pygame.SRCALPHA)
         self.bg.fill((255,255,255,200))
-    
+
     def draw(self, y):
         win.blit(self.bg, (0, (y*26)))
         win.blit(smallFont.render(self.text, True, BLACK), (0, ((y*26)+3)))
         self.showTime-=1
         if self.showTime<=0:
             debugLog.remove(self)
-        
+
 
 def redrawScreen():
-        
+
     win.fill(WHITE)
     level.draw()
-    
+
     #spikes.draw() 
 
     for tile in level.onScreenLevel:
@@ -1057,13 +1057,13 @@ while run:
             # This event is triggered when the window is resized
             w, h = event.w, event.h
 
-    
+
     #mouse getters
     clicked = pygame.mouse.get_pressed(num_buttons=3)
     posx, posy = pygame.mouse.get_pos()
 
     level.trimLevel()
-    
+
     keys = pygame.key.get_pressed()
 
     if spaceHeld:
@@ -1075,7 +1075,7 @@ while run:
     if keys[pygame.K_SPACE] and not spaceHeld:
         player.jump()
         spaceHeld = True
-    
+
     player.jumpPower = 11
 
     if ((keys[pygame.K_a] or keys[pygame.K_LEFT]) and not (keys[pygame.K_d] or keys[pygame.K_RIGHT])) or ((keys[pygame.K_d] or keys[pygame.K_RIGHT]) and not (keys[pygame.K_a] or keys[pygame.K_LEFT])) and player.homeTo == (0,0):
@@ -1094,7 +1094,7 @@ while run:
         player.canBoost = True
     elif player.conveyorBonus != 0:
         player.changeXVel(0, player.conveyorBonus>0)
-    
+
     # if not player.climbedLastFrame and player.kTime < 8:
     #     if (keys[pygame.K_s] or keys[pygame.K_DOWN]) and not stompHeld:
     #         player.stomp = True
@@ -1127,26 +1127,26 @@ while run:
         else:
             debugLog.append(DebugLogText("Basic Reload"))
             level.changeLevel(False)
-    
+
     if keys[pygame.K_t] and keys[pygame.K_LCTRL]:
             level.quickDraw = False
             level.changeLevel(True, True)
 
-    
-    
+
+
     gameManager.speed = 3
-    
+
     for tile in level.levels:
         tile.update()
-        
+
 
     #redraw win
     redrawScreen()
     # Set the framerate
     deltaTime = clock.tick(60)/10
 
-    
-    
+
+
     if (keys[pygame.K_BACKSLASH] and not slashHeld) or frameAdvance:
         slashHeld = True
         waiting = True
