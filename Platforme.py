@@ -50,8 +50,15 @@ if joystick.get_init():
     if "xbox" in joystick.get_name().lower():
         isXboxController = True
 
+
+useFullScreen = False # change to load on fullscreen or not
+
 # Set up the display
-window = pygame.display.set_mode((w, h), pygame.SCALED | pygame.RESIZABLE)
+if useFullScreen:
+    window = pygame.display.set_mode((w, h), pygame.FULLSCREEN | pygame.SCALED)
+else:
+    window = pygame.display.set_mode((w, h), pygame.RESIZABLE | pygame.SCALED)
+    
 win = pygame.Surface((w, h))
 pygame.display.set_caption("Really Fast Rat")
 pygame.display.set_icon(pygame.image.load('icon.png'))
@@ -140,6 +147,7 @@ pygame.time.delay(100)
 deltaTime = 1
 
 worldX, worldY = 1, 0
+
 
 defaultKTime = 10
 
@@ -603,7 +611,7 @@ class Player:
     def draw(self):
         #pygame.draw.rect(win, RED, self.charRect)
         #pygame.draw.rect(win, RED, self.homingRange)
-        win.blit(self.animate(), (self.charRect.x-5, self.charRect.y))
+        win.blit(self.animate(), (self.charRect.x-5 if level.levelPosx > 475 and level.levelPosx-475+w < level.levelVis.get_width() else (level.levelPosx if level.levelPosx-475+w < level.levelVis.get_width() else w-(level.levelVis.get_width()-level.levelPosx)), self.charRect.y if level.levelPosy > 475 else level.levelPosy-175))
 
         for y, powerUp in enumerate(self.powerUps):
             powerUp.draw(y)
@@ -666,7 +674,7 @@ class Level:
                 for y, row in enumerate(tiles):
                     for x in range(len(row)):
                         if tiles[y][x] != "-1":
-                            newTile = Tile(x*20, y*20, int(tiles[y][x]))
+                            newTile = createTile(x*20, y*20, int(tiles[y][x]))
                             self.levels.append(newTile)
                             
                             #set vars needed for tiles
@@ -683,8 +691,6 @@ class Level:
             if not self.quickDraw:
                 loadingText = ""
                 for tile in self.levels:
-                    if(tile.tileID == 3):
-                        print(f"{tile.tileID} and {resetPlayerPos}")
                     if tile.tileID == 3 and resetPlayerPos:
                         spawnPos = self.getSpawn()
                         self.levelPosx, self.levelPosy = spawnPos[0], spawnPos[1]
@@ -851,20 +857,13 @@ class Level:
         return (0,0)
 
     def draw(self):
-        # imageRect = self.levelVis.get_rect()
-        # screenX, screenY = 960, 600
-        # if self.levelVis.get_height()-self.levelPosy-475 < 600:
-        #     screenY = self.levelVis.get_height()-self.levelPosy-475
-        #     print( self.levelVis.get_height()-self.levelPosy-475)
-
-        # win.blit(self.levelVis.subsurface((self.levelPosx-475, self.levelPosy-475, screenX, screenY)), (0,0))
         
-
-        win.blit(self.levelVis, (-self.levelPosx+475,-self.levelPosy+475))
+        
+        win.blit(pygame.Surface.subsurface(self.levelVis, ((self.levelPosx-475 if self.levelPosx > 475 and self.levelPosx-475+w < self.levelVis.get_width() else (0 if self.levelPosx-475+w < self.levelVis.get_width() else self.levelVis.get_width()-w)), (self.levelPosy-475 if self.levelPosy > 475 and self.levelPosy < self.levelVis.get_height() else (0 if self.levelPosy < self.levelVis.get_height() else self.levelVis.get_height()-1))), (w, h)), (0,0))
         
         
         # really tiny level view
-        win.blit(pygame.transform.scale(self.levelVis, (100,100)), (0,0))
+        # win.blit(pygame.transform.scale(self.levelVis, (w,h)), (0,0))
 
 class semiLevel:
     def __init__(self):
@@ -1087,7 +1086,7 @@ def redrawScreen():
     for y, log in enumerate(debugLog):
         log.draw(y)
 
-    ui.getElementByTag("FPSText").updateText("FPS: " + str(int(clock.get_fps())))
+    # ui.getElementByTag("FPSText").updateText("FPS: " + str(int(clock.get_fps())))
 
     ui.getElementByTag("boostBar").updateSize(getIntPercentage(60-player.superBoostCoolDown, 60), 20)
     
@@ -1194,7 +1193,7 @@ inputs.setAxis(0, (0.1, 2), "MoveRight")
 inputs.setKey(pygame.K_RCTRL, "Dash")
 inputs.setButton(2, "Dash")
 
-inputs.setKey(pygame.K_LSHIFT, "Boost")
+inputs.setKey(pygame.K_LSHIFT, "Boost") 
 inputs.setAxis(5, (-0.5, 2), "Boost")
 
 inputs.setKey(pygame.K_LCTRL, "Climb")
@@ -1225,8 +1224,8 @@ slashHeld = False
 
 ui = UICanvas()
 ui.show = False
-ui.addElement(UIText((0,0), "FPSText", "FPS:", 20, (0,0,0), 0))
-ui.getElementByTag("FPSText").setBG((255,255,255))
+# ui.addElement(UIText((0,0), "FPSText", "FPS:", 20, (0,0,0), 0))
+# ui.getElementByTag("FPSText").setBG((255,255,255))
 ui.addElement(UIRect((0, 580), "boostBar", 100, 20, YELLOW))
 
 
@@ -1259,7 +1258,8 @@ while run:
         elif event.type == pygame.VIDEORESIZE:
             # This event is triggered when the window is resized
             w, h = event.w, event.h
-
+            
+    
     for clickState in range(len(inputs.clickDown)):
         if inputs.clickDown[clickState]:
             inputs.clickDown[clickState] = clicked[clickState]

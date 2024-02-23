@@ -2,6 +2,52 @@ import pygame
 from resources import *
 from colours import *
 
+
+"""
+
+0 = ground
+1 = semiSolid
+2 = spike
+3 = start
+4 = bounce up
+5 = bounce right
+6 = bounce up weak
+7 = bounce left
+8 = bounce down
+9 = homing balloon
+10 = slime
+11 = jump power up
+12 = coin
+13 = collectable
+14 = checkpoint
+15 = 
+16 = 
+17 = 
+
+"""
+
+
+def createTile(x, y, tileID, image=pygame.Surface((0, 0))):
+    match tileID:
+        case 0:
+            return GroundTile(x,y,tileID,image)
+        case 1:
+            return SemiSolidTile(x,y,tileID,image)
+        case 2:
+            return SpikeTile(x,y,tileID,image)
+        case 4:
+            return SpringTile(x,y,tileID, 20, image)
+        case 5:
+            return BoosterTile(x,y,tileID, 13, image)
+        case 6:
+            return SpringTile(x,y,tileID, 13, image)
+        case 7:
+            return BoosterTile(x,y,tileID, -13, image)
+        case 8:
+            return SpringTile(x,y,tileID, -20, image)
+        case _:
+            return GroundTile(x,y,tileID,image)
+#
 class Tile:
     def __init__(self, x, y, tileID, image=pygame.Surface((0,0))):
         self.x, self.y = x, y
@@ -70,34 +116,18 @@ class Tile:
             if self.popTimer==0:
                 self.popped = False
             
+    def playerCollision(self):
+        pass
+    
     def checkCollision(self, collider):
         collided = self.rect.colliderect(collider)
         if collided and collider == self.player.charRect and not self.popped:
+            self.playerCollision()
             # if not self.popped:
             #     self.player.homeTo = (0,0)
             self.player.canHomingAttck = True
-            if self.tileID == 4:
-                self.player.yVel = -20
-                self.player.xVel = 0
-            elif self.tileID == 8:
-                self.player.yVel = 20
-                self.player.xVel = 0
-            elif self.tileID == 6:
-                self.player.yVel = -13
-                self.player.xVel = 0
-            elif self.tileID == 2:
-                self.player.die()
-            elif self.tileID == 5:
-                if self.player.yVel > 0:
-                    self.player.yVel = 0
-                self.player.maxBoost = 20
-                self.player.xVel = 13
-            elif self.tileID == 7:
-                if self.player.yVel > 0:
-                    self.player.yVel = 0
-                self.player.maxBoost = 20
-                self.player.xVel = -13
-            elif self.tileID == 9:
+                
+            if self.tileID == 9:
                 self.player.yVel = -10
                 self.player.xVel = 0
                 self.popped = True
@@ -150,6 +180,60 @@ class Tile:
         return collided
     def checkCollisionRect(self, collider):
         return self.rect.colliderect(collider)
+    
+    
+    
+    
+    
+class GroundTile(Tile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
+        
+    def checkCollision(self, collider):
+        return super().checkCollision(collider)
+    
+class SemiSolidTile(Tile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
+        
+    def checkCollision(self, collider):
+        return super().checkCollision(collider)
+    
+class SpikeTile(Tile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
+        
+    def checkCollision(self, collider):
+        return super().checkCollision(collider)
+        
+    def playerCollision(self):
+        self.player.die()
+    
+class SpringTile(Tile):
+    def __init__(self, x, y, tileID, power, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
+        self.power = power
+        
+    def checkCollision(self, collider):
+        return super().checkCollision(collider)
+    
+    def playerCollision(self):
+        self.player.yVel = -self.power
+        self.player.xVel = 0
+        
+class BoosterTile(Tile):
+    def __init__(self, x, y, tileID, power, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
+        self.power = power
+        
+    def checkCollision(self, collider):
+        return super().checkCollision(collider)
+    
+    def playerCollision(self):
+        if self.player.yVel > 0:
+            self.player.yVel = 0
+        self.player.maxBoost = 20
+        self.player.xVel = self.power
     
     
     
