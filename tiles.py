@@ -45,6 +45,10 @@ def createTile(x, y, tileID, image=pygame.Surface((0, 0))):
             return BoosterTile(x,y,tileID, -13, image)
         case 8:
             return SpringTile(x,y,tileID, -20, image)
+        case 9:
+            return Balloon(x,y,tileID, image)
+        case 10:
+            return Slime(x,y,tileID, image)
         case _:
             return GroundTile(x,y,tileID,image)
 #
@@ -63,13 +67,11 @@ class Tile:
         self.rect.y = self.y-self.level.levelPosy+475
         if self.toBeDeleted:
             self.level.levels.remove(self)
-        if self.popped and self.tileID in [9]:
-            if not self in self.level.onScreenLevel:
-                self.popped = False
 
         if not self.hasBeenDrawn:
             self.levelDraw()
             self.hasBeenDrawn = True
+            
         
 
         
@@ -111,12 +113,8 @@ class Tile:
                 pygame.draw.rect(self.win, MAGENTA, self.rect)
 
         
-        if self.popped and self.popTimer>0:
-            self.popTimer-=1
-            if self.popTimer==0:
-                self.popped = False
             
-    def playerCollision(self):
+    def playerCollision(self) -> None:
         pass
     
     def checkCollision(self, collider):
@@ -127,30 +125,21 @@ class Tile:
             #     self.player.homeTo = (0,0)
             self.player.canHomingAttck = True
                 
-            if self.tileID == 9:
-                self.player.yVel = -10
-                self.player.xVel = 0
-                self.popped = True
-                self.player.homeTo = (0,0)
-                self.popTimer = 360
-            elif self.tileID == 10:
-                self.gameManager.speed = 0
-                self.player.xVel=0
-                self.player.jumpPower = 17
-            elif self.tileID == 11:
+                
+            if self.tileID == 11:
                 self.player.powerUps.append(PowerUp(0, 240))
                 self.popped = True
-            elif self.tileID == 12:
-                self.gameManager.collectables+=1
-                if self.player.superBoostCoolDown>0:
-                    self.player.superBoostCoolDown-=2
-                self.popped = True
-            elif self.tileID == 13:
-                self.gameManager.rareCollectables+=1
-                if self.player.superBoostCoolDown>0:
-                    self.player.superBoostCoolDown=0
-                self.popped = True
-            elif self.tileID == 14:
+            if self.tileID == 12:
+              self.gameManager.collectables+=1
+              if self.player.superBoostCoolDown>0:
+                  self.player.superBoostCoolDown-=2
+              self.popped = True
+            if self.tileID == 13:
+              self.gameManager.rareCollectables+=1
+              if self.player.superBoostCoolDown>0:
+                  self.player.superBoostCoolDown=0
+              self.popped = True
+            if self.tileID == 14:
                 #self.image = objectImages[7]
                 self.player.lastSpawn = (self.x, self.y+160)
                 self.popped = True
@@ -182,24 +171,37 @@ class Tile:
         return self.rect.colliderect(collider)
     
     
+class StaticTile(Tile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
+        
+class DynamicTile(Tile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
     
-    
-    
-class GroundTile(Tile):
+    def draw(self):
+        if self.rect.x > -20 and self.rect.x < 960 and self.rect.y > -20 and self.rect.y < 600:
+            
+            pygame.draw.rect(self.win, BLUE, self.rect)
+            #self.level.levelVis.blit(self.image, self.rect)
+                
+
+        
+class GroundTile(StaticTile):
     def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
         super().__init__(x, y, tileID, image)
         
     def checkCollision(self, collider):
         return super().checkCollision(collider)
     
-class SemiSolidTile(Tile):
+class SemiSolidTile(StaticTile):
     def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
         super().__init__(x, y, tileID, image)
         
     def checkCollision(self, collider):
         return super().checkCollision(collider)
     
-class SpikeTile(Tile):
+class SpikeTile(StaticTile):
     def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
         super().__init__(x, y, tileID, image)
         
@@ -209,7 +211,7 @@ class SpikeTile(Tile):
     def playerCollision(self):
         self.player.die()
     
-class SpringTile(Tile):
+class SpringTile(StaticTile):
     def __init__(self, x, y, tileID, power, image=pygame.Surface((0, 0))):
         super().__init__(x, y, tileID, image)
         self.power = power
@@ -221,7 +223,7 @@ class SpringTile(Tile):
         self.player.yVel = -self.power
         self.player.xVel = 0
         
-class BoosterTile(Tile):
+class BoosterTile(StaticTile):
     def __init__(self, x, y, tileID, power, image=pygame.Surface((0, 0))):
         super().__init__(x, y, tileID, image)
         self.power = power
@@ -234,7 +236,51 @@ class BoosterTile(Tile):
             self.player.yVel = 0
         self.player.maxBoost = 20
         self.player.xVel = self.power
+        
+class Slime(StaticTile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
     
+    def playerCollision(self):
+        self.gameManager.speed = 0
+        self.player.xVel=0
+        self.player.jumpPower = 17
+
+class Balloon(DynamicTile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
+        
+    def playerCollision(self):
+        
+        print(self.popped)
+        self.player.yVel = -10
+        self.player.xVel = 0
+        self.popped = True
+        self.player.homeTo = (0,0)
+        self.popTimer = 360
+        
+        return super().playerCollision()
+    
+    def update(self):
+        
+                
+        if self.popped:
+            if not self in self.level.onScreenLevel:
+                self.popped = False
+                
+        return super().update()
+    
+    def draw(self):
+        if self.popped and self.popTimer>0:
+            self.popTimer-=1
+            if self.popTimer==0:
+                self.popped = False
+                
+                
+        if not self.popped:
+            super().draw()
+        
+        
     
     
 class PowerUp:

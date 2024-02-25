@@ -611,7 +611,15 @@ class Player:
     def draw(self):
         #pygame.draw.rect(win, RED, self.charRect)
         #pygame.draw.rect(win, RED, self.homingRange)
-        win.blit(self.animate(), (self.charRect.x-5 if level.levelPosx > 475 and level.levelPosx-475+w < level.levelVis.get_width() else (level.levelPosx if level.levelPosx-475+w < level.levelVis.get_width() else w-(level.levelVis.get_width()-level.levelPosx)), self.charRect.y if level.levelPosy > 475 else level.levelPosy-175))
+        
+        
+        # Calculate the blit position
+        blitPosX = self.charRect.x - 5 if (level.levelPosx > 475 and level.levelPosx - 475 + w < level.levelVis.get_width()) else (level.levelPosx if level.levelPosx - 475 + w < level.levelVis.get_width() else w - (level.levelVis.get_width() - level.levelPosx))
+        blitPosY = self.charRect.y if level.levelPosy > 475 and level.levelPosy - 475 + h < level.levelVis.get_height() else (level.levelPosy - 175 if level.levelPosy - 475 + h < level.levelVis.get_height() else h - (level.levelVis.get_height() - level.levelPosy)-175)
+
+        # Blit the animated character onto the screen
+        win.blit(self.animate(), (blitPosX, blitPosY))
+
 
         for y, powerUp in enumerate(self.powerUps):
             powerUp.draw(y)
@@ -685,7 +693,7 @@ class Level:
                             
                             if y*20+185 > self.lowestPoint:
                                 self.lowestPoint = y*20+185
-            self.levelVis = pygame.Surface((len(tiles[0])*20, (len(tiles)*20+300)), pygame.SRCALPHA)
+            self.levelVis = pygame.Surface((len(tiles[0])*20, (len(tiles)*20)), pygame.SRCALPHA)
             self.levelVis.fill((0,0,0,0))
             tilesLoaded = 0
             if not self.quickDraw:
@@ -760,6 +768,8 @@ class Level:
             if resetPlayerPos:
                 spawnPos = self.getSpawn()
                 player.x, player.y = spawnPos[0], spawnPos[1]
+                
+        
     def getTileImage(self, tile, tiles, typeNum:str, row, tilesLoaded, tilesToBeUsed, groundTiles=["0", "2", "8", "9", "10", "11"]):
         above, below, left, right = False, False, False, False
         # Define a dictionary to map neighbor patterns to tile images
@@ -858,12 +868,20 @@ class Level:
 
     def draw(self):
         
+        subPosX = (self.levelPosx - 475) if (self.levelPosx > 475 and self.levelPosx - 475 + w < self.levelVis.get_width()) else (0 if self.levelPosx - 475 + w < self.levelVis.get_width() else self.levelVis.get_width() - w)
+        subPosY = (self.levelPosy - 475) if (self.levelPosy > 475 and self.levelPosy - 475 + h < self.levelVis.get_height()) else (0 if self.levelPosy - 475 + h < self.levelVis.get_height() else self.levelVis.get_height() - h)
+
+        # Create the subsurface
+        subsurface = pygame.Surface.subsurface(self.levelVis, (subPosX, subPosY), (w, h))
         
-        win.blit(pygame.Surface.subsurface(self.levelVis, ((self.levelPosx-475 if self.levelPosx > 475 and self.levelPosx-475+w < self.levelVis.get_width() else (0 if self.levelPosx-475+w < self.levelVis.get_width() else self.levelVis.get_width()-w)), (self.levelPosy-475 if self.levelPosy > 475 and self.levelPosy < self.levelVis.get_height() else (0 if self.levelPosy < self.levelVis.get_height() else self.levelVis.get_height()-1))), (w, h)), (0,0))
+        win.blit(subsurface, (0, 0))
         
+        
+        #win.blit(pygame.Surface.subsurface(self.levelVis, (subPosX, self.levelVis.get_height()-h), (w, h)), (0,0))
         
         # really tiny level view
         # win.blit(pygame.transform.scale(self.levelVis, (w,h)), (0,0))
+        # pygame.image.save(self.levelVis, 'lvl.png')
 
 class semiLevel:
     def __init__(self):
