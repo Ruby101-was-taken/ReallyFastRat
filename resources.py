@@ -1,6 +1,7 @@
 import pygame
 
 
+
 #LOAD IMAGES 
 playerImages = [
     pygame.image.load("player/player.png"),
@@ -39,5 +40,3 @@ def sliceTilemap(sheet, w, h):
             spliedImages.append(tile.convert_alpha()) 
     
     return spliedImages
-
-

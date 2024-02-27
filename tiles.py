@@ -3,6 +3,13 @@ from resources import *
 from colours import *
 
 
+
+class TileImages:
+    def __init__(self) -> None:
+        pass
+
+tileImages = TileImages()
+
 """
 
 0 = ground
@@ -20,7 +27,7 @@ from colours import *
 12 = coin
 13 = collectable
 14 = checkpoint
-15 = 
+15 = ground B (aka just a different looking ground)
 16 = 
 17 = 
 
@@ -30,30 +37,38 @@ from colours import *
 def createTile(x, y, tileID, image=pygame.Surface((0, 0))):
     match tileID:
         case 0:
-            return GroundTile(x,y,tileID,image)
+            return GroundTile(x,y,tileID)
         case 1:
-            return SemiSolidTile(x,y,tileID,image)
+            return SemiSolidTile(x,y,tileID)
         case 2:
-            return SpikeTile(x,y,tileID,image)
+            return SpikeTile(x,y,tileID)
         case 4:
-            return SpringTile(x,y,tileID, 20, image)
+            return SpringTile(x,y,tileID, 20)
         case 5:
-            return BoosterTile(x,y,tileID, 13, image)
+            return BoosterTile(x,y,tileID, 13)
         case 6:
-            return SpringTile(x,y,tileID, 13, image)
+            return SpringTile(x,y,tileID, 13)
         case 7:
-            return BoosterTile(x,y,tileID, -13, image)
+            return BoosterTile(x,y,tileID, -13)
         case 8:
-            return SpringTile(x,y,tileID, -20, image)
+            return SpringTile(x,y,tileID, -20)
         case 9:
-            return Balloon(x,y,tileID, image)
+            return Balloon(x,y,tileID, tileImages.objectImages[8])
         case 10:
             return Slime(x,y,tileID, image)
+        case 12:
+            return Coin(x,y,tileID, tileImages.objectImages[9])
+        case 13:
+            return SuperCoin(x,y,tileID, tileImages.objectImages[10])
+        case 14:
+            return Checkpoint(x,y,tileID)
+        case 15:
+            return GroundTile(x,y,tileID)
         case _:
-            return GroundTile(x,y,tileID,image)
+            return StaticTile(x,y,tileID)
 #
 class Tile:
-    def __init__(self, x, y, tileID, image=pygame.Surface((0,0))):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0,0)), offset=(0,0)):
         self.x, self.y = x, y
         self.tileID = tileID
         self.rect = pygame.Rect(self.x, self.y, 20, 20)
@@ -61,10 +76,11 @@ class Tile:
         self.popped = False
         self.toBeDeleted = False
         self.popTimer = 0
-        self.hasBeenDrawn = self.tileID in [9] #this list is the tiles that draw on the fly rather than being static
+        self.hasBeenDrawn = False
+        self.offset = offset
     def update(self):
-        self.rect.x = self.x-self.level.levelPosx+475
-        self.rect.y = self.y-self.level.levelPosy+475
+        self.rect.x = self.x-self.level.levelPosx+475+self.offset[0]
+        self.rect.y = self.y-self.level.levelPosy+475+self.offset[1]
         if self.toBeDeleted:
             self.level.levels.remove(self)
 
@@ -82,6 +98,11 @@ class Tile:
         
     def levelDraw(self):
         self.level.levelVis.blit(self.image, (self.x, self.y))
+        
+    def levelDelete(self):
+        for y in range(20):
+            for x in range(20):
+                self.level.levelVis.set_at((self.x+x, self.y+y), (0, 0, 0, 0))
     
     def draw(self):
         if self.rect.x > -20 and self.rect.x < 960 and self.rect.y > -20 and self.rect.y < 600:
@@ -114,13 +135,17 @@ class Tile:
 
         
             
-    def playerCollision(self) -> None:
+    def playerCollision(self, collider) -> None:
+        pass
+    
+    def start(self) -> None:
         pass
     
     def checkCollision(self, collider):
         collided = self.rect.colliderect(collider)
         if collided and collider == self.player.charRect and not self.popped:
-            self.playerCollision()
+            playerCollideOutcome = self.playerCollision(collider)
+            collided = playerCollideOutcome if playerCollideOutcome != None else collided
             # if not self.popped:
             #     self.player.homeTo = (0,0)
             self.player.canHomingAttck = True
@@ -129,21 +154,7 @@ class Tile:
             if self.tileID == 11:
                 self.player.powerUps.append(PowerUp(0, 240))
                 self.popped = True
-            if self.tileID == 12:
-              self.gameManager.collectables+=1
-              if self.player.superBoostCoolDown>0:
-                  self.player.superBoostCoolDown-=2
-              self.popped = True
-            if self.tileID == 13:
-              self.gameManager.rareCollectables+=1
-              if self.player.superBoostCoolDown>0:
-                  self.player.superBoostCoolDown=0
-              self.popped = True
-            if self.tileID == 14:
-                #self.image = objectImages[7]
-                self.player.lastSpawn = (self.x, self.y+160)
-                self.popped = True
-                self.levelDraw()
+              
               
 
         elif collided and collider == self.player.homingRange and not self.popped:
@@ -172,18 +183,17 @@ class Tile:
     
     
 class StaticTile(Tile):
-    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
-        super().__init__(x, y, tileID, image)
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0)), offset=(0,0)):
+        super().__init__(x, y, tileID, image, offset)
         
 class DynamicTile(Tile):
-    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
-        super().__init__(x, y, tileID, image)
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0)), offset=(0,0)):
+        super().__init__(x, y, tileID, image, offset)
     
     def draw(self):
-        if self.rect.x > -20 and self.rect.x < 960 and self.rect.y > -20 and self.rect.y < 600:
-            
-            pygame.draw.rect(self.win, BLUE, self.rect)
-            #self.level.levelVis.blit(self.image, self.rect)
+        if not self.popped and not self.hasBeenDrawn:
+            self.levelDraw()
+            self.hasBeenDrawn = True
                 
 
         
@@ -208,7 +218,7 @@ class SpikeTile(StaticTile):
     def checkCollision(self, collider):
         return super().checkCollision(collider)
         
-    def playerCollision(self):
+    def playerCollision(self, collider):
         self.player.die()
     
 class SpringTile(StaticTile):
@@ -219,7 +229,7 @@ class SpringTile(StaticTile):
     def checkCollision(self, collider):
         return super().checkCollision(collider)
     
-    def playerCollision(self):
+    def playerCollision(self, collider):
         self.player.yVel = -self.power
         self.player.xVel = 0
         
@@ -231,7 +241,7 @@ class BoosterTile(StaticTile):
     def checkCollision(self, collider):
         return super().checkCollision(collider)
     
-    def playerCollision(self):
+    def playerCollision(self, collider):
         if self.player.yVel > 0:
             self.player.yVel = 0
         self.player.maxBoost = 20
@@ -241,7 +251,7 @@ class Slime(StaticTile):
     def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
         super().__init__(x, y, tileID, image)
     
-    def playerCollision(self):
+    def playerCollision(self, collider):
         self.gameManager.speed = 0
         self.player.xVel=0
         self.player.jumpPower = 17
@@ -250,16 +260,20 @@ class Balloon(DynamicTile):
     def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
         super().__init__(x, y, tileID, image)
         
-    def playerCollision(self):
+    def playerCollision(self, collider):
         
-        print(self.popped)
         self.player.yVel = -10
         self.player.xVel = 0
         self.popped = True
         self.player.homeTo = (0,0)
         self.popTimer = 360
         
-        return super().playerCollision()
+        self.levelDelete()
+        
+        return super().playerCollision(collider)
+    
+    def start(self):
+        self.levelDraw()
     
     def update(self):
         
@@ -267,6 +281,7 @@ class Balloon(DynamicTile):
         if self.popped:
             if not self in self.level.onScreenLevel:
                 self.popped = False
+                self.hasBeenDrawn = False
                 
         return super().update()
     
@@ -275,11 +290,67 @@ class Balloon(DynamicTile):
             self.popTimer-=1
             if self.popTimer==0:
                 self.popped = False
-                
-                
-        if not self.popped:
-            super().draw()
+                self.levelDraw()
         
+        super().draw()
+                
+                
+class Coin(DynamicTile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
+        
+    def playerCollision(self, collider):
+        
+        self.gameManager.collectables+=1
+        if self.player.superBoostCoolDown>0:
+            self.player.superBoostCoolDown-=2
+        self.popped = True
+        
+        self.levelDelete()
+        
+        return super().playerCollision(collider)
+     
+class SuperCoin(DynamicTile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
+        
+    def playerCollision(self, collider):
+        
+        self.gameManager.rareCollectables+=1
+        if self.player.superBoostCoolDown>0:
+            self.player.superBoostCoolDown=0
+        self.popped = True
+        self.levelDelete()
+        
+        return super().playerCollision(collider)
+    
+
+
+class Checkpoint(StaticTile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0)), offset=(0,-100)):
+        super().__init__(x, y, tileID, image, offset)
+        self.rect = pygame.Rect(self.x, self.y, 100, 100)
+        
+    def playerCollision(self, collider) -> None:
+
+        self.player.lastSpawn = (self.x, self.y+160)
+        self.popped = True
+        
+        self.image = tileImages.objectImages[7]
+        self.levelDraw()
+        
+class Slope(StaticTile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0)), offset=(0, 0)):
+        super().__init__(x, y, tileID, image, offset)
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def playerCollision(self, collider) -> None:
+        offset = ((collider.x - self.rect.x), (collider.y - self.rect.y)+10)
+        collided = self.mask.overlap(pygame.mask.from_surface(self.player.rectAsSurface), offset) is not None
+        
+        
+        
+        return collided
         
     
     
