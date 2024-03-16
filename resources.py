@@ -28,7 +28,6 @@ slope = pygame.image.load("objects/slope.png")
 tile_width = 20
 tile_height = 20  # Replace with your tile height
 
-tileSheet = pygame.image.load("tilemap/sampleTiles.png")
 
 
 def sliceTilemap(sheet, w, h):

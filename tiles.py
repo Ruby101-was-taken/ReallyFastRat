@@ -2,6 +2,8 @@ import pygame
 from resources import *
 from colours import *
 
+from sign import sign
+
 
 
 class TileImages:
@@ -28,8 +30,13 @@ tileImages = TileImages()
 13 = collectable
 14 = checkpoint
 15 = ground B (aka just a different looking ground)
-16 = 
-17 = 
+16 = ground c
+17 = ground d
+18 = move up platform
+19 = BG Tile
+20 = BG Tile
+21 = BG Tile
+21 = BG Tile
 
 """
 
@@ -64,6 +71,18 @@ def createTile(x, y, tileID, image=pygame.Surface((0, 0))):
             return Checkpoint(x,y,tileID)
         case 15:
             return GroundTile(x,y,tileID)
+        case 16:
+            return GroundTile(x,y,tileID)
+        case 17:
+            return GroundTile(x,y,tileID)
+        case 18:
+            return BgTile(x,y,tileID)
+        case 19:
+            return BgTile(x,y,tileID)
+        case 20:
+            return BgTile(x,y,tileID)
+        case 21:
+            return BgTile(x,y,tileID)
         case _:
             return StaticTile(x,y,tileID)
 #
@@ -88,7 +107,9 @@ class Tile:
             self.levelDraw()
             self.hasBeenDrawn = True
             
-        
+    def singleUpdate(self):
+        pass
+    
 
         
     def isInSpace(self, x, y):
@@ -96,13 +117,13 @@ class Tile:
     def reload(self):
         self.popped = False
         
-    def levelDraw(self):
-        self.level.levelVis.blit(self.image, (self.x, self.y))
+    def levelDraw(self, offset = (0,0)):
+        self.level.levelVis.blit(self.image, (self.x+offset[0], self.y+offset[1]))
         
     def levelDelete(self):
         for y in range(20):
             for x in range(20):
-                self.level.levelVis.set_at((self.x+x, self.y+y), (0, 0, 0, 0))
+                self.level.levelVis.set_at((self.x+x+self.offset[0], self.y+y+self.offset[1]), (0, 0, 0, 0))
     
     def draw(self):
         if self.rect.x > -20 and self.rect.x < 960 and self.rect.y > -20 and self.rect.y < 600:
@@ -194,6 +215,21 @@ class DynamicTile(Tile):
         if not self.popped and not self.hasBeenDrawn:
             self.levelDraw()
             self.hasBeenDrawn = True
+            
+    def levelDraw(self, offset = (0,0)):
+        self.level.levelInteract.blit(self.image, (self.x+offset[0], self.y+offset[1]))
+        
+    def levelDelete(self):
+        for y in range(20):
+            for x in range(20):
+                self.level.levelInteract.set_at((self.x+x+self.offset[0], self.y+y+self.offset[1]), (0, 0, 0, 0))
+    
+    def reload(self):
+        self.levelDraw()
+        return super().reload()
+    
+
+
                 
 
         
@@ -338,6 +374,28 @@ class Checkpoint(StaticTile):
         
         self.image = tileImages.objectImages[7]
         self.levelDraw()
+    
+    def reload(self):
+        self.image = tileImages.objectImages[6]
+        return super().reload()
+    
+    
+       
+class BgTile(StaticTile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0)), offset=(0, 0)):
+        super().__init__(x, y, tileID, image, offset)
+    
+    def checkCollision(self, collider):
+        return False
+    
+    def levelDraw(self, offset = (0,0)):
+        self.level.levelBG.blit(self.image, (self.x+offset[0], self.y+offset[1]))
+        
+    def levelDelete(self):
+        for y in range(self.size):
+            for x in range(self.size):
+                self.level.levelBG.set_at((self.x+x+self.offset[0], self.y+y+self.offset[1]), (0, 0, 0, 0))
+
         
 class Slope(StaticTile):
     def __init__(self, x, y, tileID, image=pygame.Surface((0, 0)), offset=(0, 0)):
@@ -351,9 +409,74 @@ class Slope(StaticTile):
         
         
         return collided
+    
+
         
+
+class MovingPlatform(DynamicTile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0)), offset=(0, 0), moveBy = (80, 0), speed = 1):
+        self.moveBy = moveBy
+        self.speed = speed
+        self.startX, self.startY = x, y
+        self.moveOut = True
+        
+        self.xVel, self.yVel = 0, 0
+        
+        super().__init__(x, y, tileID, image, offset)
     
-    
+    def start(self):
+        self.levelDelete()
+        
+    def draw(self):
+        self.levelDelete()
+        self.levelDraw(self.offset)
+        
+        pygame.draw.rect(self.win, RED if self in self.level.trimmedLevel else BLUE, self.rect)
+        
+    def playerCollision(self, collider) -> None:
+        
+        if self.player.x > self.x+self.offset[0]:
+            self.player.xVel = self.speed*sign(self.xVel)
+        
+        self.player.changeX(self.player.xVel)
+        
+        
+                
+        
+    def singleUpdate(self):
+        
+        x = self.x+self.offset[0]
+        
+        
+        if self.moveOut:
+            if x < self.startX+self.moveBy[0]:
+                self.offset = (self.offset[0] + self.speed, self.offset[1])
+                self.xVel = self.speed
+            else: 
+                self.offset = (self.startX+self.moveBy[0], self.offset[1])
+                self.xVel = 0
+            
+            x = self.x+self.offset[0]
+            
+            self.moveOut = (x < self.startX+self.moveBy[0])
+            
+        else:
+            if x > self.startX:
+                self.offset = (self.offset[0] - self.speed, self.offset[1])
+                self.xVel = -self.speed
+            else: 
+                self.offset = (0, self.offset[1])
+                self.xVel = 0
+            
+            x = self.x+self.offset[0]
+            
+            self.moveOut = (self.offset[0] == 0)
+
+            
+        
+        
+        
+        
 class PowerUp:
     def __init__(self, powerType, time = 120):
         self.type = powerType
