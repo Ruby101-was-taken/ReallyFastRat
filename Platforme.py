@@ -754,7 +754,9 @@ class Level:
             resliceImages(self.levelInfo["tileMapType"])
             
                     
-                    
+            
+            self.lowestPoint = 0
+            self.highestPoint = 0
             
             largestX = 0
             for chunk in levelJson["layers"][0]["chunks"]:
@@ -778,29 +780,31 @@ class Level:
                             
                             if (chunkY + y)*tileSize < self.highestPoint:
                                 self.highestPoint = (chunkY + y)*tileSize
+                            
+                            elif (chunkY+y)*tileSize > self.lowestPoint:
+                                self.lowestPoint = (chunkY+y)*tileSize
             
             
             
             tileHightOffset = abs(self.highestPoint)
             for tile in self.levels:
-                print(tile.y)
                 tile.y += int(tileHightOffset)
-                print(tile.y)
             
+            self.lowestPoint += tileHightOffset+tileSize
             
-            
-            self.lowestPoint = levelJson["layers"][0]["height"]*tileSize+160
-        
-
-                                
-            self.levelVis = pygame.Surface((largestX*tileSize, (levelJson["layers"][0]["height"]*tileSize)), pygame.SRCALPHA)
+            self.levelVis = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
             self.levelVis.fill((0,0,0,0))
             
-            self.levelBG = pygame.Surface((largestX*tileSize, (levelJson["layers"][0]["height"]*tileSize)), pygame.SRCALPHA)
+            self.levelBG = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
             self.levelBG.fill((0,0,0,0))
             
-            self.levelInteract = pygame.Surface((largestX*tileSize, (levelJson["layers"][0]["height"]*tileSize)), pygame.SRCALPHA)
+            self.levelInteract = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
             self.levelInteract.fill((0,0,0,0))
+            
+            
+            self.lowestPoint = levelJson["layers"][0]["height"]*tileSize
+        
+
             
             
             tilesLoaded = 0
@@ -1026,7 +1030,7 @@ class Level:
         #win.blit(pygame.Surface.subsurface(self.levelVis, (subPosX, self.levelVis.get_height()-h), (w, h)), (0,0))
         
         # full level view
-        # win.blit(pygame.transform.scale(self.levelVis, (w,h)), (0,0))
+        #win.blit(pygame.transform.scale(self.levelVis, (w,h)), (0,0))
        
         # save image of level (super duper laggy
         # pygame.image.save(self.levelVis, 'lvl.png')
