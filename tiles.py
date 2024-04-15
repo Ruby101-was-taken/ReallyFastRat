@@ -37,6 +37,7 @@ tileImages = TileImages()
 20 = BG Tile
 21 = BG Tile
 21 = BG Tile
+22 - Moving platform
 
 """
 
@@ -83,6 +84,8 @@ def createTile(x, y, tileID, image=pygame.Surface((0, 0))):
             return BgTile(x,y,tileID)
         case 21:
             return BgTile(x,y,tileID)
+        case 22:
+            return MovingPlatform(x,y,tileID, (0,0))
         case _:
             return StaticTile(x,y,tileID)
 #
@@ -246,6 +249,64 @@ class SemiSolidTile(StaticTile):
         
     def checkCollision(self, collider):
         return super().checkCollision(collider)
+    
+    
+    
+    
+
+class MovingPlatform(DynamicTile):
+    def __init__(self, x, y, tileID, offset=(0, 0), moveBy = 80, speed = 1):
+        self.moveBy = moveBy
+        self.speed = speed
+        self.startX, self.startY = x, y
+        self.moveOut = True
+        
+        self.xVel, self.yVel = 0, 0
+        
+        super().__init__(x, y, tileID, pygame.Surface((0, 0)), offset)
+    
+    def start(self):
+        self.levelDelete()
+        
+    def draw(self):
+        self.levelDelete()
+        self.levelDraw(self.offset)
+        
+        
+        
+                
+        
+    def singleUpdate(self):
+        
+        x = self.x+self.offset[0]
+        
+        
+        if self.moveOut:
+            if x < self.startX+self.moveBy:
+                self.offset = (self.offset[0] + self.speed, self.offset[1])
+                self.xVel = self.speed
+            else: 
+                self.offset = (self.startX+self.moveBy, self.offset[1])
+                self.xVel = 0
+            
+            x = self.x+self.offset[0]
+            
+            self.moveOut = (x < self.startX+self.moveBy)
+            
+        else:
+            if x > self.startX:
+                self.offset = (self.offset[0] - self.speed, self.offset[1])
+                self.xVel = -self.speed
+            else: 
+                self.offset = (0, self.offset[1])
+                self.xVel = 0
+            
+            x = self.x+self.offset[0]
+            
+            self.moveOut = (self.offset[0] == 0)
+
+    
+    
     
 class SpikeTile(StaticTile):
     def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
@@ -412,66 +473,6 @@ class Slope(StaticTile):
     
 
         
-
-class MovingPlatform(DynamicTile):
-    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0)), offset=(0, 0), moveBy = (80, 0), speed = 1):
-        self.moveBy = moveBy
-        self.speed = speed
-        self.startX, self.startY = x, y
-        self.moveOut = True
-        
-        self.xVel, self.yVel = 0, 0
-        
-        super().__init__(x, y, tileID, image, offset)
-    
-    def start(self):
-        self.levelDelete()
-        
-    def draw(self):
-        self.levelDelete()
-        self.levelDraw(self.offset)
-        
-        pygame.draw.rect(self.win, RED if self in self.level.trimmedLevel else BLUE, self.rect)
-        
-    def playerCollision(self, collider) -> None:
-        
-        if self.player.x > self.x+self.offset[0]:
-            self.player.xVel = self.speed*sign(self.xVel)
-        
-        self.player.changeX(self.player.xVel)
-        
-        
-                
-        
-    def singleUpdate(self):
-        
-        x = self.x+self.offset[0]
-        
-        
-        if self.moveOut:
-            if x < self.startX+self.moveBy[0]:
-                self.offset = (self.offset[0] + self.speed, self.offset[1])
-                self.xVel = self.speed
-            else: 
-                self.offset = (self.startX+self.moveBy[0], self.offset[1])
-                self.xVel = 0
-            
-            x = self.x+self.offset[0]
-            
-            self.moveOut = (x < self.startX+self.moveBy[0])
-            
-        else:
-            if x > self.startX:
-                self.offset = (self.offset[0] - self.speed, self.offset[1])
-                self.xVel = -self.speed
-            else: 
-                self.offset = (0, self.offset[1])
-                self.xVel = 0
-            
-            x = self.x+self.offset[0]
-            
-            self.moveOut = (self.offset[0] == 0)
-
             
         
         

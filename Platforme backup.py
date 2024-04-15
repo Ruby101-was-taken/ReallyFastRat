@@ -430,7 +430,6 @@ class Player:
         level.levelPosy = round(level.levelPosy, 2)
         if level.levelPosy > level.lowestPoint:
             self.die()
-            print(level.levelPosy, level.lowestPoint)
             
         for i in range(int(self.yVel)):
             self.y+=1
@@ -703,7 +702,6 @@ class Level:
         self.levelPosx = 0
         self.levelPosy = 0
         self.lowestPoint = 0
-        self.highestPoint = 0
         self.worldXLast, self.worldYLast = -1, -1
         self.levelVis = pygame.Surface((0,0), pygame.SRCALPHA)
         self.quickDraw = keys[pygame.K_SPACE]
@@ -739,7 +737,6 @@ class Level:
         return collided
     def changeLevel(self, resetPlayerPos=True, reloadLevel=False):
         groundTiles = ["0"]
-        #self.quickDraw = True
         if self.worldXLast != worldX or reloadLevel:
             self.worldXLast, self.worldYLast = worldX, worldY
             self.levels = []
@@ -747,28 +744,20 @@ class Level:
             self.levelInfo = parseJsonFile(f"levels/levelInfo/{worldX}-{worldY}.json")
             
             
-            levelJson = parseJsonFile(f"levels/levels/{worldX}-{worldY}.json")
-            
-            
             
             resliceImages(self.levelInfo["tileMapType"])
             
-                    
-                    
-            
-            largestX = 0
-            for chunk in levelJson["layers"][0]["chunks"]:
-                chunkX = chunk["x"]
-                chunkY = chunk["y"]
-                for y in range(16):
-                    for x in range(16):
-                        if chunk["data"][(y*16) + x] != 0:
-                            newTile = createTile((chunkX + x)*tileSize, (chunkY + y)*tileSize, int(chunk["data"][(y*16) + x])-1, tileSize)
+            with open(f'levels/levels/{worldX}-{worldY}.csv', 'r') as csv_file:
+                # Create a CSV reader object
+                csv_reader = csv.reader(csv_file)
+                tiles = list(csv_reader)
+
+                # Loop through the rows in the CSV file
+                for y, row in enumerate(tiles):
+                    for x in range(len(row)):
+                        if tiles[y][x] != "-1":
+                            newTile = createTile(x*tileSize, y*tileSize, int(tiles[y][x]), tileSize)
                             self.levels.append(newTile)
-                            
-                            
-                            if (chunkX + x)  > largestX:
-                                largestX = (chunkX + x)
                             
                             #set vars needed for tiles
                             newTile.level = self
@@ -776,32 +765,19 @@ class Level:
                             newTile.gameManager = gameManager
                             newTile.win = win
                             
-                            if (chunkY + y)*tileSize < self.highestPoint:
-                                self.highestPoint = (chunkY + y)*tileSize
-            
-            
-            
-            tileHightOffset = abs(self.highestPoint)
-            for tile in self.levels:
-                print(tile.y)
-                tile.y += int(tileHightOffset)
-                print(tile.y)
-            
-            
-            
-            self.lowestPoint = levelJson["layers"][0]["height"]*tileSize+160
-        
-
+                            if y*tileSize+ (tileSize*11.5) > self.lowestPoint:
+                                self.lowestPoint = y*tileSize+ (tileSize*11.5)
                                 
-            self.levelVis = pygame.Surface((largestX*tileSize, (levelJson["layers"][0]["height"]*tileSize)), pygame.SRCALPHA)
+            self.levelVis = pygame.Surface((len(tiles[0])*tileSize, (len(tiles)*tileSize)), pygame.SRCALPHA)
             self.levelVis.fill((0,0,0,0))
             
-            self.levelBG = pygame.Surface((largestX*tileSize, (levelJson["layers"][0]["height"]*tileSize)), pygame.SRCALPHA)
+            self.levelBG = pygame.Surface((len(tiles[0])*tileSize, (len(tiles)*tileSize)), pygame.SRCALPHA)
             self.levelBG.fill((0,0,0,0))
             
-            self.levelInteract = pygame.Surface((largestX*tileSize, (levelJson["layers"][0]["height"]*tileSize)), pygame.SRCALPHA)
+            self.levelInteract = pygame.Surface((len(tiles[0])*tileSize, (len(tiles)*tileSize)), pygame.SRCALPHA)
             self.levelInteract.fill((0,0,0,0))
             
+            #row = []
             
             tilesLoaded = 0
             if not self.quickDraw:
@@ -829,68 +805,64 @@ class Level:
                             elif event.type == pygame.VIDEORESIZE:
                                 # This event is triggered when the window is resized
                                 w, h = event.w, event.h
-                        
-                        tile.image = slope
-                        
-                        # if tiles[int(tile.y/20)][int(tile.x/20)] == "0":
-                        #     self.getTileImage(tile, tiles, "0", row, tilesLoaded, tileImages.groundImages)
-                        # if tiles[int(tile.y/20)][int(tile.x/20)] == "1":
-                        #     self.getTileImage(tile, tiles, "1", row, tilesLoaded, tileImages.bridgeImages, ["0", "1", "15", "16", "17"])
-                        # if tiles[int(tile.y/20)][int(tile.x/20)] == "2":
-                        #     self.getTileImage(tile, tiles, "2", row, tilesLoaded, tileImages.spikeImages, ["0", "2", "15", "16", "17"])
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "4":
-                        #     tile.image = tileImages.objectImages[1]
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "5":
-                        #    tile.image = tileImages.objectImages[3]
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "6":
-                        #     tile.image = tileImages.objectImages[0]
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "7":
-                        #     tile.image = tileImages.objectImages[4]
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "8":
-                        #     tile.image = tileImages.objectImages[2]
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "10":
-                        #     tile.image = tileImages.objectImages[5]
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "14":
-                        #     tile.image = tileImages.objectImages[6]
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "15":
-                        #     self.getTileImage(tile, tiles, "15", row, tilesLoaded, tileImages.groundBImages)
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "16":
-                        #     self.getTileImage(tile, tiles, "16", row, tilesLoaded, tileImages.groundCImages, ["16", "17"])
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "17":
-                        #     self.getTileImage(tile, tiles, "17", row, tilesLoaded, tileImages.groundDImages, ["16", "17"])
+                        if tiles[int(tile.y/20)][int(tile.x/20)] == "0":
+                            self.getTileImage(tile, tiles, "0", row, tilesLoaded, tileImages.groundImages)
+                        if tiles[int(tile.y/20)][int(tile.x/20)] == "1":
+                            self.getTileImage(tile, tiles, "1", row, tilesLoaded, tileImages.bridgeImages, ["0", "1", "15", "16", "17"])
+                        if tiles[int(tile.y/20)][int(tile.x/20)] == "2":
+                            self.getTileImage(tile, tiles, "2", row, tilesLoaded, tileImages.spikeImages, ["0", "2", "15", "16", "17"])
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "4":
+                            tile.image = tileImages.objectImages[1]
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "5":
+                           tile.image = tileImages.objectImages[3]
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "6":
+                            tile.image = tileImages.objectImages[0]
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "7":
+                            tile.image = tileImages.objectImages[4]
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "8":
+                            tile.image = tileImages.objectImages[2]
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "10":
+                            tile.image = tileImages.objectImages[5]
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "14":
+                            tile.image = tileImages.objectImages[6]
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "15":
+                            self.getTileImage(tile, tiles, "15", row, tilesLoaded, tileImages.groundBImages)
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "16":
+                            self.getTileImage(tile, tiles, "16", row, tilesLoaded, tileImages.groundCImages, ["16", "17"])
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "17":
+                            self.getTileImage(tile, tiles, "17", row, tilesLoaded, tileImages.groundDImages, ["16", "17"])
                             
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "18":
-                        #     self.getTileImage(tile, tiles, "18", row, tilesLoaded, tileImages.backGroundAImages, ["0", "15", "16", "17", "18", "19"])
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "19":
-                        #     self.getTileImage(tile, tiles, "19", row, tilesLoaded, tileImages.backGroundBImages, ["0", "15", "16", "17", "18", "19"])
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "20":
-                        #     self.getTileImage(tile, tiles, "20", row, tilesLoaded, tileImages.backGroundCImages, ["0", "15", "16", "17", "20", "21"])
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "21":
-                        #     self.getTileImage(tile, tiles, "21", row, tilesLoaded, tileImages.backGroundDImages, ["0", "15", "16", "17", "20", "21"])
-                        # elif tiles[int(tile.y/20)][int(tile.x/20)] == "22":
-                        #     self.getTileImage(tile, tiles, "22", row, tilesLoaded, tileImages.movingPlatformImages, ["22"])
-                        # tilesLoaded+=1
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "18":
+                            self.getTileImage(tile, tiles, "18", row, tilesLoaded, tileImages.backGroundAImages, ["0", "15", "16", "17", "18", "19"])
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "19":
+                            self.getTileImage(tile, tiles, "19", row, tilesLoaded, tileImages.backGroundBImages, ["0", "15", "16", "17", "18", "19"])
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "20":
+                            self.getTileImage(tile, tiles, "20", row, tilesLoaded, tileImages.backGroundCImages, ["0", "15", "16", "17", "20", "21"])
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "21":
+                            self.getTileImage(tile, tiles, "21", row, tilesLoaded, tileImages.backGroundDImages, ["0", "15", "16", "17", "20", "21"])
+                        elif tiles[int(tile.y/20)][int(tile.x/20)] == "22":
+                            self.getTileImage(tile, tiles, "22", row, tilesLoaded, tileImages.movingPlatformImages, ["22"])
+                        tilesLoaded+=1
                     
             else:
                 for tile in self.levels:
-                    pass
-                    # above, below, left, right = False, False, False, False
-                    # if tile.tileID == 0:# Check neighbors
-                    #     if tile.y!=0:
-                    #         if tiles[int(tile.y/tileSize)-1][int(tile.x/tileSize)] in groundTiles:
-                    #             above = True
-                    #     if tile.y/tileSize!=len(tiles)-1:
-                    #         if tiles[int(tile.y/tileSize)+1][int(tile.x/tileSize)] in groundTiles:
-                    #             below = True
-                    #     if tile.x!=0:
-                    #         if tiles[int(tile.y/tileSize)][int(tile.x/tileSize)-1] in groundTiles:
-                    #             left = True
-                    #     if tile.x/tileSize!=len(row)-1:
-                    #         if tiles[int(tile.y/tileSize)][int(tile.x/tileSize)+1] in groundTiles:
-                    #             right = True
+                    above, below, left, right = False, False, False, False
+                    if tile.tileID == 0:# Check neighbors
+                        if tile.y!=0:
+                            if tiles[int(tile.y/tileSize)-1][int(tile.x/tileSize)] in groundTiles:
+                                above = True
+                        if tile.y/tileSize!=len(tiles)-1:
+                            if tiles[int(tile.y/tileSize)+1][int(tile.x/tileSize)] in groundTiles:
+                                below = True
+                        if tile.x!=0:
+                            if tiles[int(tile.y/tileSize)][int(tile.x/tileSize)-1] in groundTiles:
+                                left = True
+                        if tile.x/tileSize!=len(row)-1:
+                            if tiles[int(tile.y/tileSize)][int(tile.x/tileSize)+1] in groundTiles:
+                                right = True
 
-                    #     if above and below and left and right:
-                    #         tile.toBeDeleted = True
+                        if above and below and left and right:
+                            tile.toBeDeleted = True
 
         else:
             for tile in self.levels:
