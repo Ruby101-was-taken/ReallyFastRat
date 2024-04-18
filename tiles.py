@@ -100,6 +100,8 @@ class Tile:
         self.popTimer = 0
         self.hasBeenDrawn = False
         self.offset = offset
+        
+        self.tilePos = (x/20, y/20)
     def update(self):
         self.rect.x = self.x-self.level.levelPosx+475+self.offset[0]
         self.rect.y = self.y-self.level.levelPosy+475+self.offset[1]
