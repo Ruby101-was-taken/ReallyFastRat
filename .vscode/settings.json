@@ -1,3 +1,18 @@
 {
-    "python.REPL.enableREPLSmartSend": false
+    "python.REPL.enableREPLSmartSend": false,
+    "cSpell.words": [
+        "ctiles",
+        "decel",
+        "dtime",
+        "fratedown",
+        "frateup",
+        "lvlx",
+        "lvlxlast",
+        "lvly",
+        "lvlylast",
+        "semied",
+        "tframes",
+        "tilex",
+        "tiley"
+    ]
 }

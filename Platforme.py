@@ -257,7 +257,7 @@ class Player:
         self.maxSpeed = gameManager.speed
         self.maxBoost = gameManager.speed*3
         self.defaultBoost = self.maxBoost
-        self.teminalVelocity = 17
+        self.terminalVelocity = 17
         self.boostDirection = 0
         self.canBoost = True
         self.decelSpeed = 0.2
@@ -279,7 +279,7 @@ class Player:
         self.isRight = True
 
         self.homingRange = pygame.Rect(self.charRect.x-240, self.charRect.y-240, 490, 500)
-        self.canHomingAttck = True
+        self.canHomingAttack = True
 
         self.homeTo = (0,0)
         self.homeRight = False
@@ -462,8 +462,8 @@ class Player:
             
         if not level.checkCollision(self.charRect):
             self.yVel+=0.5
-            if self.yVel > self.teminalVelocity:
-                self.yVel = self.teminalVelocity
+            if self.yVel > self.terminalVelocity:
+                self.yVel = self.terminalVelocity
             self.kTime -= 1
             if self.kTime<0:
                 self.kTime=0
@@ -497,11 +497,11 @@ class Player:
                     self.yVel = 0
                     self.touchGround = True
                     self.stomp = False
-                    toochSemi = self.semied
+                    touchSemi = self.semied
                     self.semied = True
-                    while not toochSemi:
+                    while not touchSemi:
                         level.levelPosy+=1
-                        toochSemi = semiLevel.checkCollision(self.charRect)
+                        touchSemi = semiLevel.checkCollision(self.charRect)
                         self.kTime = defaultKTime
                         self.jumpsLeft = 2
                 else:
@@ -566,9 +566,9 @@ class Player:
             self.maxBoost -= self.decelSpeed
 
         if self.stomp:
-            self.teminalVelocity = 25
+            self.terminalVelocity = 25
         else:
-            self.teminalVelocity = 17
+            self.terminalVelocity = 17
 
         self.gravity()
         if self.homeTo != (0,0):
@@ -918,7 +918,7 @@ class Level:
                 self.chunks[f"{int(tilex)}-{int(tiley)}"].tiles.append(tile)
                 
             
-            for tile in self.levels: # adds tiles to the levelmap with it's type as they key, done after offsetting so values are not changed
+            for tile in self.levels: # adds tiles to the level map with it's type as they key, done after offsetting so values are not changed
                 idStr = str(tile.tileID)
                 if not idStr in levelMap:
                     levelMap[idStr] = {}
@@ -1075,7 +1075,7 @@ class Level:
             (False, False, True, False): 26,
         }
 
-        wasFrist = self.first
+        wasFirst = self.first
         
         for t in groundTiles:
             if t in levelMap:
@@ -1125,9 +1125,6 @@ class Level:
             newImage.blit(pygame.transform.flip(tilesToBeUsed[14], True, False).convert_alpha(), (0,0)) 
         
         tile.image = newImage
-        # if wasFrist:
-        #     self.image = pygame.image.load("lvl.png")
-        #self.levelVis.blit(groundImages[neighbor_image_map.get(neighbors, 6)], (self.levels[tilesLoaded].x, self.levels[tilesLoaded].y))
         if neighbor_image_map.get(neighbors, 6) == 10:
             tile.toBeDeleted = True
 
@@ -1234,7 +1231,6 @@ class Level:
         # full level view
         #win.blit(pygame.transform.scale(self.levelVis, (w,h)), (0,0))
        
-        # save image of level (super duper laggy
         if keys[pygame.K_F2]:
             debugLog.append(DebugLogText("Level Image Screenshotted", 100))
             pygame.image.save(self.levelVis, 'lvl.png')
