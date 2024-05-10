@@ -1,9 +1,14 @@
+
+
+worldX, worldY = 0,0
+
+collisionTiles = 0
+
+
 import pygame, random, os, csv, copy
 import math as maths
+import threading
 
-from resources import * #load all images from the external python file
-
-from tiles import *
 from colours import *
 
 
@@ -26,11 +31,25 @@ tileSize = 20
 borderW = 50
 
 
+#bg have 5 colours btw
+
 
 # Initialize Pygame
 pygame.init()
 pygame.mixer.init()
 pygame.joystick.init()
+
+# Set up the display
+if useFullScreen:
+    window = pygame.display.set_mode((w, h), pygame.FULLSCREEN | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+else:
+    window = pygame.display.set_mode((w, h), pygame.RESIZABLE | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+    
+    
+    
+from resources import * #load all images from the external python file
+
+from tiles import *
 
 class noJoystick:
     def get_init(self):
@@ -42,32 +61,36 @@ class noJoystick:
     def get_hat(self, num):
         return (0,0)
 
-num_joysticks = pygame.joystick.get_count()
+def reloadController():
+    global joystick, window
+    num_joysticks = pygame.joystick.get_count()
 
-if num_joysticks > 0:
-    if num_joysticks == 1:
-        joystick = pygame.joystick.Joystick(0)
-        joystick.rumble(1, 1, 1000)
+    if num_joysticks > 0:
+        if num_joysticks == 1:
+            joystick = pygame.joystick.Joystick(0)
+            joystick.rumble(1, 1, 1000)
+        else:
+            from extraControllers import getController
+            joystick = pygame.joystick.Joystick(getController(num_joysticks, pygame.joystick))
+            joystick.rumble(1, 1, 1000)
+        joystick.init()
     else:
-        from extraControllers import getController
-        joystick = pygame.joystick.Joystick(getController(num_joysticks, pygame.joystick))
-        joystick.rumble(1, 1, 1000)
-    joystick.init()
-else:
-    print("No controllers found.")
-    joystick = noJoystick()
+        print("No controllers found.")
+        joystick = noJoystick()
+        
+    
+    if useFullScreen:
+        window = pygame.display.set_mode((w, h), pygame.FULLSCREEN | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+    else:
+        window = pygame.display.set_mode((w, h), pygame.RESIZABLE | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+        
+reloadController()
 
 isXboxController = False
 if joystick.get_init():
     if "xbox" in joystick.get_name().lower():
         isXboxController = True
 
-
-# Set up the display
-if useFullScreen:
-    window = pygame.display.set_mode((w, h), pygame.FULLSCREEN | pygame.SCALED)
-else:
-    window = pygame.display.set_mode((w, h), pygame.RESIZABLE | pygame.SCALED)
 
     
 win = pygame.Surface((w, h))
@@ -123,20 +146,20 @@ pygame.display.flip()
 
 
 def resliceImages(tileType:str):
-    tileImages.groundImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/ground.png"), tileSize, tileSize)
-    tileImages.spikeImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/spikeTiles.png"), tileSize, tileSize)
-    tileImages.bridgeImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/bridgeTiles.png"), tileSize, tileSize)
-    tileImages.objectImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/objectTiles.png"), tileSize, tileSize)
-    tileImages.groundBImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/groundB.png"), tileSize, tileSize)
-    tileImages.groundCImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/groundC.png"), tileSize, tileSize)
-    tileImages.groundDImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/groundD.png"), tileSize, tileSize)
+    tileImages.groundImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/ground.png").convert_alpha(), tileSize, tileSize)
+    tileImages.spikeImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/spikeTiles.png").convert_alpha(), tileSize, tileSize)
+    tileImages.bridgeImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/bridgeTiles.png").convert_alpha(), tileSize, tileSize)
+    tileImages.objectImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/objectTiles.png").convert_alpha(), tileSize, tileSize)
+    tileImages.groundBImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/groundB.png").convert_alpha(), tileSize, tileSize)
+    tileImages.groundCImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/groundC.png").convert_alpha(), tileSize, tileSize)
+    tileImages.groundDImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/groundD.png").convert_alpha(), tileSize, tileSize)
 
-    tileImages.backGroundAImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/backGroundA.png"), tileSize, tileSize)
-    tileImages.backGroundBImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/backGroundB.png"), tileSize, tileSize)
-    tileImages.backGroundCImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/backGroundC.png"), tileSize, tileSize)
-    tileImages.backGroundDImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/backGroundD.png"), tileSize, tileSize)
+    tileImages.backGroundAImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/backGroundA.png").convert_alpha(), tileSize, tileSize)
+    tileImages.backGroundBImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/backGroundB.png").convert_alpha(), tileSize, tileSize)
+    tileImages.backGroundCImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/backGroundC.png").convert_alpha(), tileSize, tileSize)
+    tileImages.backGroundDImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/backGroundD.png").convert_alpha(), tileSize, tileSize)
     
-    tileImages.movingPlatformImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/movingPlatform.png"), tileSize, tileSize)
+    tileImages.movingPlatformImages = sliceTilemap(pygame.image.load(f"tilemap/{tileType}/movingPlatform.png").convert_alpha(), tileSize, tileSize)
 
 
 resliceImages("Test")
@@ -170,7 +193,6 @@ pygame.time.delay(100)
 
 deltaTime = 1
 
-worldX, worldY = 1, 1
 
 
 defaultKTime = 10
@@ -290,8 +312,6 @@ class Player:
             
             level.levelPosx = self.x
             
-            for tile in level.trimmedLevel:
-                tile.update()
             
             if level.checkCollision(self.charRect):
                 self.wallCheck()
@@ -299,20 +319,6 @@ class Player:
                 break
         
         
-        # for i in range(int(abs(speed))):
-        #     self.x+=sign(speed)
-        #     if level.checkCollision(self.charRect, True):
-        #         canMoveUp = False
-                
-        #         for i in range(8):
-        #             if not level.checkCollision(self.charRect, True) and not canMoveUp:
-        #                 canMoveUp = True
-        #             elif not canMoveUp:
-        #                 level.levelPosy-=1
-        #         if not canMoveUp:
-        #             level.levelPosy+=8
-        #             self.x-=sign(speed)
-        #             self.xVel = 0
         
         if not walled:
             self.walkAnimateFrame += abs(self.xVel)/7
@@ -329,38 +335,43 @@ class Player:
         level.levelPosx=self.x
     def changeXVel(self, speed, isRight):
         
+        speed *= deltaTime
+        fullDebugUi.getElementByTag("speed").updateText("Speed: " + str(speed))
         
         self.wallJumped = False
         
+        maxSpeed = self.maxSpeed*deltaTime        
+        maxBoost = self.maxBoost*deltaTime
+                
         self.isRight = isRight
         if isRight:
             self.xVel += speed
-            if self.xVel > self.maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
+            if self.xVel > maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
                 self.xVel -= speed
-                if self.xVel > self.maxSpeed:
-                    self.xVel-=self.decelSpeed
-            elif self.xVel > self.maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
-                self.xVel = self.maxBoost
+                if self.xVel > maxSpeed:
+                    self.xVel-=self.decelSpeed*deltaTime      
+            elif self.xVel > maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
+                self.xVel = maxBoost
                 if not self.canBoost:
                     self.xVel -= speed
-                    if self.xVel > self.maxSpeed:
-                        self.xVel-=self.decelSpeed
+                    if self.xVel > maxSpeed:
+                        self.xVel-=self.decelSpeed*deltaTime      
             for i in range(int(self.xVel)):
                 self.x+=1
                 
                 level.levelPosx, level.levelPosy = self.x, self.y
         elif not isRight:
             self.xVel -= speed
-            if self.xVel < -self.maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
+            if self.xVel < -maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
                 self.xVel += speed
-                if self.xVel < -self.maxSpeed:
-                    self.xVel+=self.decelSpeed
-            elif self.xVel < -self.maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
-                self.xVel = -self.maxBoost
+                if self.xVel < -maxSpeed:
+                    self.xVel+=self.decelSpeed*deltaTime      
+            elif self.xVel < -maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
+                self.xVel = -maxBoost
                 if not self.canBoost:
                     self.xVel += speed
-                    if self.xVel < -self.maxSpeed:
-                        self.xVel+=self.decelSpeed
+                    if self.xVel < -maxSpeed:
+                        self.xVel+=self.decelSpeed*deltaTime      
             for i in range(-int(self.xVel)):
                 self.x-=1
         self.xVel = round(self.xVel,2)
@@ -373,7 +384,7 @@ class Player:
         # if abs(self.xVel) > 19:
         #     self.xVel = 19*self.getDirNum()
 
-        self.changeX(self.xVel)
+        self.changeX((self.xVel))
         
         
         
@@ -429,9 +440,9 @@ class Player:
                 self.homeTo=(0,0)
         level.levelPosy = round(level.levelPosy, 2)
         if level.levelPosy > level.lowestPoint:
+            #print(level.lowestPoint)
             self.die()
-            print(level.levelPosy, level.lowestPoint)
-            
+            pass
         for i in range(int(self.yVel)):
             self.y+=1
             level.levelPosx, level.levelPosy = self.x, self.y
@@ -508,7 +519,15 @@ class Player:
 
 
 
-        level.checkCollision(self.charRect, True, [2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14])
+        level.checkCollision(self.charRect, True, [2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 23])
+        
+        global stompHeld
+        if not self.climbedLastFrame and self.kTime < 8:
+            if inputs.inputEvent("Stomp") and not stompHeld and not self.climbedLastFrame:
+                self.stomp = True
+                self.yVel = 20
+                self.xVel = 0
+                stompHeld = True
 
 
 
@@ -696,7 +715,39 @@ class Player:
         #     else:
         #         win.blit(random.choice(boostImages), (self.charRect.x-5, self.charRect.y))
 
-   
+
+class LevelChunk:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.tiles = []
+        self.trimmedTiles = []
+        self.draw = False
+    def checkCollision(self, rectToCheck, tileToCheck=[0, 10, 15, 16, 17, 18]):
+        global collisionTiles
+        collided = False
+        for tile in self.trimmedTiles:  
+            collisionTiles += 1  
+            if tile.tileID in tileToCheck:
+                tile.update()
+                if tile.checkCollision(rectToCheck):
+                    player.stomp = False
+                    collided = True
+        return collided
+    def trimTiles(self):
+        self.trimmedTiles = []
+        for tile in self.tiles:
+            if tile.rect.x > 400 and tile.rect.x < 550 and tile.rect.y > 200 and tile.rect.y < 400:
+                self.trimmedTiles.append(tile)
+    def update(self):
+        for tile in self.tiles:
+            tile.update()
+    def singleUpdate(self):
+        for tile in self.tiles:
+            tile.singleUpdate()
+    def posToString(self) -> str:
+            return f"{self.x}-{self.y}"
+                        
 
 class Level:
     def __init__(self):
@@ -706,6 +757,14 @@ class Level:
         self.highestPoint = 0
         self.worldXLast, self.worldYLast = -1, -1
         self.levelVis = pygame.Surface((0,0), pygame.SRCALPHA)
+        self.levelBG = pygame.Surface((0,0), pygame.SRCALPHA)
+        self.levelInteract = pygame.Surface((0,0), pygame.SRCALPHA)
+        
+        
+        self.bg = pygame.Surface((0,0), pygame.SRCALPHA)
+        self.paraLayer1 = pygame.Surface((w*2,h), pygame.SRCALPHA)
+        self.paraLayer2 = pygame.Surface((w*2,h), pygame.SRCALPHA)
+        
         self.quickDraw = keys[pygame.K_SPACE]
         self.offset = 1540
         self.switch = False
@@ -713,33 +772,62 @@ class Level:
         self.levels=[]
         
         self.levelInfo = {}
+        
+        self.chunks = {}
+        self.activeChunks = []
+        
+        self.lvlxlast = 0
+        self.lvlylast = 0
+        
+    def moveLevel(self, lvl, world=0):
+        global worldX, worldY
+        worldY+=lvl
+        worldX+=world
+        self.changeLevel(True, True)
 
     def updateTiles(self):
-         for tile in self.trimmedLevel[::-1]:
-            tile.update()
+        for chunk in self.activeChunks:
+            chunk.update()
+    def singleUpdateTiles(self):
+        for chunk in self.activeChunks:
+            chunk.singleUpdate()
      
     def checkCollision(self, rectToCheck, useTrim=True, tileToCheck=[0, 10, 15, 16, 17, 18]):
+        global collisionTiles
         collided = False
-        if useTrim:
-            for tile in self.trimmedLevel[::-1]:
-                if (tile.x < self.levelPosx+rectToCheck.width and tile.x > self.levelPosx-rectToCheck.width and tile.rect.y < player.charRect.y+300 and tile.rect.y > player.charRect.y-300) or tile.tileID == 18:
-                    tile.update()
-                    if tile.tileID in tileToCheck:
-                        if tile.checkCollision(rectToCheck):
-                            player.stomp = False
-                            collided = True
-        else:
-            for tile in self.onScreenLevel[::-1]:
-                if tile.x < self.levelPosx+rectToCheck.width and tile.x > self.levelPosx-rectToCheck.width and tile.rect.y < player.charRect.y+300 and tile.rect.y > player.charRect.y-300:
-                    tile.update()
-                    if tile.tileID in tileToCheck:
-                        if tile.checkCollision(rectToCheck):
-                            player.stomp = False
-                            collided = True
+        collisionTiles = 0
+        # if useTrim:
+        #     for tile in self.trimmedLevel[::-1]:
+        #         if (tile.x < self.levelPosx+rectToCheck.width and tile.x > self.levelPosx-rectToCheck.width and tile.rect.y < player.charRect.y+300 and tile.rect.y > player.charRect.y-300) or tile.tileID == 18:
+        #             tile.update()
+        #             if tile.tileID in tileToCheck:
+        #                 if tile.checkCollision(rectToCheck):
+        #                     player.stomp = False
+        #                     collided = True
+        # else:
+        #     for tile in self.onScreenLevel[::-1]:
+        #         if tile.x < self.levelPosx+rectToCheck.width and tile.x > self.levelPosx-rectToCheck.width and tile.rect.y < player.charRect.y+300 and tile.rect.y > player.charRect.y-300:
+        #             tile.update()
+        #             if tile.tileID in tileToCheck:
+        #                 if tile.checkCollision(rectToCheck):
+        #                     player.stomp = False
+        #                     collided = True
+        
+        for chunk in self.activeChunks:
+            collided = chunk.checkCollision(rectToCheck, tileToCheck)
+            
+            if collided:
+                return collided
+        
         return collided
     def changeLevel(self, resetPlayerPos=True, reloadLevel=False):
         self.first = True
         groundTiles = ["0"]
+        
+        
+        self.chunks = {}
+        self.activeChunks = []
+        
         #self.quickDraw = True
         if self.worldXLast != worldX or reloadLevel:
             self.worldXLast, self.worldYLast = worldX, worldY
@@ -754,19 +842,36 @@ class Level:
             
             resliceImages(self.levelInfo["tileMapType"])
             
+            self.bg = pygame.image.load(f"backgrounds/{self.levelInfo['bgType']}/bg.png").convert()
+            
+            paraLayer1 = pygame.image.load(f"backgrounds/{self.levelInfo['bgType']}/layer1.png").convert_alpha()
+            paraLayer2 = pygame.image.load(f"backgrounds/{self.levelInfo['bgType']}/layer2.png").convert()
+            
+            
+            self.paraLayer1 = pygame.Surface((w*2,h), pygame.SRCALPHA)
+            self.paraLayer1.blit(paraLayer1, (0,0))
+            self.paraLayer1.blit(paraLayer1, (w,0))
+            
+            self.paraLayer2 = pygame.Surface((w*2,h), pygame.SRCALPHA)
+            self.paraLayer2.blit(paraLayer2, (0,0))
+            self.paraLayer2.blit(paraLayer2, (w,0))
                     
             
             self.lowestPoint = 0
-            self.highestPoint = 0
+            self.highestPoint = float('inf')
             
             
             levelMap = {}
+            
+            chunksTemp = []
             
             largestX = 0
             for layer in levelJson["layers"]:
                 for chunk in layer["chunks"]:
                     chunkX = chunk["x"]
                     chunkY = chunk["y"]
+                    if(not f"{chunkX}-{chunkY}" in self.chunks):
+                        chunksTemp.append(LevelChunk(int(chunkX), int(chunkY)))
                     for y in range(16):
                         for x in range(16):
                             if chunk["data"][(y*16) + x] != 0:
@@ -790,16 +895,27 @@ class Level:
                                     
                                     elif (chunkY+y)*tileSize > self.lowestPoint:
                                         self.lowestPoint = (chunkY+y)*tileSize
-                                        print(layer["name"])
-                                    
                                 #(int(chunk["data"][(y*16) + x])-1) 
                                 
             
             
+            tileHightOffset = -self.highestPoint
+            print(tileHightOffset)
+                
+            for chunk in chunksTemp:
+                chunk.y+=int(tileHightOffset)
+                self.chunks[chunk.posToString()] = chunk
+                
+            del chunksTemp
+                
             
-            tileHightOffset = abs(self.highestPoint)
             for tile in self.levels:
                 tile.y += int(tileHightOffset)
+                tilex = int((tile.x/tileSize)/16)*16
+                tiley = int((tile.y/tileSize)/16)*16
+                if not f"{int(tilex)}-{int(tiley)}" in self.chunks:
+                    self.chunks[f"{int(tilex)}-{int(tiley)}"] = LevelChunk(tilex, tiley)
+                self.chunks[f"{int(tilex)}-{int(tiley)}"].tiles.append(tile)
                 
             
             for tile in self.levels: # adds tiles to the levelmap with it's type as they key, done after offsetting so values are not changed
@@ -851,9 +967,6 @@ class Level:
                                 pygame.quit()
                                 run = False
                                 quit()
-                            elif event.type == pygame.VIDEORESIZE:
-                                # This event is triggered when the window is resized
-                                w, h = event.w, event.h
                         
                         #tile.image = slope
                         
@@ -894,6 +1007,8 @@ class Level:
                             self.getTileImage(tile, levelMap, "21", tilesLoaded, tileImages.backGroundDImages, ["0", "15", "16", "17", "20", "21"])
                         elif tile.tileID == 22:
                             self.getTileImage(tile, levelMap, "22", tilesLoaded, tileImages.movingPlatformImages, ["22"])
+                        elif tile.tileID == 23:
+                            tile.image = tileImages.objectImages[11]
                         tilesLoaded+=1
                     
             else:
@@ -929,6 +1044,12 @@ class Level:
         for tile in self.levels:
             tile.start()
         
+        for tile in self.levels:
+            tile.levelDraw()
+        for tile in self.levels:
+            tile.checkDelete()
+            
+        self.trimLevel(True)
         audioPlayer.playMusic(AudioSource(f"music/{self.levelInfo['music']}"))
                 
         
@@ -997,11 +1118,11 @@ class Level:
         if not topRight and above and right:
             newImage.blit(tilesToBeUsed[5], (0,0))
         if not topLeft and above and left:
-            newImage.blit(pygame.transform.flip(tilesToBeUsed[5], True, False), (0,0)) 
+            newImage.blit(pygame.transform.flip(tilesToBeUsed[5], True, False).convert_alpha(), (0,0)) 
         if not bottomRight and below and right:
             newImage.blit(tilesToBeUsed[14], (0,0))
         if not bottomLeft and below and left:
-            newImage.blit(pygame.transform.flip(tilesToBeUsed[14], True, False), (0,0)) 
+            newImage.blit(pygame.transform.flip(tilesToBeUsed[14], True, False).convert_alpha(), (0,0)) 
         
         tile.image = newImage
         # if wasFrist:
@@ -1014,17 +1135,47 @@ class Level:
         for tile in self.levels:
             tile.reload()
 
-    def trimLevel(self):
-        self.trimmedLevel = []
+    def trimLevel(self, forceLoad=False):
+        
+        
+        lvlx = int((self.levelPosx / tileSize) / 16) * 16
+        lvly = int((self.levelPosy / tileSize) / 16) * 16
+
+        # Define offsets for nearby chunks
+        offsets = [(0, 0), (16, 0), (-16, 0), (0, 16), (16, 16), (-16, 16), (0, -16), (16, -16), (-16, -16)]
+
+        self.activeChunks = []
+        self.lvlxlast = lvlx
+        self.lvlylast = lvly
+
+        # Check nearby chunks using offsets
+        for offset in offsets:
+            x_offset, y_offset = offset
+            chunk_key = f"{lvlx + x_offset}-{lvly + y_offset}"
+            if chunk_key in self.chunks:
+                self.activeChunks.append(self.chunks[chunk_key])
+
+        # Process tiles in active chunks
         self.onScreenLevel = []
-        for tile in self.levels:
-            if tile.rect.x > 400 and tile.rect.x < 550 and tile.rect.y > 200 and tile.rect.y < 400:
-                self.trimmedLevel.append(tile)
-                self.onScreenLevel.append(tile)
-            elif tile.rect.x > -tileSize and tile.rect.x < 980 and tile.rect.y > -tileSize and tile.rect.y < 620:
-                self.onScreenLevel.append(tile)
-                if tile.tileID == 18:
-                    self.trimmedLevel.append(tile)
+        for chunk in self.activeChunks:
+            chunk.trimTiles()
+            for tile in chunk.tiles:
+                if 400 < tile.rect.x < 550 and 200 < tile.rect.y < 400:
+                    self.onScreenLevel.append(tile)
+                elif -tileSize < tile.rect.x < 980 and -tileSize < tile.rect.y < 620:
+                    self.onScreenLevel.append(tile)
+                    
+    
+        # self.trimmedLevel = []
+        # self.onScreenLevel = []
+        # for tile in self.levels:
+        #     if tile.rect.x > 400 and tile.rect.x < 550 and tile.rect.y > 200 and tile.rect.y < 400:
+        #         self.trimmedLevel.append(tile)
+        #         self.onScreenLevel.append(tile)
+        #     elif tile.rect.x > -tileSize and tile.rect.x < 980 and tile.rect.y > -tileSize and tile.rect.y < 620:
+        #         self.onScreenLevel.append(tile)
+        #         if tile.tileID == 18:
+        #             self.trimmedLevel.append(tile)
     
     def getSpawn(self):
         for tilesLoaded, tile in enumerate(self.levels):
@@ -1035,18 +1186,39 @@ class Level:
 
     def draw(self):
         
-        subPosX = (self.levelPosx - 475) if (self.levelPosx > 475 and self.levelPosx - 475 + w < self.levelVis.get_width()) else (0 if self.levelPosx - 475 + w < self.levelVis.get_width() else self.levelVis.get_width() - w)
-        subPosY = (self.levelPosy - 475) if (self.levelPosy > 475 and self.levelPosy - 475 + h < self.levelVis.get_height()) else (0 if self.levelPosy - 475 + h < self.levelVis.get_height() else self.levelVis.get_height() - h)
+        # Blit background
+        win.blit(self.bg, (0, 0))
 
-        # Create the subsurface
-        subsurfaceBG = pygame.Surface.subsurface(self.levelBG, (subPosX, subPosY), (w, h))
-        subsurfaceInter = pygame.Surface.subsurface(self.levelInteract, (subPosX, subPosY), (w, h))
-        subsurface = pygame.Surface.subsurface(self.levelVis, (subPosX, subPosY), (w, h))
-        
-        #draws subsurface of level
+        # Calculate sub-surface position
+        subPosX = max(0, min(self.levelVis.get_width() - w, self.levelPosx - 475))
+        subPosY = max(0, min(self.levelVis.get_height() - h, self.levelPosy - 475))
+
+        # Calculate layer positions
+        layerOnePos = ((-subPosX / 4) % 960) - 960
+        layerTwoPos = ((-subPosX / 2) % 960) - 960
+
+        # Blit parallax layers
+        win.blit(self.paraLayer1, (layerOnePos, 0))
+        win.blit(self.paraLayer2, (layerTwoPos, 0))
+
+        # Create and blit sub-surfaces
+        subsurfaceBG = self.levelBG.subsurface((subPosX, subPosY, w, h))
+        subsurfaceInter = self.levelInteract.subsurface((subPosX, subPosY, w, h))
+        subsurface = self.levelVis.subsurface((subPosX, subPosY, w, h))
+
         win.blit(subsurfaceBG, (0, 0))
         win.blit(subsurfaceInter, (0, 0))
         win.blit(subsurface, (0, 0))
+        
+        
+        
+        
+
+        if debug > 2:
+            pygame.draw.rect(win, RED, player.charRect)
+            for chunk in self.activeChunks:
+                for tile in chunk.trimmedTiles:
+                    pygame.draw.rect(win, WHITE, tile.rect)
         
         # old level draw code
         # win.blit(self.levelVis, (-self.levelPosx+475,-self.levelPosy+475))
@@ -1063,7 +1235,9 @@ class Level:
         #win.blit(pygame.transform.scale(self.levelVis, (w,h)), (0,0))
        
         # save image of level (super duper laggy
-        # pygame.image.save(self.levelVis, 'lvl.png')
+        if keys[pygame.K_F2]:
+            debugLog.append(DebugLogText("Level Image Screenshotted", 100))
+            pygame.image.save(self.levelVis, 'lvl.png')
 
 class semiLevel:
     def __init__(self):
@@ -1072,13 +1246,7 @@ class semiLevel:
         feetRect = pygame.Rect(475, player.charRect.y+29, 20, 1)
         collided = False
         if player.yVel >= 0:
-            for tile in level.trimmedLevel:
-                tile.update()
-                if (tile.x < level.levelPosx+20 and tile.x > level.levelPosx-20 and tile.rect.y < player.charRect.y+50 and tile.rect.y > player.charRect.y-20) or tile.tileID == 22:
-                    if tile.tileID in tilesToCheck and not collided:
-                        if tile.checkCollisionRect(feetRect):
-                            collided = True
-                            break
+            collided = level.checkCollision(rectToCheck, True, tilesToCheck)
         return collided and not inputs.inputEvent("Stomp")
     def draw(self):
         #win.blit(self.image, (-level.levelPosx+475,0))
@@ -1264,22 +1432,33 @@ def getIntPercentage(num, full):
         
 
 def redrawScreen():
+    #win.fill(WHITE)
         
-    win.fill(WHITE)
     if gameManager.inGame:
         level.draw()
         
         #spikes.draw() 
 
-        for tile in level.onScreenLevel:
-            tile.draw()
+        # for tile in level.onScreenLevel:
+        #     tile.draw()
         
         player.draw()
 
     for y, log in enumerate(debugLog):
         log.draw(y)
-
-    ui.getElementByTag("FPSText").updateText("FPS: " + str(int(clock.get_fps())))
+    if(debug > 0):
+        debugUi.getElementByTag("FPSText").updateText("FPS: " + str(int(clock.get_fps())))
+        if(debug > 1):
+            fullDebugUi.getElementByTag("x").updateText("X: " + str(level.levelPosx))
+            fullDebugUi.getElementByTag("y").updateText("Y: " + str(level.levelPosy))
+            fullDebugUi.getElementByTag("ctiles").updateText("Collision Tiles: " + str(collisionTiles))
+            fullDebugUi.getElementByTag("stomp").updateText("Stomp: " + str(player.stomp))
+            fullDebugUi.getElementByTag("dtime").updateText("DeltaTime: " + str(deltaTime))
+            fullDebugUi.getElementByTag("tframes").updateText("Target Frames: " + str(targetFrames))
+            
+            fullDebugUi.draw()
+        
+        debugUi.draw()
 
     ui.getElementByTag("boostBar").updateSize(getIntPercentage(60-player.superBoostCoolDown, 60), 20)
     
@@ -1290,6 +1469,7 @@ def redrawScreen():
     window.blit(win, (0,0))    
     # window.blit(pygame.transform.scale(win, (w, h)), (0,0))    
     pygame.display.flip()
+    
 
 gameManager = GameManager()
 player = Player()
@@ -1379,9 +1559,9 @@ inputs.setKey(pygame.K_d, "MoveRight")
 inputs.setButton(14, "MoveRight")
 inputs.setAxis(0, (0.1, 2), "MoveRight")
 
-# inputs.setButton(1, "Stomp")
-# inputs.setKey(pygame.K_DOWN, "Stomp")
-# inputs.setKey(pygame.K_s, "Stomp")
+inputs.setButton(1, "Stomp")
+inputs.setKey(pygame.K_DOWN, "Stomp")
+inputs.setKey(pygame.K_s, "Stomp")
 
 inputs.setKey(pygame.K_RCTRL, "Dash")
 inputs.setButton(2, "Dash")
@@ -1402,23 +1582,49 @@ inputs.setKey(pygame.K_DOWN, "ClimbDown")
 
 inputs.setButton(4, "Restart1")
 inputs.setKey(pygame.K_TAB, "Restart1")
-inputs.setButton(15, "Restart2")
+inputs.setButton(5, "Restart2")
+inputs.setKey(pygame.K_RSHIFT, "Restart2")
+inputs.setButton(9, "Restart1")
+inputs.setKey(pygame.K_TAB, "Restart1")
+inputs.setButton(10, "Restart2")
 inputs.setKey(pygame.K_RSHIFT, "Restart2")
 
 inputs.setButton(6, "Pause")
 inputs.setKey(pygame.K_ESCAPE, "Pause")
+
+
+inputs.setKey(pygame.K_F4, "frateup")
+inputs.setKey(pygame.K_F5, "fratedown")
 
 stallFrames = 0
 frameAdvance = False
 slashHeld = False
 
 
+debugUi = UICanvas()
+debugUi.addElement(UIText((0,0), "FPSText", "FPS:", 20, (0,0,0), 0))
+debugUi.getElementByTag("FPSText").setBG((255,255,255))
+
+
+fullDebugUi = UICanvas()
+fullDebugUi.addElement(UIText((0,20), "x", "X:", 20, (0,0,0), 0))
+fullDebugUi.getElementByTag("x").setBG((255,255,255))
+fullDebugUi.addElement(UIText((0,40), "y", "Y:", 20, (0,0,0), 0))
+fullDebugUi.getElementByTag("y").setBG((255,255,255))
+fullDebugUi.addElement(UIText((0,60), "ctiles", "Collision Tiles:", 20, (0,0,0), 0))
+fullDebugUi.getElementByTag("ctiles").setBG((255,255,255))
+fullDebugUi.addElement(UIText((0,80), "stomp", "Stomp:", 20, (0,0,0), 0))
+fullDebugUi.getElementByTag("stomp").setBG((255,255,255))
+fullDebugUi.addElement(UIText((0,100), "dtime", "DeltaTime:", 20, (0,0,0), 0))
+fullDebugUi.getElementByTag("dtime").setBG((255,255,255))
+fullDebugUi.addElement(UIText((0,120), "speed", "Speed:", 20, (0,0,0), 0))
+fullDebugUi.getElementByTag("speed").setBG((255,255,255))
+fullDebugUi.addElement(UIText((0,160), "tframes", "Target Frames:", 20, (0,0,0), 0))
+fullDebugUi.getElementByTag("tframes").setBG((255,255,255))
 
 
 ui = UICanvas()
 ui.show = False
-ui.addElement(UIText((0,0), "FPSText", "FPS:", 20, (0,0,0), 0))
-ui.getElementByTag("FPSText").setBG((255,255,255))
 ui.addElement(UIRect((0, 580), "boostBar", 100, 20, YELLOW))
 
 
@@ -1436,6 +1642,10 @@ uiMainMenu = UICanvas()
 uiMainMenu.addElement(UIText((100,100), "TITLE", "Really Fast Rat", 60, GREY, 0))
 uiMainMenu.addElement(UIButton((860, 350), "Start Button", gameManager.toggleLevelSelect, "Start", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
 
+debug = 1
+debugHeld = False
+
+targetFrames = 60
 
 run = True
 # Main game loop
@@ -1509,11 +1719,7 @@ while run:
             
             
         
-        if not player.climbedLastFrame and player.kTime < 8:
-            if inputs.inputEvent("Stomp") and not stompHeld and not player.climbedLastFrame:
-                player.stomp = True
-                player.yVel = 20
-                stompHeld = True
+        
 
 
         if inputs.inputEvent("Restart1") and inputs.inputEvent("Restart2"):
@@ -1527,6 +1733,7 @@ while run:
                     level.changeLevel(True, True)
                     debugLog.append(DebugLogText("Full Reload"))
                     player.reset(False)
+                    playerImages = reloadPlayerImages()
                 elif keys[pygame.K_LALT]:
                     debugLog.append(DebugLogText("QuickDraw Load"))
                     level.quickDraw = True
@@ -1552,26 +1759,59 @@ while run:
         
         gameManager.speed = 3
         
-        for tile in level.levels:
-            tile.update()
-            
-        for tile in level.levels:
-            tile.singleUpdate()
+        level.updateTiles()
+        level.singleUpdateTiles()
+        
+        # for tile in level.levels:
+        #     tile.singleUpdate()
     
     elif gameManager.mainMenu:
         
         uiMainMenu.update()
         
+    elif gameManager.pause:
+        
+        if keys[pygame.K_r]:
+            reloadController()
+        
     if inputs.inputEvent("Pause") and not pauseHeld:
         gameManager.togglePause()
         pauseHeld = True
-        
+        if gameManager.pause:
+            pygame.mixer.Channel(7).pause()
+        else:
+            pygame.mixer.Channel(7).unpause()
+            
     
+    if debugHeld:
+        debugHeld = keys[pygame.K_F3] or keys[pygame.K_F11]
+    if keys[pygame.K_F3] and not debugHeld:
+        debug += 1
+        debugHeld = True
+        if debug == 4:
+            debug = 0
+            
+    if keys[pygame.K_F11] and not debugHeld:
+        debugHeld = True
+        useFullScreen = not useFullScreen
+        # Set up the display
+        if useFullScreen:
+            window = pygame.display.set_mode((w, h), pygame.FULLSCREEN | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+        else:
+            window = pygame.display.set_mode((w, h), pygame.RESIZABLE | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
 
+    
+    if inputs.inputEvent("frateup", False):
+        targetFrames+=10
+    elif inputs.inputEvent("fratedown", False):
+        targetFrames-=10
+        if targetFrames <= 0: targetFrames = 10
+    
     #redraw win
     redrawScreen()
     # Set the framerate
-    deltaTime = clock.tick(60)/10
+    deltaTime = clock.tick(targetFrames)* 0.001 * 60
+    #deltaTime -= 0.6
 
     
     

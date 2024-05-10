@@ -86,6 +86,8 @@ def createTile(x, y, tileID, image=pygame.Surface((0, 0))):
             return BgTile(x,y,tileID)
         case 22:
             return MovingPlatform(x,y,tileID, (0,0))
+        case 23:
+            return EndGoal(x,y,tileID)
         case _:
             return StaticTile(x,y,tileID)
 #
@@ -105,12 +107,18 @@ class Tile:
     def update(self):
         self.rect.x = self.x-self.level.levelPosx+475+self.offset[0]
         self.rect.y = self.y-self.level.levelPosy+475+self.offset[1]
+        
+        self.checkDelete()
+    def checkDelete(self):
         if self.toBeDeleted:
-            self.level.levels.remove(self)
+            if self in self.level.levels:
+                self.level.levels.remove(self)
+            tilex = int((self.x/20)/16)*16
+            tiley = int((self.y/20)/16)*16
+            if self in self.level.chunks[f"{int(tilex)}-{int(tiley)}"].tiles:
+                self.level.chunks[f"{int(tilex)}-{int(tiley)}"].tiles.remove(self)
 
-        if not self.hasBeenDrawn:
-            self.levelDraw()
-            self.hasBeenDrawn = True
+            
             
     def singleUpdate(self):
         pass
@@ -123,6 +131,7 @@ class Tile:
         self.popped = False
         
     def levelDraw(self, offset = (0,0)):
+        self.hasBeenDrawn = True
         self.level.levelVis.blit(self.image, (self.x+offset[0], self.y+offset[1]))
         
     def levelDelete(self):
@@ -282,6 +291,9 @@ class MovingPlatform(DynamicTile):
         
         x = self.x+self.offset[0]
         
+        self.levelDelete()
+        
+        
         
         if self.moveOut:
             if x < self.startX+self.moveBy:
@@ -307,8 +319,7 @@ class MovingPlatform(DynamicTile):
             
             self.moveOut = (self.offset[0] == 0)
 
-    
-    
+        self.levelDraw(self.offset)
     
 class SpikeTile(StaticTile):
     def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
@@ -475,6 +486,17 @@ class Slope(StaticTile):
     
 
         
+        
+    
+class EndGoal(StaticTile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
+        
+    def checkCollision(self, collider):
+        return super().checkCollision(collider)
+        
+    def playerCollision(self, collider):
+        self.level.moveLevel(1, 1)
             
         
         
@@ -490,3 +512,5 @@ class PowerUp:
         self.time-=1
         if self.time <=0:
             self.player.powerUps.remove(self)
+
+

@@ -2,7 +2,7 @@ import os
 os.system("cls")
 from jsonParse import *
 
-from tiles import *
+#from tiles import *
 
 
 levelInfo = parseJsonFile(f"levels/levels/1-1.json")
@@ -32,8 +32,16 @@ print(True if "Joe" in testMap else False)
 print(testMap["Joe"][int])
 
 
-testTile = createTile(0, 1, 0)
-testTile2 = createTile(0, 1, 16)
+# testTile = createTile(0, 1, 0)
+# testTile2 = createTile(0, 1, 16)
 
 
-print(type(testTile) == type(testTile2))
+# print(type(testTile) == type(testTile2))
+
+
+
+x:int = 5
+y:int = -5
+
+print(-x)
+print(-y)

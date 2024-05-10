@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.8" tiledversion="1.8.4" orientation="orthogonal" renderorder="right-down" width="480" height="35" tilewidth="20" tileheight="20" infinite="1" nextlayerid="2" nextobjectid="1">
  <editorsettings>
-  <export target="../levels/1-0.csv" format="csv"/>
+  <export target="../levels/1-0.json" format="json"/>
  </editorsettings>
  <tileset firstgid="1" source="../../tilemap/ReallyFastRatTiles.tsx"/>
  <tileset firstgid="37" source="../../../!PlatformingEngine/tilemap/Platformertesttiles.tsx"/>
- <layer id="1" name="Tile Layer 1" width="480" height="35" offsetx="-19.3333" offsety="29">
+ <layer id="1" name="Main" width="480" height="35" offsetx="-19.3333" offsety="29">
   <data encoding="csv">
    <chunk x="608" y="-224" width="16" height="16">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -444,7 +444,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,13,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,16,17,17,17,17,
 0,0,0,0,0,0,0,0,0,0,0,16,17,17,17,17,
 1,1,1,1,1,1,1,1,1,1,1,1,16,16,16,16,
@@ -3058,7 +3058,7 @@
 1,1,0,0,0,0,0,0,13,0,13,0,13,0,0,0,
 1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+1,1,0,0,0,4,0,0,0,0,0,0,0,0,0,0,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
