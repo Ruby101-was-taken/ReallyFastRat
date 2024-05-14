@@ -5,7 +5,7 @@ worldX, worldY = 0,0
 collisionTiles = 0
 
 
-import pygame, random, os, csv, copy
+import pygame, random, os, csv, copy, time
 import math as maths
 import threading
 
@@ -260,7 +260,13 @@ class Player:
         self.terminalVelocity = 17
         self.boostDirection = 0
         self.canBoost = True
+        
         self.decelSpeed = 0.2
+        self.gravForce = 0.5
+        
+        self.groundDecelSpeed = 0.2
+        self.airDecelSpeed = 0.05
+        
         self.bonusXVel = 0
         self.superBoost = 5
         self.superBoostCoolDown = 0
@@ -292,6 +298,7 @@ class Player:
         self.lastSpawn = (0,0)
         
         self.wallJumpDelay = 0
+        self.touchGround = True
     def reset(self, resetPlayerPos=True):
         gameManager.reset()
         self.xVel = 0
@@ -307,7 +314,7 @@ class Player:
         
         walled = False
         
-        for i in range(abs(int(speed))):
+        for i in range(abs(int(speed)) *2):
             self.x += sign(int(speed))
             
             level.levelPosx = self.x
@@ -335,56 +342,67 @@ class Player:
         level.levelPosx=self.x
     def changeXVel(self, speed, isRight):
         
-        speed *= deltaTime
-        fullDebugUi.getElementByTag("speed").updateText("Speed: " + str(speed))
+        # speed*=deltaTime
+        # fullDebugUi.getElementByTag("speed").updateText("Speed: " + str(round(speed, 2)))
         
-        self.wallJumped = False
+        # self.wallJumped = False
         
-        maxSpeed = self.maxSpeed*deltaTime        
-        maxBoost = self.maxBoost*deltaTime
+        # maxSpeed = self.maxSpeed*deltaTime        
+        # maxBoost = self.maxBoost*deltaTime
                 
-        self.isRight = isRight
-        if isRight:
-            self.xVel += speed
-            if self.xVel > maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
-                self.xVel -= speed
-                if self.xVel > maxSpeed:
-                    self.xVel-=self.decelSpeed*deltaTime      
-            elif self.xVel > maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
-                self.xVel = maxBoost
-                if not self.canBoost:
-                    self.xVel -= speed
-                    if self.xVel > maxSpeed:
-                        self.xVel-=self.decelSpeed*deltaTime      
-            for i in range(int(self.xVel)):
-                self.x+=1
-                
-                level.levelPosx, level.levelPosy = self.x, self.y
-        elif not isRight:
-            self.xVel -= speed
-            if self.xVel < -maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
-                self.xVel += speed
-                if self.xVel < -maxSpeed:
-                    self.xVel+=self.decelSpeed*deltaTime      
-            elif self.xVel < -maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
-                self.xVel = -maxBoost
-                if not self.canBoost:
-                    self.xVel += speed
-                    if self.xVel < -maxSpeed:
-                        self.xVel+=self.decelSpeed*deltaTime      
-            for i in range(-int(self.xVel)):
-                self.x-=1
+        # self.isRight = isRight
+        # if isRight:
+        #     self.xVel += speed
+        #     if self.xVel > maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
+        #         self.xVel -= speed
+        #         if self.xVel > maxSpeed:
+        #             self.xVel-=self.decelSpeed*deltaTime      
+        #     elif self.xVel > maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
+        #         self.xVel = maxBoost
+        #         if not self.canBoost:
+        #             self.xVel -= speed
+        #             if self.xVel > maxSpeed:
+        #                 self.xVel-=self.decelSpeed*deltaTime
+                                       
+        # elif not isRight:
+        #     self.xVel -= speed
+        #     if self.xVel < -maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
+        #         self.xVel += speed
+        #         if self.xVel < -maxSpeed:
+        #             self.xVel+=self.decelSpeed*deltaTime      
+        #     elif self.xVel < -maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
+        #         self.xVel = -maxBoost
+        #         if not self.canBoost:
+        #             self.xVel += speed
+        #             if self.xVel < -maxSpeed:
+        #                 self.xVel+=self.decelSpeed*deltaTime
+        
+
+        # if self.stomp:
+        #     self.xVel = 0
+
+        # # if abs(self.xVel) > 19:
+        # #     self.xVel = 19*self.getDirNum()
+
+        if not isRight: speed = -speed
+        speed += (self.xVel * -self.decelSpeed)
+        self.xVel += speed * deltaTime
         self.xVel = round(self.xVel,2)
         if str(abs(self.xVel))[:3] == "0.1" or str(abs(self.xVel))[:3] == "0.0":
             self.xVel = 0
-
-        if self.stomp:
+        self.x += self.xVel * deltaTime + (speed * 0.5) * (deltaTime * deltaTime)
+            
+        if self.x < 0:
+            self.x = 0
             self.xVel = 0
+            self.walkAnimateFrame = 0
+        level.levelPosx=self.x
 
-        # if abs(self.xVel) > 19:
-        #     self.xVel = 19*self.getDirNum()
-
-        self.changeX((self.xVel))
+        
+        
+        #self.changeX((self.xVel))
+        
+        
         
         
         
@@ -396,7 +414,7 @@ class Player:
         
         for i in range(10):
             level.levelPosy-=1
-            if not level.checkCollision(self.charRect) and not movedUp:
+            if not level.checkCollision(self.charRect) and not movedUp and self.yVel > 0:
                 level.levelPosx+=velSign
                 movedUp = True
                 break
@@ -443,81 +461,43 @@ class Player:
             #print(level.lowestPoint)
             self.die()
             pass
-        for i in range(int(self.yVel)):
-            self.y+=1
-            level.levelPosx, level.levelPosy = self.x, self.y
-            if level.checkCollision(self.charRect):
-                self.yVel = 0
-                self.jumpsLeft = 2
-                self.stomp = False
-                player.decelSpeed = 0.2
-                level.levelPosy = self.y
-                self.homeTo = (0,0)
-                break
+        
+        # #move up
+        # for _ in range(-int(self.yVel)):
+        #     self.y -= 1
+        #     level.levelPosy = self.y
+        #     self.touchGround = False
+        #     if self.checkCeiling():
+        #         debugLog.append(DebugLogText("Bonk"))
+        #         break
             
-        for i in range(-int(self.yVel)):
-            self.y-=1
-            level.levelPosx, level.levelPosy = self.x, self.y
-            self.checkCeiling()
+        # #move down
+        # for _ in range(int(self.yVel)):
+        #     self.y += 1
+        #     level.levelPosy = self.y
             
-        if not level.checkCollision(self.charRect):
-            self.yVel+=0.5
-            if self.yVel > self.terminalVelocity:
-                self.yVel = self.terminalVelocity
-            self.kTime -= 1
-            if self.kTime<0:
-                self.kTime=0
-                self.decelSpeed = 0.05
-        if self.homeTo == (0,0):
-            level.levelPosy+=1
-            self.touchGround = level.checkCollision(self.charRect)
-            level.levelPosy-=1
-            while self.touchGround:
-                level.levelPosy = self.y+1
-                if not level.checkCollision(self.charRect):
-                    self.yVel=+1
-                    self.y+=1
-                    level.levelPosy = self.y
-                    self.touchGround=False
-                    self.kTime = 0
-                else:
-                    self.y-=0.1
-                    level.levelPosy = self.y
-                    self.touchGround = level.checkCollision(self.charRect)
-                    self.kTime = defaultKTime
-                    self.stomp = False
-                    self.jumpsLeft = 2
+        # if not level.checkCollision(self.charRect):
+        #     self.yVel+=self.gravForce*deltaTime
+        #     self.decelSpeed = self.airDecelSpeed
+        # elif level.checkCollision(self.charRect):
+        #     self.yVel = 0
+        #     self.jumpsLeft = 1 
+        #     self.touchGround = True
+        #     self.decelSpeed = self.groundDecelSpeed
+        #     while level.checkCollision(self.charRect):
+        #         self.y -= 1
+        #         level.levelPosy = self.y
 
-
-            if semiLevel.checkCollision(self.charRect):
-                level.levelPosy-=int(self.yVel)+1
-                if not semiLevel.checkCollision(self.charRect):
-                    level.levelPosy+=1
-                    player.decelSpeed = 0.2
-                    self.yVel = 0
-                    self.touchGround = True
-                    self.stomp = False
-                    touchSemi = self.semied
-                    self.semied = True
-                    while not touchSemi:
-                        level.levelPosy+=1
-                        touchSemi = semiLevel.checkCollision(self.charRect)
-                        self.kTime = defaultKTime
-                        self.jumpsLeft = 2
-                else:
-                    level.levelPosy+=int(self.yVel)+1
-                    if self.semied:
-                        self.kTime = defaultKTime
-                    self.semied = False
-                level.levelPosy-=1
-                self.y = level.levelPosy
-            elif self.semied and not inputs.inputEvent("Jump"):
-                self.kTime = defaultKTime
-                self.semied = False
-            elif self.semied:
-                self.semied = False
-
-
+        
+        # self.yVel += self.gravForce * deltaTime
+        # if self.yVel > self.terminalVelocity: self.yVel = self.terminalVelocity
+        # self.y += self.yVel * deltaTime + (self.gravForce * 0.5) * (deltaTime * deltaTime)
+        
+        # level.levelPosy = self.y
+        
+        
+        
+        
 
         level.checkCollision(self.charRect, True, [2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 23])
         
@@ -584,7 +564,7 @@ class Player:
             if self.yVel > -3:
                 self.yVel = -3
         elif self.superBoostCoolDown>0:
-            self.superBoostCoolDown-=1
+            self.superBoostCoolDown-=deltaTime
             ui.getElementByTag("boostBar").colour = RED
             ui.getElementByTag("boostBar").updateSurface()
             
@@ -640,12 +620,13 @@ class Player:
                 
     def jump(self):
         level.levelPosy+=1
-        if (self.touchGround or self.kTime>0) and self.jumpsLeft > 0:
+        debugLog.append(DebugLogText(str(self.touchGround)))
+        if (self.touchGround or self.kTime>0):
             self.executeJump()
-        elif self.homeTo == (0,0):
-            if level.checkCollision(self.homingRange, False, [9]):
-                self.xVel = 0
-                self.yVel = 0
+        # elif self.homeTo == (0,0):
+        #     if level.checkCollision(self.homingRange, False, [9]):
+        #         self.xVel = 0
+        #         self.yVel = 0
         level.levelPosy-=1
 
     def animate(self):
@@ -1444,9 +1425,9 @@ def redrawScreen():
         log.draw(y)
     if(debug > 0):
         debugUi.getElementByTag("FPSText").updateText("FPS: " + str(int(clock.get_fps())))
+        debugUi.getElementByTag("y").updateText("YVEL: " + str(player.yVel))
         if(debug > 1):
             fullDebugUi.getElementByTag("x").updateText("X: " + str(level.levelPosx))
-            fullDebugUi.getElementByTag("y").updateText("Y: " + str(level.levelPosy))
             fullDebugUi.getElementByTag("ctiles").updateText("Collision Tiles: " + str(collisionTiles))
             fullDebugUi.getElementByTag("stomp").updateText("Stomp: " + str(player.stomp))
             fullDebugUi.getElementByTag("dtime").updateText("DeltaTime: " + str(deltaTime))
@@ -1605,16 +1586,22 @@ debugUi.getElementByTag("FPSText").setBG((255,255,255))
 fullDebugUi = UICanvas()
 fullDebugUi.addElement(UIText((0,20), "x", "X:", 20, (0,0,0), 0))
 fullDebugUi.getElementByTag("x").setBG((255,255,255))
-fullDebugUi.addElement(UIText((0,40), "y", "Y:", 20, (0,0,0), 0))
-fullDebugUi.getElementByTag("y").setBG((255,255,255))
+
+debugUi.addElement(UIText((0,40), "y", "Y:", 20, (0,0,0), 0))
+debugUi.getElementByTag("y").setBG((255,255,255))
+
 fullDebugUi.addElement(UIText((0,60), "ctiles", "Collision Tiles:", 20, (0,0,0), 0))
 fullDebugUi.getElementByTag("ctiles").setBG((255,255,255))
+
 fullDebugUi.addElement(UIText((0,80), "stomp", "Stomp:", 20, (0,0,0), 0))
 fullDebugUi.getElementByTag("stomp").setBG((255,255,255))
+
 fullDebugUi.addElement(UIText((0,100), "dtime", "DeltaTime:", 20, (0,0,0), 0))
 fullDebugUi.getElementByTag("dtime").setBG((255,255,255))
+
 fullDebugUi.addElement(UIText((0,120), "speed", "Speed:", 20, (0,0,0), 0))
 fullDebugUi.getElementByTag("speed").setBG((255,255,255))
+
 fullDebugUi.addElement(UIText((0,160), "tframes", "Target Frames:", 20, (0,0,0), 0))
 fullDebugUi.getElementByTag("tframes").setBG((255,255,255))
 
@@ -1642,6 +1629,8 @@ debug = 1
 debugHeld = False
 
 targetFrames = 60
+
+prevTime = time.time()
 
 run = True
 # Main game loop
@@ -1806,7 +1795,11 @@ while run:
     #redraw win
     redrawScreen()
     # Set the framerate
-    deltaTime = clock.tick(targetFrames)* 0.001 * 60
+    clock.tick(targetFrames)
+    now = time.time()
+    deltaTime = (now-prevTime)*60
+    if deltaTime > 6: deltaTime = 6
+    prevTime = now
     #deltaTime -= 0.6
 
     

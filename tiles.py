@@ -183,7 +183,7 @@ class Tile:
             collided = playerCollideOutcome if playerCollideOutcome != None else collided
             # if not self.popped:
             #     self.player.homeTo = (0,0)
-            self.player.canHomingAttck = True
+            self.player.canHomingAttack = True
                 
                 
             if self.tileID == 11:
