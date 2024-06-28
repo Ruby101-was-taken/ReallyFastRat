@@ -340,6 +340,7 @@ class SpringTile(StaticTile):
         return super().checkCollision(collider)
     
     def playerCollision(self, collider):
+        self.player.bounce = True
         self.player.yVel = -self.power
         self.player.xVel = 0
         

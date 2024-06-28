@@ -2,7 +2,9 @@ import cx_Freeze
 
 executables = [cx_Freeze.Executable("Platforme.py", icon="icon.ico", base = "Win32GUI")]
 
-includedFiles=["player.png", "icon.png", "logo/", "objects/", "levels/", "player/", "tilemap/", "tilemap.png", "font.ttf", "sound/", "extraControllers.py"]
+includedFiles=["player.png", "icon.png", "tilemap.png", "font.ttf",
+               "logo/", "objects/", "levels/", "player/", "tilemap/", "sound/", "backgrounds/",
+               "extraControllers.py", "colours.py", "jsonParse.py", "resources.py", "sign.py", "tiles.py"]
 
 packages=["os", "pygame", "csv", "random", "math"]
 

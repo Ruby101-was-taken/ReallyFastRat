@@ -15,7 +15,14 @@ def reloadPlayerImages():
         pygame.image.load("player/jump2.png").convert_alpha(),
         pygame.image.load("player/run0.png").convert_alpha(),
         pygame.image.load("player/run1.png").convert_alpha(),
-        pygame.image.load("player/run2.png").convert_alpha()
+        pygame.image.load("player/run2.png").convert_alpha(),
+        pygame.image.load("player/climbHold.png").convert_alpha(),
+        pygame.image.load("player/climbUp1.png").convert_alpha(),
+        pygame.image.load("player/climbUp2.png").convert_alpha(),
+        pygame.image.load("player/bounceFront.png").convert_alpha(),
+        pygame.image.load("player/bounceRight.png").convert_alpha(),
+        pygame.image.load("player/bounceBack.png").convert_alpha(),
+        pygame.image.load("player/bounceLeft.png").convert_alpha(),
     ]
     return playerImages
 
@@ -27,6 +34,28 @@ slope = pygame.image.load("objects/slope.png").convert_alpha()
 tile_width = 20
 tile_height = 20  # Replace with your tile height
 
+
+uiAnimations = {
+    "bluePrints": [
+        pygame.image.load("ui/playerBluePrints/playerBluePrints00.png").convert_alpha(),
+        pygame.image.load("ui/playerBluePrints/playerBluePrints01.png").convert_alpha(),
+        pygame.image.load("ui/playerBluePrints/playerBluePrints02.png").convert_alpha(),
+        pygame.image.load("ui/playerBluePrints/playerBluePrints03.png").convert_alpha(),
+        pygame.image.load("ui/playerBluePrints/playerBluePrints04.png").convert_alpha(),
+        pygame.image.load("ui/playerBluePrints/playerBluePrints05.png").convert_alpha(),
+        pygame.image.load("ui/playerBluePrints/playerBluePrints06.png").convert_alpha(),
+        pygame.image.load("ui/playerBluePrints/playerBluePrints07.png").convert_alpha(),
+        pygame.image.load("ui/playerBluePrints/playerBluePrints08.png").convert_alpha(),
+        pygame.image.load("ui/playerBluePrints/playerBluePrints09.png").convert_alpha(),
+        pygame.image.load("ui/playerBluePrints/playerBluePrints10.png").convert_alpha()
+        ],
+    
+    "bgDetail": [
+        pygame.image.load("ui/settings/noDetail.png").convert_alpha(),
+        pygame.image.load("ui/settings/minDetail.png").convert_alpha(),
+        pygame.image.load("ui/settings/fullDetail.png").convert_alpha()
+    ]
+}
 
 
 def sliceTilemap(sheet, w, h):
