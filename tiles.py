@@ -38,6 +38,8 @@ tileImages = TileImages()
 21 = BG Tile
 21 = BG Tile
 22 - Moving platform
+23 - End Goal
+24 - Death Plane
 
 """
 
@@ -88,6 +90,8 @@ def createTile(x, y, tileID, image=pygame.Surface((0, 0))):
             return MovingPlatform(x,y,tileID, (0,0))
         case 23:
             return EndGoal(x,y,tileID)
+        case 24:
+            return DeathPlane(x,y,tileID)
         case _:
             return StaticTile(x,y,tileID)
 #
@@ -330,6 +334,11 @@ class SpikeTile(StaticTile):
         
     def playerCollision(self, collider):
         self.player.die()
+        
+    
+class DeathPlane(SpikeTile):
+    def __init__(self, x, y, tileID):
+        super().__init__(x, y, tileID)
     
 class SpringTile(StaticTile):
     def __init__(self, x, y, tileID, power, image=pygame.Surface((0, 0))):
@@ -452,6 +461,7 @@ class Checkpoint(StaticTile):
     
     def reload(self):
         self.image = tileImages.objectImages[6]
+        self.levelDraw()
         return super().reload()
     
     

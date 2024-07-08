@@ -26,8 +26,8 @@ random.seed(100)
 useFullScreen = False # change to load on fullscreen or not
 
 # Set win dimensions
-w = 960
-h = 600
+w = 1280
+h = 720
 
 
 tileSize = 20  
@@ -45,9 +45,9 @@ pygame.joystick.init()
 
 # Set up the display
 if useFullScreen:
-    window = pygame.display.set_mode((w, h), pygame.FULLSCREEN | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+    win = pygame.display.set_mode((w, h), pygame.FULLSCREEN | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
 else:
-    window = pygame.display.set_mode((w, h), pygame.RESIZABLE | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+    win = pygame.display.set_mode((w, h), pygame.RESIZABLE | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
     
     
     
@@ -66,12 +66,13 @@ class noJoystick:
         return (0,0)
 
 def reloadController():
-    global joystick, window
+    global joystick, win
     num_joysticks = pygame.joystick.get_count()
-
+    print(num_joysticks)
     if num_joysticks > 0:
         if num_joysticks == 1:
             joystick = pygame.joystick.Joystick(0)
+            print(joystick.get_name())
             joystick.rumble(1, 1, 1000)
         else:
             from extraControllers import getController
@@ -84,9 +85,9 @@ def reloadController():
         
     
     if useFullScreen:
-        window = pygame.display.set_mode((w, h), pygame.FULLSCREEN | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+        win = pygame.display.set_mode((w, h), pygame.FULLSCREEN | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
     else:
-        window = pygame.display.set_mode((w, h), pygame.RESIZABLE | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+        win = pygame.display.set_mode((w, h), pygame.RESIZABLE | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
         
 reloadController()
 
@@ -97,7 +98,6 @@ if joystick.get_init():
 
 
     
-win = pygame.Surface((w, h))
 pygame.display.set_caption("Really Fast Rat")
 pygame.display.set_icon(pygame.image.load('icon.png'))
 
@@ -111,7 +111,7 @@ logo=[pygame.image.load('logo/logosubless.png'), pygame.image.load('logo/logoSUB
 #             run = False
 #             quit()
 #         elif event.type == pygame.VIDEORESIZE:
-#             # This event is triggered when the window is resized
+#             # This event is triggered when the win is resized
 #             w, h = event.w, event.h
 #     if i<=100:
 #         win.blit(logo[0], (int(960/2)-168, int(600/2)-48))
@@ -125,7 +125,7 @@ logo=[pygame.image.load('logo/logosubless.png'), pygame.image.load('logo/logoSUB
 #         win.blit(logo[0], (int(960/2)-168, int(600/2)-48))
 #         win.blit(logo[1], (subLength, (subHeight*200 / 100)-subHeight))
     
-#     window.blit(pygame.transform.scale(win, (w, h)), (0,0)) 
+#     win.blit(pygame.transform.scale(win, (w, h)), (0,0)) 
 #     pygame.display.flip()
 
 
@@ -228,11 +228,32 @@ class GameManager:
         
         self.bgDetailLevels = ["None", "Min", "Max"]
         
-    def reset(self):
+        self.timer = 0
+        self.timeString = ""
+        
+    def update(self):
+        self.timer+=1
+        # Calculate total seconds
+        totalSeconds = self.timer // 60
+        
+        # Calculate minutes and remaining seconds
+        minutes = totalSeconds // 60
+        seconds = totalSeconds % 60
+        
+        # Calculate centiseconds
+        centiseconds = (self.timer % 60) * 100 // 60
+        
+        # Format as MM:SS:ss
+        self.timeString = f"{minutes:02}:{seconds:02}.{centiseconds:02}"
+        
+        ui.getElementByTag("timer").updateText(self.timeString)
+        
+    def reset(self, resetTime=True):
         self.speed = 3
         self.collectables = 0
         self.rareCollectables = 0
         self.pause = False
+        if resetTime: self.timer = 0
     def togglePause(self):
         self.pause = not self.pause
         uiPause.show = self.pause
@@ -385,10 +406,11 @@ class Player:
         
         self.bounce = False
     def die(self):
-        self.reset()
-    def reset(self, resetPlayerPos=True):
+        self.reset(False)
+        level.reloadTiles()
+    def reset(self, resetTime=True):
         self.resetFrame = True
-        gameManager.reset()
+        gameManager.reset(resetTime)
         self.xVel = 0
         self.yVel = 0
         self.homeTo = (0,0)
@@ -615,7 +637,7 @@ class Player:
 
 
 
-        level.checkCollision(self.charRect, True, [2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 23])
+        level.checkCollision(self.charRect, True, [2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 23, 24])
         
         global stompHeld
         if not self.climbedLastFrame and self.kTime < 8:
@@ -820,11 +842,11 @@ class Player:
         
         
         # Calculate the blit position
-        blitPosX = self.charRect.x - 5 if (level.levelPosx > 475 and level.levelPosx - 475 + w < level.levelVis.get_width()) else (level.levelPosx-5 if level.levelPosx - 475 + w < level.levelVis.get_width() else w - (level.levelVis.get_width() - level.levelPosx)-5)
-        blitPosY = self.charRect.y if level.levelPosy > 475 and level.levelPosy - 475 + h < level.levelVis.get_height() else (level.levelPosy - 175 if level.levelPosy - 475 + h < level.levelVis.get_height() else h - (level.levelVis.get_height() - level.levelPosy)-175)
+        blitPosX = 630 if (level.levelPosx > 635 and level.levelPosx - 635 + w < level.levelVis.get_width()) else (level.levelPosx-5 if level.levelPosx - 635 + w < level.levelVis.get_width() else w - (level.levelVis.get_width() - level.levelPosx)-5)
+        blitPosY = 345 if level.levelPosy > 520 and level.levelPosy - 520 + h < level.levelVis.get_height() else (level.levelPosy - 175 if level.levelPosy - 520 + h < level.levelVis.get_height() else h - (level.levelVis.get_height() - level.levelPosy)-175)
 
         # Blit the animated character onto the screen
-        win.blit(self.animate(), (blitPosX, blitPosY))
+        win.blit(self.animate(), (blitPosX, blitPosY+1))
 
 
         for y, powerUp in enumerate(self.powerUps):
@@ -899,6 +921,9 @@ class Level:
         
         self.lvlxlast = 0
         self.lvlylast = 0
+        
+        self.yOffSet = 0
+        
         
     def moveLevel(self, lvl, world=0):
         global worldX, worldY
@@ -1078,7 +1103,7 @@ class Level:
                         if loadingText !=  f"{str(int((tilesLoaded/len(self.levels))*100))}%":
                             win.fill(BLACK)
                             win.blit(bigFont.render(f"Loading Level: {str(int((tilesLoaded/len(self.levels))*100))}%", True, WHITE), (0,90))
-                            window.blit(win, (0,0))
+                            win.blit(win, (0,0))
                             pygame.display.flip()
                             loadingText = f"{str(int((tilesLoaded/len(self.levels))*100))}%"
                         for event in pygame.event.get():
@@ -1146,11 +1171,14 @@ class Level:
                 
         for tile in self.levels:
             tile.start()
-        
-        for tile in self.levels:
             tile.levelDraw()
-        for tile in self.levels:
-            tile.checkDelete()
+        deletedTiles = 100
+        while deletedTiles>0:
+            deletedTiles = 0
+            for tile in self.levels:
+                if tile.toBeDeleted:
+                    deletedTiles+=1
+                tile.checkDelete()
             
         self.trimLevel(True)
         audioPlayer.playMusic(MusicSource(f"{self.levelInfo['music']}"), s.settings["musicVolume"]/100)
@@ -1288,6 +1316,7 @@ class Level:
 
     def draw(self):
         
+        
         bgDetail = s.settings["backgroundDetail"]
         
         # Blit background
@@ -1295,13 +1324,13 @@ class Level:
             win.blit(self.bg, (0, 0))
 
         # Calculate sub-surface position
-        subPosX = max(0, min(self.levelVis.get_width() - w, self.levelPosx - 475))
-        subPosY = max(0, min(self.levelVis.get_height() - h, self.levelPosy - 475))
+        subPosX = max(0, min(self.levelVis.get_width() - w, self.levelPosx - 635))
+        subPosY = max(0, min(self.levelVis.get_height() - h, self.levelPosy - 520)) # I'm gonna keep it a buck fifty, I have no idea why 520 works here
 
         if bgDetail == 2:
             # Calculate layer positions
-            layerOnePos = ((-subPosX / 4) % 960) - 960
-            layerTwoPos = ((-subPosX / 2) % 960) - 960
+            layerOnePos = ((-subPosX / 4) % 1280) - 1280
+            layerTwoPos = ((-subPosX / 2) % 1280) - 1280
 
             # Blit parallax layers
             win.blit(self.paraLayer1, (layerOnePos, 0))
@@ -1377,22 +1406,20 @@ class DebugLogText:
 
 class UICanvas:
     def __init__(self) -> None:
-        self.UIComponents = []
+        self.UIComponents = {}
         self.show = True
     def addElement(self, element):
-        self.UIComponents.append(element)
+        self.UIComponents[element.tag] = element
     def getElementByTag(self, tag:str):
-        for element in self.UIComponents:
-            if element.tag == tag:
-                return element
-    def draw(self, window=win):
+        return self.UIComponents[tag]
+    def draw(self, win=win):
         if self.show:
             for element in self.UIComponents:
-                element.draw(window)
+                self.UIComponents[element].draw(win)
     def update(self):
         if self.show:
             for element in self.UIComponents:
-                element.update()
+                self.UIComponents[element].update()
 
 class UIElement:
     def __init__(self, screenPos, tag:str, hasShadow=False, shadowOffset=0, shadowColour=(255,255,255)) -> None:
@@ -1560,7 +1587,6 @@ def getIntPercentage(num, full):
 
 def redrawScreen():
     global win
-    win = pygame.Surface((w, h))
     if not gameManager.inGame:
         win.fill(WHITE)
         
@@ -1585,6 +1611,7 @@ def redrawScreen():
             fullDebugUi.getElementByTag("stomp").updateText("Stomp: " + str(player.stomp))
             fullDebugUi.getElementByTag("dtime").updateText("DeltaTime: " + str(deltaTime))
             fullDebugUi.getElementByTag("tframes").updateText("Target Frames: " + str(targetFrames))
+            fullDebugUi.getElementByTag("tiles").updateText("Tiles: " + str(len(level.levels)))
             
             fullDebugUi.draw(win)
         
@@ -1601,8 +1628,8 @@ def redrawScreen():
         uiMainMenuSettings.draw(win)
         uiPauseSettings.draw(win)
 
-    window.blit(win, (0,0))    
-    # window.blit(pygame.transform.scale(win, (w, h)), (0,0))    
+    # win.blit(win, (0,0))
+    # win.blit(pygame.transform.scale(win, (w, h)), (0,0))    
     pygame.display.flip()
     
 
@@ -1634,6 +1661,8 @@ class InputSystem:
         self.scrolly = 0
         
         self.heldEvents = []
+        
+        self.controlType = -1 # -1=unknown 0=key 1=controller
     def setKey(self, keyEnum, inputName:str):
         if inputName in self.inputDict:
             self.inputDict[inputName].append(keyEnum)
@@ -1652,19 +1681,25 @@ class InputSystem:
     def inputEvent(self, inputName:str, canHold=True) -> bool:
         inputted = False
         careForHold = (not inputName in self.heldEvents or canHold)
-        if inputName in self.inputDict and careForHold:
-            for keyEnum in self.inputDict[inputName]:
-                if keys[keyEnum]:
-                    inputted = True
-        if joystick.get_init():
-            if not inputted and inputName in self.controllerDict and careForHold:
-                for button in self.controllerDict[inputName]:
-                    if joystick.get_button(button):
+        if self.controlType == -1 or self.controlType == 0:
+            if inputName in self.inputDict and careForHold:
+                for keyEnum in self.inputDict[inputName]:
+                    if keys[keyEnum]:
                         inputted = True
-            if not inputted and inputName in self.axisDict and careForHold:
-                for axis in self.axisDict[inputName]:
-                    if joystick.get_axis(axis[0]) > axis[1][0] and joystick.get_axis(axis[0]) < axis[1][1]:
-                        inputted = True
+                        self.controlType = 0
+                 
+        if self.controlType == -1 or self.controlType == 1:   
+            if joystick.get_init():
+                if not inputted and inputName in self.controllerDict and careForHold:
+                    for button in self.controllerDict[inputName]:
+                        if joystick.get_button(button):
+                            inputted = True
+                            self.controlType = 1
+                if not inputted and inputName in self.axisDict and careForHold:
+                    for axis in self.axisDict[inputName]:
+                        if joystick.get_axis(axis[0]) > axis[1][0] and joystick.get_axis(axis[0]) < axis[1][1]:
+                            inputted = True
+                            self.controlType = 1
                         
         if inputted and not canHold:
             self.heldEvents.append(inputName)
@@ -1675,7 +1710,7 @@ class InputSystem:
             if self.inputEvent(event, True):
                 heldEventAfter.append(event)
         self.heldEvents = copy.copy(heldEventAfter)
-                
+        self.controlType = -1
     def rumble(self, lf, hf, dur):
         if joystick.get_init():
             joystick.rumble(lf, hf, dur)
@@ -1737,7 +1772,7 @@ slashHeld = False
 
 
 debugUi = UICanvas()
-debugUi.addElement(UIText((0,0), "FPSText", "FPS:", 20, (0,0,0), 0))
+debugUi.addElement(UIText((0,h-45), "FPSText", "FPS:", 20, (0,0,0), 0))
 debugUi.getElementByTag("FPSText").setBG((255,255,255))
 
 
@@ -1756,11 +1791,15 @@ fullDebugUi.addElement(UIText((0,120), "speed", "Speed:", 20, (0,0,0), 0))
 fullDebugUi.getElementByTag("speed").setBG((255,255,255))
 fullDebugUi.addElement(UIText((0,160), "tframes", "Target Frames:", 20, (0,0,0), 0))
 fullDebugUi.getElementByTag("tframes").setBG((255,255,255))
+fullDebugUi.addElement(UIText((0,180), "tiles", "Tiles:", 20, (0,0,0), 0))
+fullDebugUi.getElementByTag("tiles").setBG((255,255,255))
 
 
 ui = UICanvas()
 ui.show = False
-ui.addElement(UIRect((0, 580), "boostBar", 100, 20, YELLOW))
+ui.addElement(UIRect((0, h-20), "boostBar", 100, 20, YELLOW))
+ui.addElement(UIText((589,20), "timer", "00:00.00", 35, (0,0,0), 0))
+ui.getElementByTag("timer").setBG((255,255,255, 150))
 
 
 uiPause = UICanvas()
@@ -1814,6 +1853,7 @@ targetFrames = 60
 run = True
 # Main game loop
 while run:
+    gameManager.update()
     scrolly = 0
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -1822,8 +1862,10 @@ while run:
             quit()
         elif event.type == pygame.MOUSEWHEEL:
             scrolly = event.y
+            level.yOffSet+=scrolly
+            print(level.yOffSet)
         elif event.type == pygame.VIDEORESIZE:
-            # This event is triggered when the window is resized
+            # This event is triggered when the win is resized
             #w, h = event.w, event.h
             pass
     
@@ -1889,7 +1931,7 @@ while run:
         if inputs.inputEvent("Restart1") and inputs.inputEvent("Restart2"):
             player.lastSpawn = gameManager.ogSpawn
             level.reloadTiles()
-            player.die()
+            player.reset(True)
 
         if keys[pygame.K_r]:
             if keys[pygame.K_LCTRL]:
@@ -1972,9 +2014,9 @@ while run:
         useFullScreen = not useFullScreen
         # Set up the display
         if useFullScreen:
-            window = pygame.display.set_mode((w, h), pygame.FULLSCREEN | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+            win = pygame.display.set_mode((w, h), pygame.FULLSCREEN | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
         else:
-            window = pygame.display.set_mode((w, h), pygame.RESIZABLE | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+            win = pygame.display.set_mode((w, h), pygame.RESIZABLE | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
 
     
     if inputs.inputEvent("frateup", False):
