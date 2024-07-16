@@ -1,6 +1,7 @@
 import pygame
 from resources import *
 from colours import *
+from entity import *
 
 from sign import sign
 
@@ -92,6 +93,8 @@ def createTile(x, y, tileID, image=pygame.Surface((0, 0))):
             return EndGoal(x,y,tileID)
         case 24:
             return DeathPlane(x,y,tileID)
+        case 25:
+            return EvilRatSpawner(x,y,tileID)
         case _:
             return StaticTile(x,y,tileID)
 #
@@ -352,6 +355,7 @@ class SpringTile(StaticTile):
         self.player.bounce = True
         self.player.yVel = -self.power
         self.player.xVel = 0
+        self.player.stomp = False
         
 class BoosterTile(StaticTile):
     def __init__(self, x, y, tileID, power, image=pygame.Surface((0, 0))):
@@ -366,6 +370,7 @@ class BoosterTile(StaticTile):
             self.player.yVel = 0
         self.player.maxBoost = 20
         self.player.xVel = self.power
+        self.player.stomp = False
         
 class Slime(StaticTile):
     def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
@@ -509,10 +514,38 @@ class EndGoal(StaticTile):
     def playerCollision(self, collider):
         self.level.moveLevel(1, 1)
             
+  
+class Spawner(StaticTile):
+    def __init__(self, x, y, tileID, entityType, w, h, args = {}, entityImage = pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID)
+        self.entityType  = entityType
+        self.w = w
+        self.h = h
+        self.entityImage = entityImage
+        self.args = args
+    def start(self) -> None:
+        return super().start()
+    
+    def spawn(self):
+        self.chunk.entities.append(self.entityType(self.x, self.y+177, self.w, self.h, self.entityImage, self.args))
+        self.chunk.entities[-1].level = self.level
+        self.chunk.entities[-1].gameManager = self.gameManager
         
+
+class InstantSpawner(Spawner):
+    def __init__(self, x, y, tileID, entityType, w, h, args={}, entityImage=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, entityType, w, h, args, entityImage)
         
+    def start(self) -> None:
+        self.spawn()
+        self.toBeDeleted = True
+        return super().start()
+
+class EvilRatSpawner(InstantSpawner):
+    def __init__(self, x, y, tileID):
+        super().__init__(x, y, tileID, EvilRat, 20, 30, {}, entityImages["evilRat"][0])
         
-        
+
 class PowerUp:
     def __init__(self, powerType, time = 120):
         self.type = powerType

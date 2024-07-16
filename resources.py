@@ -34,6 +34,12 @@ slope = pygame.image.load("objects/slope.png").convert_alpha()
 tile_width = 20
 tile_height = 20  # Replace with your tile height
 
+entityImages ={
+    "evilRat" : [
+        pygame.image.load("entities/enemy/evilRat/evilRat.png").convert_alpha()
+    ]
+}
+
 
 uiAnimations = {
     "bluePrints": [
