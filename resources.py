@@ -1,5 +1,6 @@
 import pygame
 
+from audioSource import AudioSource
 
 
 #LOAD IMAGES 
@@ -40,6 +41,11 @@ entityImages ={
     ]
 }
 
+sounds = {
+    "click": AudioSource("ui/click.wav"),
+    "menuChange": AudioSource("ui/menuChange.wav"),
+    "rat": AudioSource("rat/rat.mp3")
+}
 
 uiAnimations = {
     "bluePrints": [
@@ -60,7 +66,24 @@ uiAnimations = {
         pygame.image.load("ui/settings/noDetail.png").convert_alpha(),
         pygame.image.load("ui/settings/minDetail.png").convert_alpha(),
         pygame.image.load("ui/settings/fullDetail.png").convert_alpha()
-    ]
+    ],
+    
+    "controlLayouts": {
+        "xbox": pygame.image.load("ui/controls/controller/xbox.png").convert_alpha()
+    }, 
+    
+    "rankings": {
+        "e": pygame.image.load("ui/results/e.png").convert_alpha(),
+        "d": pygame.transform.scale(pygame.image.load("ui/results/d.png"), (321, 321)).convert_alpha(),
+        "c": pygame.transform.scale(pygame.image.load("ui/results/c.png"), (321, 321)).convert_alpha(),
+        "b": pygame.transform.scale(pygame.image.load("ui/results/b.png"), (321, 321)).convert_alpha(),
+        "a": pygame.transform.scale(pygame.image.load("ui/results/a.png"), (321, 321)).convert_alpha(),
+        "s": pygame.transform.scale(pygame.image.load("ui/results/s.png"), (321, 321)).convert_alpha()
+    },
+    
+    "levelName": {
+        "bg": pygame.image.load("ui/levelName/bg.png").convert_alpha()
+    }
 }
 
 

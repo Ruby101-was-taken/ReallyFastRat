@@ -1,6 +1,6 @@
 {
     "name": "First",
     "tileMapType": "Test",
-    "music": "first.mp3",
+    "music": "first.wav",
     "bgType" : "test"
 }

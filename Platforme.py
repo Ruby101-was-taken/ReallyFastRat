@@ -1,6 +1,6 @@
 
 
-worldX, worldY = 1,1
+worldX, worldY = 0,0
 
 collisionTiles = 0
 
@@ -11,8 +11,11 @@ import threading
 
 from animation import Animation
 
+from audioSource import AudioSource
+
 from colours import *
 
+from ratFacts import facts
 
 from jsonParse import *
 from sign import *
@@ -27,7 +30,6 @@ from profiler import *
 
 os.system("cls")
 
-random.seed(100)
 
 useFullScreen = False # change to load on fullscreen or not
 
@@ -107,32 +109,8 @@ if joystick.get_init():
 pygame.display.set_caption("Really Fast Rat")
 pygame.display.set_icon(pygame.image.load('icon.png'))
 
-logo=[pygame.image.load('logo/logosubless.png'), pygame.image.load('logo/logoSUB.png'), pygame.image.load('logo/logoBGless.png')]
+logo=[pygame.image.load('logo/logosubless.png'), pygame.image.load('logo/logoSUB.png'), pygame.image.load('logo/logoDecorSmol.png')]
 
-# for i in range(500):
-#     win.fill(LOGORED)
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             pygame.quit()
-#             run = False
-#             quit()
-#         elif event.type == pygame.VIDEORESIZE:
-#             # This event is triggered when the win is resized
-#             w, h = event.w, event.h
-#     if i<=100:
-#         win.blit(logo[0], (int(960/2)-168, int(600/2)-48))
-        
-#     elif i<200:
-#         subLength = int(960/2)-168+40
-#         subHeight = int(600/2)-40
-#         win.blit(logo[0], (int(960/2)-168, int(600/2)-48))
-#         win.blit(logo[1], (subLength, (subHeight*i / 100)-subHeight))
-#     elif i<500:
-#         win.blit(logo[0], (int(960/2)-168, int(600/2)-48))
-#         win.blit(logo[1], (subLength, (subHeight*200 / 100)-subHeight))
-    
-#     win.blit(pygame.transform.scale(win, (w, h)), (0,0)) 
-#     pygame.display.flip()
 
 
 
@@ -144,17 +122,46 @@ smallFont = pygame.font.SysFont("arial", 20)
 smallerFont = pygame.font.SysFont("arial", 15)
 bigFont = pygame.font.SysFont("arial", 45)
 
+loadingFactFont = pygame.font.SysFont("arial", 30)
+
 # Set up timer
 clock = pygame.time.Clock()
 
 win = pygame.Surface((w, h))
 
-#load image text
-win.blit(smallFont.render(loadingTexts[0], True, (255, 255, 255)), (0,200+(0*20)))
-pygame.display.flip()
+logoPos = 0
+logoSubPos = pygame.math.Vector2()
+logoSubPos.x = -401
+logoSubPos.y = h+146
 
+logoScreen = True
+delay = 60
+while logoScreen:
+    win.fill(LOGORED)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            run = False
+            quit()
+        elif event.type == pygame.VIDEORESIZE:
+            # This event is triggered when the win is resized
+            w, h = event.w, event.h
+    delay-=1
+    if delay <= 0:
+        if logoPos < 473:
+            logoPos = pygame.math.lerp(logoPos, 473, 0.05)
+        win.blit(logo[0], (logoPos, 313))
+    if delay <= -60:
+        if logoSubPos.x < 511 and logoSubPos.y > 318:
+            logoSubPos.x = pygame.math.lerp(logoSubPos.x, 511, 0.05)
+            logoSubPos.y = pygame.math.lerp(logoSubPos.y, 318, 0.045)
+        win.blit(logo[1], logoSubPos)
+        
+    logoScreen = delay > -400
+    window.blit(win, (0,0)) 
+    pygame.display.flip()
 
-
+del delay, logoScreen, logoPos, logoSubPos
 
 
 def resliceImages(tileType:str):
@@ -239,22 +246,28 @@ class GameManager:
         self.timer = 0
         self.timeString = ""
         
+        self.timerOn = False
+        
     def update(self):
-        self.timer+=1
+        if self.timerOn:
+            self.timer+=1
         # Calculate total seconds
         totalSeconds = self.timer // 60
+       
+        self.timeString = self.intToTime(totalSeconds)
+        ui.getElementByTag("timer").updateText(self.timeString)
         
+    def intToTime(self, num, includeCenti = True) -> str: 
         # Calculate minutes and remaining seconds
-        minutes = totalSeconds // 60
-        seconds = totalSeconds % 60
+        minutes = num // 60
+        seconds = num % 60
         
         # Calculate centiseconds
-        centiseconds = (self.timer % 60) * 100 // 60
+        if includeCenti: centiseconds = (self.timer % 60) * 100 // 60
+        else: centiseconds = 0
         
         # Format as MM:SS:ss
-        self.timeString = f"{minutes:02}:{seconds:02}.{centiseconds:02}"
-        
-        ui.getElementByTag("timer").updateText(self.timeString)
+        return f"{minutes:02}:{seconds:02}.{centiseconds:02}"
         
         
     def reset(self, resetTime=True):
@@ -270,13 +283,15 @@ class GameManager:
         uiPauseButtons.show = self.pause
         if self.pause:
             uiPause.getElementByTag("WorldText").updateText(f"{worldX} - {worldY}")
-            
-        self.closeSettingPause()
+        else:
+            if uiSettings.show:
+                self.closeSettingPause()
     def toggleMainMenu(self):
         self.mainMenu = not self.mainMenu
         uiMainMenu.show = self.mainMenu
     def toggleLevelSelect(self):
         audioPlayer.playSound(sounds["menuChange"])
+        audioPlayer.playSound(sounds["rat"])
         self.toggleMainMenu()
         self.inGame = True
         ui.show = True
@@ -289,11 +304,11 @@ class GameManager:
         
         
         
-        pygame.mixer_music.set_volume(0)
         
     def closeSettings(self):
         self.settingsMenu = False
         uiSettings.show = False
+        uiSettings.resetScroll()
         
         debugLog.append(DebugLogText("Settings Saved", 60))
         
@@ -303,16 +318,20 @@ class GameManager:
     def openSettingsMainMenu(self):
         self.toggleMainMenu()
         uiMainMenuSettings.show = True
+        uiMainMenuSettingsScroll.show = True
         
-        audioPlayer.playMusic(MusicSource(f"menu.mp3"), s.settings["musicVolume"]/100)
         
         self.openSettings()
         
     def closeSettingMainMenu(self):
         self.toggleMainMenu()
         uiMainMenuSettings.show = False
+        uiMainMenuSettingsScroll.show = False
+        uiMainMenuSettingsScroll.resetScroll()
         
-        audioPlayer.playMusic(MusicSource(f"title.mp3"), s.settings["musicVolume"]/100)
+        audioPlayer.playMusic(MusicSource(f"title.wav"), s.settings["musicVolume"]/100)
+        audioPlayer.playSound(sounds["menuChange"])
+        audioPlayer.playSound(sounds["rat"])
         
         self.closeSettings()
         
@@ -320,13 +339,18 @@ class GameManager:
         uiPauseSettings.show = True
         uiPauseButtons.show = False
         
-        audioPlayer.playSound(sounds["menuChange"])
         
         self.openSettings()
         
     def closeSettingPause(self):
         uiPauseSettings.show = False
         uiPauseButtons.show = self.pause
+        audioPlayer.playSound(sounds["menuChange"])
+        audioPlayer.playSound(sounds["rat"])
+        
+        uiControls.show = False
+        uiControlsPause.show = False
+        uiControlsXbox.show = False
         
         self.closeSettings()
         
@@ -334,7 +358,6 @@ class GameManager:
         uiSettings.getElementByTag("musicVolume").updateText(f"{s.settings['musicVolume']}%")
         audioPlayer.music.set_volume(s.settings['musicVolume'] /100)
         
-        audioPlayer.playSound(sounds["click"])
                 
     def increaseMusicVolume(self):
         s.increaseMusicVolume()
@@ -344,10 +367,64 @@ class GameManager:
         self.changeMusicVolume()
         
     def toggleBG(self):
-        audioPlayer.playSound(sounds["click"])
         s.toggleBG()
         uiSettings.getElementByTag("bgDetail").updateText(f"{self.bgDetailLevels[s.settings['backgroundDetail']]}")
-        uiMainMenuSettings.getElementByTag("bgDetailImg").changeImages([uiAnimations["bgDetail"][s.settings["backgroundDetail"]]])
+        
+        uiMainMenuSettingsScroll.getElementByTag("bgDetailImg").changeImages([uiAnimations["bgDetail"][s.settings["backgroundDetail"]]])
+        
+    def toggleDrawThread(self):
+        s.toggleDrawThread()
+        uiSettings.getElementByTag("threadText").updateText(f"{s.settings['drawOnThread']}")
+        
+    def showControls(self):
+        audioPlayer.playSound(sounds["menuChange"])
+        audioPlayer.playSound(sounds["rat"])
+        uiControls.show = True
+        uiSettings.show = False
+        uiControlsXbox.show = True
+    def hideControls(self):
+        audioPlayer.playSound(sounds["menuChange"])
+        audioPlayer.playSound(sounds["rat"])
+        uiControls.show = False
+        uiSettings.show = True
+        uiControlsXbox.show = False
+        
+    def showControlsMainMenu(self):
+        uiMainMenuSettings.show = False
+        uiMainMenuSettingsScroll.show = False
+        uiControlsMainMenu.show = True
+        
+        self.showControls()
+    def hideControlsMainMenu(self):
+        uiMainMenuSettings.show = True
+        uiMainMenuSettingsScroll.show = True
+        uiControlsMainMenu.show = False
+        
+        self.hideControls()
+        
+    def showControlsPauseMenu(self):
+        uiPauseSettings.show = False
+        uiControlsPause.show = True
+        
+        self.showControls()
+    def hideControlsPauseMenu(self):
+        uiPauseSettings.show = True
+        uiControlsPause.show = False
+        
+        self.hideControls()
+        
+    def nextLevel(self):
+        global worldX, worldY
+        worldX += 1
+        worldY += 1
+        
+        self.closeResults()
+        
+    def closeResults(self):
+        uiResults.show = False
+        ui.show = True
+        level.changeLevel(True, True)
+        
 
 
 class Player:
@@ -366,7 +443,8 @@ class Player:
         self.maxSpeed = gameManager.speed
         self.maxBoost = gameManager.speed*3
         self.defaultBoost = self.maxBoost
-        self.terminalVelocity = 17
+        self.terminalVelocityY = 17
+        self.terminalVelocityX = 40
         self.boostDirection = 0
         self.canBoost = True
         self.decelSpeed = 0.2
@@ -435,8 +513,8 @@ class Player:
         walled = False
         velSign = sign(self.xVel)
         
-        for i in range(int(abs(int(speed)*2)//20)):
-            self.x += sign(int(speed)) * 20
+        for i in range(int(abs(speed*2)//20)):
+            self.x += sign(speed) * 20
             
             level.levelPosx = self.x
             
@@ -446,7 +524,7 @@ class Player:
                 walled = True
         
         if abs(int(speed)*2)%20 > 0:
-            self.x += (int(speed)*2)%(20 * sign(int(speed)))
+            self.x += (int(speed)*2)%(20 * sign(speed))
             
             level.levelPosx = self.x
             
@@ -493,7 +571,7 @@ class Player:
                 self.x-= 1*velSign
                 level.levelPosx = self.x
                 
-            if (inputs.inputEvent("Jump", False)) and self.wallJumpDelay == 0:
+            if (inputs.inputEvent("Jump", False)) and self.wallJumpDelay == 0 and self.kTime == 0:
                 self.wallJumped = True
                 self.yVel = -10
                 self.xVel = 10*-velSign
@@ -532,41 +610,38 @@ class Player:
         
         maxSpeed = self.maxSpeed        
         maxBoost = self.maxBoost
-                
-        self.isRight = isRight
-        if isRight:
-            self.xVel += speed
-            if self.xVel > maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
-                self.xVel -= speed
-                if self.xVel > maxSpeed:
-                    self.xVel-=self.decelSpeed      
-            elif self.xVel > maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
-                self.xVel = maxBoost
-                if not self.canBoost:
+            
+        if not self.stomp:   
+            self.isRight = isRight
+            if isRight:
+                self.xVel += speed
+                if self.xVel > maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
                     self.xVel -= speed
                     if self.xVel > maxSpeed:
                         self.xVel-=self.decelSpeed      
-        elif not isRight:
-            self.xVel -= speed
-            if self.xVel < -maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
-                self.xVel += speed
-                if self.xVel < -maxSpeed:
-                    self.xVel+=self.decelSpeed      
-            elif self.xVel < -maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
-                self.xVel = -maxBoost
-                if not self.canBoost:
+                elif self.xVel > maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
+                    self.xVel -= speed*3
+                    if self.xVel > maxBoost:
+                        self.xVel-=self.decelSpeed      
+            elif not isRight:
+                self.xVel -= speed
+                if self.xVel < -maxSpeed and not (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
                     self.xVel += speed
                     if self.xVel < -maxSpeed:
                         self.xVel+=self.decelSpeed      
-        self.xVel = round(self.xVel,2)
-        if str(abs(self.xVel))[:3] == "0.1" or str(abs(self.xVel))[:3] == "0.0":
+                elif self.xVel < -maxBoost and (inputs.inputEvent("Boost") or self.homeTo!=(0,0)):
+                    self.xVel += speed*3
+                    if self.xVel < -maxBoost:
+                        self.xVel+=self.decelSpeed         
+            self.xVel = round(self.xVel,2)
+            if str(abs(self.xVel))[:3] == "0.1" or str(abs(self.xVel))[:3] == "0.0":
+                self.xVel = 0
+        else:
             self.xVel = 0
 
-        if self.stomp:
-            self.xVel = 0
 
-        # if abs(self.xVel) > 19:
-        #     self.xVel = 19*self.getDirNum()
+        if abs(self.xVel) > self.terminalVelocityX:
+            self.xVel = self.terminalVelocityX*self.getDirNum()
 
         self.changeX((self.xVel)+sign(self.xVel))
         
@@ -581,7 +656,7 @@ class Player:
             self.die()
             pass
         for i in range(int(self.yVel)):
-            self.y+=1
+            self.y+=deltaTime
             level.levelPosx, level.levelPosy = self.x, self.y
             if level.checkCollision(self.charRect):
                 self.yVel = 0
@@ -593,14 +668,14 @@ class Player:
                 break
             
         for i in range(-int(self.yVel)):
-            self.y-=1
+            self.y-=deltaTime
             level.levelPosx, level.levelPosy = self.x, self.y
             self.checkCeiling()
             
         if not level.checkCollision(self.charRect):
-            self.yVel+=0.5
-            if self.yVel > self.terminalVelocity:
-                self.yVel = self.terminalVelocity
+            self.yVel+=0.5*deltaTime
+            if self.yVel > self.terminalVelocityY*deltaTime:
+                self.yVel = self.terminalVelocityY*deltaTime
             self.kTime -= 1
             if self.kTime<0:
                 self.kTime=0
@@ -664,8 +739,9 @@ class Player:
             if inputs.inputEvent("Stomp") and not stompHeld and not self.climbedLastFrame:
                 self.stomp = True
                 self.yVel = 20
-                self.xVel = 0
                 stompHeld = True
+                
+                self.stompVel = self.xVel + 5*sign(self.xVel)
 
 
 
@@ -703,9 +779,9 @@ class Player:
             self.maxBoost -= self.decelSpeed
 
         if self.stomp:
-            self.terminalVelocity = 25
+            self.terminalVelocityY = 25
         else:
-            self.terminalVelocity = 17
+            self.terminalVelocityY = 17
 
 
 
@@ -967,12 +1043,46 @@ class Level:
         self.yOffSet = 0
         
         self.tileHightOffset = 0
+
+        self.loadBG(s.settings["bgType"])
         
     def moveLevel(self, lvl, world=0):
         global worldX, worldY
-        worldY+=lvl
-        worldX+=world
-        self.changeLevel(True, True)
+        # worldY+=lvl
+        # worldX+=world
+        
+        gameManager.timerOn = False
+        
+        
+        rank = "e"
+        
+        if gameManager.timer/60 < self.levelInfo["ranks"]["s"]:
+            rank = "s"
+        elif gameManager.timer/60 < self.levelInfo["ranks"]["a"]:
+            rank = "a"
+        elif gameManager.timer/60 < self.levelInfo["ranks"]["b"]:
+            rank = "b"
+        elif gameManager.timer/60 < self.levelInfo["ranks"]["c"]:
+            rank = "c"
+        elif gameManager.timer/60 < self.levelInfo["ranks"]["d"]:
+            rank = "d"
+        
+        uiResults.show = True
+        ui.show = False
+        
+        uiResults.getElementByTag("rank").changeImages([uiAnimations["rankings"][rank]])
+        
+        uiResults.getElementByTag("s").updateText(f"S RANK: {gameManager.intToTime(self.levelInfo['ranks']['s'], False)[:-3]}")
+        uiResults.getElementByTag("a").updateText(f"A RANK: {gameManager.intToTime(self.levelInfo['ranks']['a'], False)[:-3]}")
+        uiResults.getElementByTag("b").updateText(f"B RANK: {gameManager.intToTime(self.levelInfo['ranks']['b'], False)[:-3]}")
+        uiResults.getElementByTag("c").updateText(f"C RANK: {gameManager.intToTime(self.levelInfo['ranks']['c'], False)[:-3]}")
+        uiResults.getElementByTag("d").updateText(f"D RANK: {gameManager.intToTime(self.levelInfo['ranks']['d'], False)[:-3]}")
+        
+        player.xVel = 0
+        player.yVel = 0
+        
+        uiResults.getElementByTag("timer").updateText(f"Final Time: {gameManager.intToTime(gameManager.timer)}")
+        
 
     def updateTiles(self):
         for chunk in self.activeChunks:
@@ -993,10 +1103,33 @@ class Level:
                 return collided
         
         return collided
+    
+    def loadBG(self, bgName):
+        self.bg = pygame.image.load(f"backgrounds/{bgName}/bg.png").convert()
+        
+        paraLayer1 = pygame.image.load(f"backgrounds/{bgName}/layer1.png").convert_alpha()
+        paraLayer2 = pygame.image.load(f"backgrounds/{bgName}/layer2.png").convert()
+        
+        
+        self.paraLayer1 = pygame.Surface((w*2,h), pygame.SRCALPHA)
+        self.paraLayer1.blit(paraLayer1, (0,0))
+        self.paraLayer1.blit(paraLayer1, (w,0))
+        
+        self.paraLayer2 = pygame.Surface((w*2,h), pygame.SRCALPHA)
+        self.paraLayer2.blit(paraLayer2, (0,0))
+        self.paraLayer2.blit(paraLayer2, (w,0))
 
     def changeLevel(self, resetPlayerPos=True, reloadLevel=False):
         self.first = True
         groundTiles = ["0"]
+        
+        win.fill(BLACK)
+        win.blit(loadingFactFont.render(random.choice(facts), True, WHITE), (0,600))
+        
+        win.blit(bigFont.render("Reading level data...", True, WHITE), (0,90))
+        
+        window.blit(win, (0,0))
+        pygame.display.flip()
         
         
         self.chunks = {}
@@ -1016,20 +1149,7 @@ class Level:
             
             resliceImages(self.levelInfo["tileMapType"])
             
-            self.bg = pygame.image.load(f"backgrounds/{self.levelInfo['bgType']}/bg.png").convert()
-            
-            paraLayer1 = pygame.image.load(f"backgrounds/{self.levelInfo['bgType']}/layer1.png").convert_alpha()
-            paraLayer2 = pygame.image.load(f"backgrounds/{self.levelInfo['bgType']}/layer2.png").convert()
-            
-            
-            self.paraLayer1 = pygame.Surface((w*2,h), pygame.SRCALPHA)
-            self.paraLayer1.blit(paraLayer1, (0,0))
-            self.paraLayer1.blit(paraLayer1, (w,0))
-            
-            self.paraLayer2 = pygame.Surface((w*2,h), pygame.SRCALPHA)
-            self.paraLayer2.blit(paraLayer2, (0,0))
-            self.paraLayer2.blit(paraLayer2, (w,0))
-                    
+            self.loadBG(self.levelInfo['bgType'])        
             
             self.lowestPoint = 0
             self.highestPoint = float('inf')
@@ -1130,10 +1250,10 @@ class Level:
                         player.lastSpawn = (self.levelPosx, self.levelPosy)
                     if tile.tileID != "-1":
                         if loadingText !=  f"{str(int((tilesLoaded/len(self.levels))*100))}%":
-                            win.fill(BLACK)
+                            pygame.draw.rect(win, BLACK, pygame.Rect(0, 0, w, h/2))
                             win.blit(bigFont.render(f"Loading Level: {str(int((tilesLoaded/len(self.levels))*100))}%", True, WHITE), (0,90))
                             window.blit(win, (0,0))
-                            pygame.display.flip()
+                            pygame.display.update()
                             loadingText = f"{str(int((tilesLoaded/len(self.levels))*100))}%"
                         for event in pygame.event.get():
                             if event.type == pygame.QUIT:
@@ -1197,6 +1317,10 @@ class Level:
                 spawnPos = self.getSpawn()
                 player.x, player.y = spawnPos[0], spawnPos[1]
                 
+        pygame.draw.rect(win, BLACK, pygame.Rect(0, 0, w, h/2))
+        win.blit(bigFont.render("Almost Done...", True, WHITE), (0,90))
+        window.blit(win, (0,0))
+        pygame.display.update()
                 
         for tile in self.levels:
             tile.start()
@@ -1214,6 +1338,21 @@ class Level:
         
         player.lastSpawn = gameManager.ogSpawn
         player.reset()
+        
+        global titleLerpStall, titleLerpStage
+        titleLerpStall = 180
+        titleLerpStage = 0
+        
+        uiLevelTitle.show = True
+        uiLevelTitle.getElementByTag("lvlName").resetPosition()
+        uiLevelTitle.getElementByTag("lvlName").startLerp((100, 100), 0.1)
+        uiLevelTitle.getElementByTag("lvlName").updateText(self.levelInfo["name"])
+        
+        uiLevelTitle.getElementByTag("bg").resetPosition()
+        uiLevelTitle.getElementByTag("bg").startLerp((0, 125), 0.1)
+        
+        
+        gameManager.timerOn = True
         
     def getTileImage(self, tile, levelMap, typeNum:str, tilesLoaded, tilesToBeUsed, groundTiles=["0", "15"]):
         above, below, left, right = False, False, False, False
@@ -1348,10 +1487,8 @@ class Level:
         for chunk in self.entityChunks:
             if len(chunk.entities) > 0:
                 chunk.drawEntities()
-
-    def draw(self):
-        
-        
+                
+    def drawBG(self, useCrop = True):
         bgDetail = s.settings["backgroundDetail"]
         
         # Blit background
@@ -1359,9 +1496,13 @@ class Level:
             win.blit(self.bg, (0, 0))
 
         # Calculate sub-surface position
-        self.camX = max(0, min(self.levelVis.get_width() - w, self.levelPosx - 635))
-        self.camY = max(0, min(self.levelVis.get_height() - h, self.levelPosy - 520)) # I'm gonna keep it a buck fifty, I have no idea why 520 works here
-
+        if useCrop:
+            self.camX = max(0, min(self.levelVis.get_width() - w, self.levelPosx - 635))
+            self.camY = max(0, min(self.levelVis.get_height() - h, self.levelPosy - 520)) # I'm gonna keep it a buck fifty, I have no idea why 520 works here
+        else:
+            self.camX = self.levelPosx
+            self.camY = self.levelPosy
+        
         if bgDetail == 2:
             # Calculate layer positions
             layerOnePos = ((-self.camX / 4) % 1280) - 1280
@@ -1370,6 +1511,11 @@ class Level:
             # Blit parallax layers
             win.blit(self.paraLayer1, (layerOnePos, 0))
             win.blit(self.paraLayer2, (layerTwoPos, 0))
+        
+
+    def draw(self):
+        
+        self.drawBG()
 
         # Create and blit sub-surfaces
         subsurfaceBG = self.levelBG.subsurface((self.camX, self.camY, w, h))
@@ -1429,7 +1575,7 @@ class DebugLogText:
     def __init__(self, text, showTime = 60):
         self.text = text
         self.showTime = showTime
-        self.bg = pygame.Surface((960, 26), pygame.SRCALPHA)
+        self.bg = pygame.Surface((w, 26), pygame.SRCALPHA)
         self.bg.fill((255,255,255,200))
     
     def draw(self, y):
@@ -1441,11 +1587,14 @@ class DebugLogText:
 
 
 class UICanvas:
-    def __init__(self) -> None:
+    def __init__(self, canScroll=False) -> None:
         self.UIComponents = {}
         self.show = True
+        self.canScroll = canScroll
+        self.scrollPos = 0
     def addElement(self, element):
         self.UIComponents[element.tag] = element
+        self.UIComponents[element.tag].canvas = self
     def getElementByTag(self, tag:str):
         return self.UIComponents[tag]
     def draw(self, win=win):
@@ -1453,19 +1602,34 @@ class UICanvas:
             for element in self.UIComponents:
                 self.UIComponents[element].draw(win)
     def update(self):
+        if self.canScroll: 
+            self.scrollPos += scrolly*20
+            if self.scrollPos > 0: self.scrollPos = 0
+            
         if self.show:
             for element in self.UIComponents:
                 self.UIComponents[element].update()
+                
+    def resetScroll(self):
+        self.scrollPos = 0
+        
+
 
 class UIElement:
-    def __init__(self, screenPos, tag:str, hasShadow=False, shadowOffset=0, shadowColour=(255,255,255)) -> None:
+    def __init__(self, screenPos, tag:str, hasShadow=False, shadowOffset=0, shadowColour=(255,255,255), lockScroll = False) -> None:
+        self.startPos = screenPos
+        self.pos = screenPos
         self.screenPos = screenPos
+        
         self.tag = tag
         self.surface = pygame.Surface((0,0), pygame.SRCALPHA)
         self.show = True
         self.hasShadow = hasShadow
         self.shadowOffset = shadowOffset
         self.shadowColour = shadowColour
+        self.lockScroll = lockScroll
+        
+        self.lerp = False
     def toggleShow(self):
         self.show = not self.show
     def setShow(self, setTo:bool):
@@ -1481,11 +1645,28 @@ class UIElement:
         if self.show:
             surf.blit(blitSurf, (int(screenPos[0]+padding[0]), screenPos[1]+padding[1]))
     def update(self):
-        pass
+        if not self.lockScroll:
+            self.screenPos = (self.pos[0], self.pos[1] + self.canvas.scrollPos)
+            
+        if self.lerp:
+            self.pos = self.doLerp()
+            self.lerp = self.pos != self.lerpTo
+            
+    def startLerp(self, to, weight = 1):
+        self.lerp = True
+        self.lerpWeight = weight
+        self.lerpTo = to
+            
+    def doLerp(self) -> tuple:
+        return (int(pygame.math.lerp(self.pos[0], self.lerpTo[0], self.lerpWeight)), int(pygame.math.lerp(self.pos[1], self.lerpTo[1], self.lerpWeight)))
+    
+    def resetPosition(self):
+        self.pos = self.startPos
+        self.screenPos = self.pos
     
 class UIImage(UIElement):
-    def __init__(self, screenPos, tag: str, images=[], fps=1, hasShadow=False, shadowOffset=0, shadowColour=(255, 255, 255)) -> None:
-        super().__init__(screenPos, tag, hasShadow, shadowOffset, shadowColour)
+    def __init__(self, screenPos, tag: str, images=[], fps=1, hasShadow=False, shadowOffset=0, shadowColour=(255, 255, 255), lockScroll = False) -> None:
+        super().__init__(screenPos, tag, hasShadow, shadowOffset, shadowColour, lockScroll)
         self.animation = Animation(images, fps)
     def draw(self, surf=win, padding=(0, 0), screenPos=None, blitSurf=None, drawShadow=True):
         self.surface = self.animation.getFrame()
@@ -1494,8 +1675,8 @@ class UIImage(UIElement):
         self.animation = Animation(images, fps)
 
 class UIText(UIElement):
-    def __init__(self, screenPos, tag:str, text="", fontSize=10, colour=(0,0,0), padding=20) -> None:
-        super().__init__(screenPos, tag)
+    def __init__(self, screenPos, tag:str, text="", fontSize=10, colour=(0,0,0), padding=20, lockScroll = False) -> None:
+        super().__init__(screenPos, tag, lockScroll)
         self.text = text
         self.fontSize = fontSize
         self.colour = colour
@@ -1521,6 +1702,7 @@ class UIText(UIElement):
 
         self.surface.blit(self.bg.surface, (0,0))
         self.surface.blit(textSurface, (self.padding,self.padding))
+        
     def setBG(self, colour):
         self.bg = UIRect((0,0), "textBG", self.surface.get_width(),self.surface.get_height(), colour)
         self.updateText(self.text)
@@ -1532,8 +1714,8 @@ class UIText(UIElement):
         self.updateText(self.text)
 
 class UIRect(UIElement):
-    def __init__(self, screenPos, tag:str, w:int, h:int, colour=(0,0,0)) -> None:
-        super().__init__(screenPos, tag)
+    def __init__(self, screenPos, tag:str, w:int, h:int, colour=(0,0,0), lockScroll = False) -> None:
+        super().__init__(screenPos, tag, lockScroll)
         self.updateRect(w, h, colour)
     def updateRect(self, w:int, h:int, colour=None):
         self.w, self.h = w, h
@@ -1552,8 +1734,8 @@ class UIRect(UIElement):
         self.screenPos = (x,y)
         
 class UIButton(UIText):
-    def __init__(self, screenPos, tag:str, onClick, text="", fontSize=10, padding=20, textColour=(0, 0, 0), buttonColours=((255,255,255), (127,127,127), (0,0,0)), canHold=False) -> None:
-        super().__init__(screenPos, tag, text, fontSize, textColour, padding)
+    def __init__(self, screenPos, tag:str, onClick, text="", fontSize=10, padding=20, textColour=(0, 0, 0), buttonColours=((255,255,255), (127,127,127), (0,0,0)), canHold=False, lockScroll = False) -> None:
+        super().__init__(screenPos, tag, text, fontSize, textColour, padding, lockScroll)
         self.setBG(buttonColours[0])
         self.onClick = onClick
         self.held = False
@@ -1564,16 +1746,19 @@ class UIButton(UIText):
         tempRect.x, tempRect.y = self.screenPos[0], self.screenPos[1]
         if tempRect.collidepoint(posx, posy):
             self.setBG(self.buttonColours[1])
-            if clicked[0]:
+            if clicked[0] and not inputs.clickDown[0]:
+                inputs.clickDown[0] = True
                 self.setBG(self.buttonColours[2])
                 if not self.held:
                     self.held = not self.canHold
+                    audioPlayer.playSound(sounds["click"])
                     self.onClick()
         if not tempRect.collidepoint(posx, posy):
             self.setBG(self.buttonColours[0])
 
         self.held = clicked[0] or self.canHold
 
+        return super().update()
 
 
 class AudioPlayer:
@@ -1593,38 +1778,29 @@ class AudioPlayer:
         pygame.mixer.Channel(7).play(self.music, -1)
         
     
-class AudioSource:
-    def __init__(self, soundPath:str) -> None:
-        self.sound = pygame.mixer.Sound("sound/" + soundPath)
         
 class MusicSource:
     def __init__(self, soundPath:str) -> None:
         self.sound = pygame.mixer.Sound("sound/music/" + soundPath)
 
 audioPlayer = AudioPlayer()
-audioPlayer.playMusic(MusicSource(f"title.mp3"), s.settings["musicVolume"]/100)
+audioPlayer.playMusic(MusicSource(f"title.wav"), s.settings["musicVolume"]/100)
 
 
 jump = AudioSource("jump.mp3")
 music = AudioSource("music/music.mp3")
 
-sounds = {
-    "click": AudioSource("ui/click.wav"),
-    "menuChange": AudioSource("ui/menuChange.mp3")
-}
+
 
 
 def getPercentage(num, full):
     return (num/full)*100
 def getIntPercentage(num, full):
     return int((num/full)*100)
-
-        
+  
 def redrawScreen():
     global win
     if s.settings["backgroundDetail"] == 0: win = pygame.Surface((w,h))
-    if not gameManager.inGame:
-        win.fill(WHITE)
         
     if gameManager.inGame:
         level.draw()
@@ -1635,9 +1811,11 @@ def redrawScreen():
         #     tile.draw()
         
         player.draw()
+    
+    else:
+        level.levelPosx+=1
+        level.drawBG(False)
 
-    for y, log in enumerate(debugLog):
-        log.draw(y)
     if(debug > 0):
         debugUi.getElementByTag("FPSText").updateText("FPS: " + str(int(clock.get_fps())))
         if(debug > 1):
@@ -1659,11 +1837,22 @@ def redrawScreen():
     uiPause.draw(win)
     uiPauseButtons.draw(win)
     uiMainMenu.draw(win)
+    uiLevelTitle.draw(win)
+    uiResults.draw(win)
     if gameManager.settingsMenu:
         uiSettings.draw(win)
         uiMainMenuSettings.draw(win)
         uiPauseSettings.draw(win)
+        uiMainMenuSettingsScroll.draw(win)
+        uiControls.draw(win)
+        uiControlsMainMenu.draw(win)
+        uiControlsPause.draw(win)
+        uiControlsXbox.draw(win)
 
+    
+    for y, log in enumerate(debugLog):
+        log.draw(y)
+    
     window.blit(win, (0,0))
     # win.blit(pygame.transform.scale(win, (w, h)), (0,0))    
     
@@ -1844,14 +2033,14 @@ fullDebugUi.getElementByTag("tiles").setBG((255,255,255))
 ui = UICanvas()
 ui.show = False
 ui.addElement(UIRect((0, h-20), "boostBar", 100, 20, YELLOW))
-ui.addElement(UIText((589,20), "timer", "00:00.00", 35, (0,0,0), 0))
+ui.addElement(UIText((589,26), "timer", "00:00.00", 35, (0,0,0), 0))
 ui.getElementByTag("timer").setBG((255,255,255, 150))
 
 
 uiPause = UICanvas()
 uiPause.show = False
 uiPause.addElement(UIRect((0,0), "PauseBG", w, h, (100,100,100,100)))
-uiPause.addElement(UIText((0,0), "PauseText", "PAUSE", 50, (0,0,0), 0))
+uiPause.addElement(UIText((0,h-85), "PauseText", "PAUSE", 50, (0,0,0), 20))
 uiPause.getElementByTag("PauseText").setBG((255,255,255))
 
 uiPause.addElement(UIText((w-100,0), "WorldText", "0-0", 50, (0,0,0), 0))
@@ -1859,20 +2048,24 @@ uiPause.addElement(UIText((w-100,0), "WorldText", "0-0", 50, (0,0,0), 0))
 
 uiPauseButtons = UICanvas()
 uiPauseButtons.show = False
-uiPauseButtons.addElement(UIButton((800, 450), "Settings Button", gameManager.openSettingsPause, "Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiPauseButtons.addElement(UIButton((175, h-70), "Settings Button", gameManager.openSettingsPause, "Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
 
 
 uiPauseSettings = UICanvas()
 uiPauseSettings.show = False
-uiPauseSettings.addElement(UIButton((750, 350), "back", gameManager.closeSettingPause, "Save Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiPauseSettings.addElement(UIButton((w-210, 350), "back", gameManager.closeSettingPause, "Save Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiPauseSettings.addElement(UIButton((w-210, 650), "controls", gameManager.showControlsPauseMenu, "Controls", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
 
 
 uiMainMenu = UICanvas()
 uiMainMenu.addElement(UIText((100,100), "TITLE", "Really Fast Rat", 60, GREY, 0))
-uiMainMenu.addElement(UIButton((800, 350), "Start Button", gameManager.toggleLevelSelect, "Start", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiMainMenu.addElement(UIButton((800, 450), "Settings Button", gameManager.openSettingsMainMenu, "Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiMainMenu.addElement(UIText((100,200), "SUBTITLE", "INDEV VERSION - 0.0.1", 20, GREY, 0))
+uiMainMenu.addElement(UIButton((100, 350), "Start Button", gameManager.toggleLevelSelect, "Start", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiMainMenu.addElement(UIButton((100, 450), "Settings Button", gameManager.openSettingsMainMenu, "Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
 
-uiSettings = UICanvas()
+uiMainMenu.addElement(UIImage((w-140, h-50), "ruby logo", [logo[2]]))
+
+uiSettings = UICanvas(True)
 uiSettings.show = False
 uiSettings.addElement(UIText((150, 10), "TITLE", "Really Fast Rat Settings", 30, GREY, 0))
 uiSettings.addElement(UIButton((10, 60), "MusicUp", gameManager.increaseMusicVolume, "Increase Music Volume", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
@@ -1882,23 +2075,84 @@ uiSettings.addElement(UIButton((410, 60), "MusicDown", gameManager.decreaseMusic
 uiSettings.addElement(UIButton((10, 160), "bgToggle", gameManager.toggleBG, "Toggle Background Detail", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
 uiSettings.addElement(UIText((350,160), "bgDetail", f"{gameManager.bgDetailLevels[s.settings['backgroundDetail']]}", 30, GREY, 20))
 
-uiSettings.addElement(UIImage((w-90,80), "ratBluePrints", uiAnimations["bluePrints"], 6))
+ 
+uiSettings.addElement(UIImage((w-90,80), "ratBluePrints", uiAnimations["bluePrints"], 6, lockScroll=True))
+
 
 
 
 uiMainMenuSettings = UICanvas()
 uiMainMenuSettings.show = False
-uiMainMenuSettings.addElement(UIButton((750, 350), "back", gameManager.closeSettingMainMenu, "Save Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiMainMenuSettings.addElement(UIImage((450,160), "bgDetailImg", [uiAnimations["bgDetail"][s.settings["backgroundDetail"]]], 6))
+uiMainMenuSettings.addElement(UIButton((w-210, 350), "back", gameManager.closeSettingMainMenu, "Save Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiMainMenuSettings.addElement(UIButton((w-210, 650), "controls", gameManager.showControlsMainMenu, "Controls", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+
+uiMainMenuSettingsScroll = UICanvas(True)
+uiMainMenuSettingsScroll.show = False
+uiMainMenuSettingsScroll.addElement(UIImage((450,160), "bgDetailImg", [uiAnimations["bgDetail"][s.settings["backgroundDetail"]]], 6))
+
+
+uiControls = UICanvas()
+uiControls.show = False
+uiControls.addElement(UIButton((115, 0), "reload", reloadController, "Reload Controller", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+
+uiControlsXbox = UICanvas()
+uiControlsXbox.show = False
+uiControlsXbox.addElement(UIImage((0,0), "xbox", [uiAnimations["controlLayouts"]["xbox"]], 6))
+uiControlsXbox.addElement(UIText((289, 69), "climb", "CLIMB (HOLD)", 30, GREY, 0))
+uiControlsXbox.addElement(UIText((860, 69), "run", "RUN (HOLD)", 30, GREY, 0))
+uiControlsXbox.addElement(UIText((220, 400), "move", "MOVE", 30, GREY, 0))
+uiControlsXbox.addElement(UIText((940, 250), "dash", "DASH", 30, GREY, 0))
+uiControlsXbox.addElement(UIText((1180, 250), "stomp", "STOMP", 30, GREY, 0))
+uiControlsXbox.addElement(UIText((1065, 440), "jump", "JUMP", 30, GREY, 0))
+
+
+uiControlsMainMenu = UICanvas()
+uiControlsMainMenu.show = False
+uiControlsMainMenu.addElement(UIButton((w-210, 0), "back", gameManager.hideControlsMainMenu, "Back", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+
+uiControlsPause = UICanvas()
+uiControlsPause.show = False
+uiControlsPause.addElement(UIButton((w-210, 0), "back", gameManager.hideControlsPauseMenu, "Back", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+
+
+uiLevelTitle = UICanvas()
+uiLevelTitle.show = False
+uiLevelTitle.addElement(UIImage((-562, 125), "bg", [uiAnimations["levelName"]["bg"]], 1))
+uiLevelTitle.addElement(UIText((100, h+400), "lvlName", "LEVEL NAME", 40, BLACK))
+
+
+uiResults = UICanvas()
+uiResults.show = False
+uiResults.addElement(UIRect((0,0), "resultBG", w, h, (100,100,100,100)))
+uiResults.addElement(UIText((0,0), "ResultText", "RESULTS:", 50, (0,0,0), 20))
+uiResults.getElementByTag("ResultText").setBG((255,255,255))
+
+uiResults.addElement(UIRect((w-400,0), "timesBG", 400, 277, (100,100,100,100)))
+
+uiResults.addElement(UIText((w-400,0), "s", "S RANK: 00:00", 30, (0,0,0), 20))
+uiResults.addElement(UIText((w-400,50), "a", "A RANK: 00:00", 30, (0,0,0), 20))
+uiResults.addElement(UIText((w-400,100), "b", "B RANK: 00:00", 30, (0,0,0), 20))
+uiResults.addElement(UIText((w-400,150), "c", "C RANK: 00:00", 30, (0,0,0), 20))
+uiResults.addElement(UIText((w-400,200), "d", "D RANK: 00:00", 30, (0,0,0), 20))
+
+uiResults.addElement(UIImage((w-400, 338), "rank", [uiAnimations["rankings"]["s"]], 1))
+
+uiResults.addElement(UIButton((w-600, 550), "continue", gameManager.nextLevel, "Continue", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiResults.addElement(UIButton((w-600, 650), "try again", gameManager.closeResults, "Try Again", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+
+uiResults.addElement(UIText((429,300), "timer", "00:00.00", 60, (0,0,0), 0))
+uiResults.getElementByTag("timer").setBG((255,255,255, 150))
 
 debug = 1
 debugHeld = False
 
 targetFrames = 60
 
-run = True
-# Main game loop
-while run:
+titleLerpStall = 180
+titleLerpStage = 0
+
+def main():
+    global posx, posy, clicked, pauseHeld, scrolly, keys, debugHeld, targetFrames, frameAdvance, stompHeld, spaceHeld, titleLerpStall, titleLerpStage, debug, slashHeld, stallFrames, deltaTime
     gameManager.update()
     scrolly = 0
     for event in pygame.event.get():
@@ -1932,6 +2186,14 @@ while run:
     
     
     
+    if not uiLevelTitle.getElementByTag("lvlName").lerp:
+        if titleLerpStall > 0:
+            titleLerpStall -=1
+        else:
+            uiLevelTitle.show = False
+            
+    else:
+        uiLevelTitle.update()
     
     level.checkCollision(player.charRect, True, [18])
     
@@ -1948,36 +2210,33 @@ while run:
         if spaceHeld:
             spaceHeld = inputs.inputEvent("Jump")
 
-        player.process()
-        if inputs.inputEvent("Jump") and not spaceHeld:
-            player.jump()
-            spaceHeld = True
-        
-        player.jumpPower = 11
-
-        if (inputs.inputEvent("MoveLeft") and not inputs.inputEvent("MoveRight")) or (inputs.inputEvent("MoveRight") and not inputs.inputEvent("MoveLeft")):
-            if inputs.inputEvent("MoveLeft") and not inputs.inputEvent("MoveRight"):
-                player.changeXVel(gameManager.speed/10, False)
-            if inputs.inputEvent("MoveRight") and not inputs.inputEvent("MoveLeft"):
-                player.changeXVel(gameManager.speed/10, True)
-        elif player.xVel > 0:
-            player.xVel-=player.decelSpeed
-            player.changeXVel(0, True)
-            player.boostDirection = 0
-        elif player.xVel < 0:
-            player.xVel+=player.decelSpeed
-            player.changeXVel(0, False)
-            player.boostDirection = 0
+        if not uiResults.show: 
+            player.process()
+            if inputs.inputEvent("Jump") and not spaceHeld:
+                player.jump()
+                spaceHeld = True
             
+            player.jumpPower = 11
+
+            if (inputs.inputEvent("MoveLeft") and not inputs.inputEvent("MoveRight")) or (inputs.inputEvent("MoveRight") and not inputs.inputEvent("MoveLeft")):
+                if inputs.inputEvent("MoveLeft") and not inputs.inputEvent("MoveRight"):
+                    player.changeXVel(gameManager.speed/10, False)
+                if inputs.inputEvent("MoveRight") and not inputs.inputEvent("MoveLeft"):
+                    player.changeXVel(gameManager.speed/10, True)
+            elif player.xVel > 0:
+                player.xVel-=player.decelSpeed
+                player.changeXVel(0, True)
+                player.boostDirection = 0
+            elif player.xVel < 0:
+                player.xVel+=player.decelSpeed
+                player.changeXVel(0, False)
+                player.boostDirection = 0
             
-        
-        
+            if inputs.inputEvent("Restart1") and inputs.inputEvent("Restart2"):
+                player.lastSpawn = gameManager.ogSpawn
+                level.reloadTiles()
+                player.reset(True)
 
-
-        if inputs.inputEvent("Restart1") and inputs.inputEvent("Restart2"):
-            player.lastSpawn = gameManager.ogSpawn
-            level.reloadTiles()
-            player.reset(True)
 
         if keys[pygame.K_r]:
             if keys[pygame.K_LCTRL]:
@@ -1986,22 +2245,10 @@ while run:
                     debugLog.append(DebugLogText("Full Reload"))
                     player.reset(False)
                     playerImages = reloadPlayerImages()
-                elif keys[pygame.K_LALT]:
-                    debugLog.append(DebugLogText("QuickDraw Load"))
-                    level.quickDraw = True
-                    level.changeLevel(True, True)
-                    player.reset()
                 else:
                     debugLog.append(DebugLogText("Advanced Reload"))
                     level.changeLevel(False, True)
                     player.reset(False)
-            elif keys[pygame.K_p]:
-                debugLog.append(DebugLogText("Player Reload"))
-                level.changeLevel(True, False)
-                player.reset()
-            else:
-                debugLog.append(DebugLogText("Basic Reload"))
-                level.changeLevel(False)
         
         if keys[pygame.K_t] and keys[pygame.K_LCTRL]:
                 level.quickDraw = False
@@ -2016,6 +2263,8 @@ while run:
         
         # for tile in level.levels:
         #     tile.singleUpdate()
+        
+        uiResults.update()
     
     elif gameManager.mainMenu:
         
@@ -2028,6 +2277,14 @@ while run:
         uiMainMenuSettings.update()
         
         uiPauseSettings.update()
+        
+        uiMainMenuSettingsScroll.update()
+        
+        uiControlsMainMenu.update()
+        
+        uiControlsPause.update()
+        
+        uiControls.update()
         
     elif gameManager.pause:
         
@@ -2071,8 +2328,6 @@ while run:
         targetFrames-=10
         if targetFrames <= 0: targetFrames = 10
     
-    #redraw win
-    redrawScreen()
     # Set the framerate
     deltaTime = clock.tick(targetFrames)* 0.001 * 60
     #deltaTime -= 0.6
@@ -2113,3 +2368,14 @@ while run:
         screenshotName = str(int(time.time())) + ".png"
         pygame.image.save(win, f"screenshots/{screenshotName}")
         debugLog.append(DebugLogText(f"Game Screenshotted -> {screenshotName}", 100))
+        
+        
+run = True
+# Main game loop
+while run:
+    drawOnThread = s.settings["drawOnThread"]
+    if drawOnThread:
+        threading.Thread(target=redrawScreen, daemon=True).start()
+    main()
+    if not drawOnThread:
+        redrawScreen()

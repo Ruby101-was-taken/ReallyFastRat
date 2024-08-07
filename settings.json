@@ -1,9 +1,11 @@
 {
-    "musicVolume": 0,
+    "musicVolume": 10,
     "sfxVolume": 100,
     "backgroundDetail": 2,
     "animatedTile": true,
     "animateTilesAtSpeed": false,
     "simpleUI": false,
-    "particles": true
+    "particles": true,
+    "drawOnThread": false,
+    "bgType": "test"
 }

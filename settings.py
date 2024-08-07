@@ -4,13 +4,15 @@ from jsonParse import *
 class Settings:
     def __init__(self) -> None:
         self.defaults = {
-            "musicVolume": 100,
+            "musicVolume": 50,
             "sfxVolume": 100,
             "backgroundDetail": 2,
             "animatedTile": True,
             "animateTilesAtSpeed": False,
             "simpleUI": False,
-            "particles": True
+            "particles": True,
+            "drawOnThread": False,
+            "bgType": "test"
         }
         self.loadSettings()
         
@@ -42,5 +44,8 @@ class Settings:
     def toggleBG(self):
         self.settings["backgroundDetail"]-=1
         if self.settings["backgroundDetail"] == -1: self.settings["backgroundDetail"] = 2
+        
+    def toggleDrawThread(self):
+        self.settings["drawOnThread"] = not self.settings["drawOnThread"]
             
 s = Settings()
