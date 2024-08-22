@@ -7,7 +7,7 @@ includedFiles=["player.png", "icon.png", "tilemap.png", "font.ttf",
                "extraControllers.py", "colours.py", "jsonParse.py", "resources.py", "sign.py", "tiles.py", "entity.py", "settings.py", "profiler.py"
                ]
 
-packages=["os", "pygame", "csv", "random", "math", "time"]
+packages=["os", "pygame", "csv", "random", "math", "time", "webbrowser"]
 
 cx_Freeze.setup(
     name="Really Fast Rat",

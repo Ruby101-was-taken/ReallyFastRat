@@ -83,6 +83,10 @@ uiAnimations = {
     
     "levelName": {
         "bg": pygame.image.load("ui/levelName/bg.png").convert_alpha()
+    },
+    
+    "HUD": {
+        "fullBoost": pygame.image.load("ui/HUD/fullBoost.png")
     }
 }
 

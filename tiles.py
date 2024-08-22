@@ -41,6 +41,8 @@ tileImages = TileImages()
 22 - Moving platform
 23 - End Goal
 24 - Death Plane
+25 - Evil Rat Spawner
+26 - Dash Refill
 
 """
 
@@ -95,6 +97,16 @@ def createTile(x, y, tileID, image=pygame.Surface((0, 0))):
             return DeathPlane(x,y,tileID)
         case 25:
             return EvilRatSpawner(x,y,tileID)
+        case 26:
+            return DashRefill(x,y,tileID)
+        case 27:
+            return ToggleBlock(x,y,tileID, state=True, toggledImage=tileImages.objectImages[16])
+        case 28:
+            return ToggleBlock(x,y,tileID, state=False, toggledImage=tileImages.objectImages[17])
+        case 29:
+            return ToggleSwitch(x,y,tileID, state=True)
+        case 30:
+            return ToggleSwitch(x,y,tileID, state=False)
         case _:
             return StaticTile(x,y,tileID)
 #
@@ -118,12 +130,14 @@ class Tile:
         self.checkDelete()
     def checkDelete(self):
         if self.toBeDeleted:
-            if self in self.level.levels:
-                self.level.levels.remove(self)
-            tilex = int((self.x/20)/16)*16
-            tiley = int((self.y/20)/16)*16
-            if self in self.level.chunks[f"{int(tilex)}-{int(tiley)}"].tiles:
-                self.level.chunks[f"{int(tilex)}-{int(tiley)}"].tiles.remove(self)
+            tilex = int((self.x / 20) / 16) * 16
+            tiley = int((self.y / 20) / 16) * 16
+            chunk_key = f"{int(tilex)}-{int(tiley)}"
+            chunk_tiles = self.level.chunks[chunk_key].tiles
+            try:
+                chunk_tiles.remove(self)
+            except ValueError:
+                pass  # Tile not in the chunk, ignore
 
             
             
@@ -331,6 +345,8 @@ class MovingPlatform(DynamicTile):
 class SpikeTile(StaticTile):
     def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
         super().__init__(x, y, tileID, image)
+        self.offset = (1, 1)
+        self.rect = pygame.Rect(self.x, self.y, 18, 18)
         
     def checkCollision(self, collider):
         return super().checkCollision(collider)
@@ -427,8 +443,10 @@ class Coin(DynamicTile):
     def playerCollision(self, collider):
         
         self.gameManager.collectables+=1
-        if self.player.superBoostCoolDown>0:
-            self.player.superBoostCoolDown-=2
+        if self.player.superBoostCoolDownCoins > self.player.minCoinCoolDown:
+            self.player.superBoostCoolDownCoins-=self.player.maxBoostCoolDown/5
+            if self.player.superBoostCoolDownCoins < self.player.minCoinCoolDown:
+                self.player.superBoostCoolDownCoins = self.player.minCoinCoolDown
         self.popped = True
         
         self.levelDelete()
@@ -441,11 +459,25 @@ class SuperCoin(DynamicTile):
         
     def playerCollision(self, collider):
         
+        self.gameManager.collectables+=5
+        if self.player.superBoostCoolDownCoins > self.player.minCoinCoolDown:
+            self.player.superBoostCoolDownCoins-=self.player.maxBoostCoolDown
+            if self.player.superBoostCoolDownCoins < self.player.minCoinCoolDown:
+                self.player.superBoostCoolDownCoins = self.player.minCoinCoolDown
+        self.popped = True
+        self.levelDelete()
+        
+        return super().playerCollision(collider)  
+    
+class DashRefill(Tile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, image)
+        
+    def playerCollision(self, collider):
+        
         self.gameManager.rareCollectables+=1
         if self.player.superBoostCoolDown>0:
             self.player.superBoostCoolDown=0
-        self.popped = True
-        self.levelDelete()
         
         return super().playerCollision(collider)
     
@@ -512,7 +544,7 @@ class EndGoal(StaticTile):
         return super().checkCollision(collider)
         
     def playerCollision(self, collider):
-        self.level.moveLevel(1, 1)
+        self.level.moveLevel()
             
   
 class Spawner(StaticTile):
@@ -544,6 +576,46 @@ class InstantSpawner(Spawner):
 class EvilRatSpawner(InstantSpawner):
     def __init__(self, x, y, tileID):
         super().__init__(x, y, tileID, EvilRat, 20, 30, {}, entityImages["evilRat"][0])
+        
+
+class ToggleBlock(DynamicTile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0)), offset=(0, 0), state = True, toggledImage = pygame.Surface((0,0))):
+        super().__init__(x, y, tileID, image, offset)
+        self.state = state
+        self.toggledImage = toggledImage
+    def playerCollision(self, collider) -> bool:
+        return self.popped
+    def update(self):
+        self.popped = self.state == self.level.toggleBlockState
+    
+        return super().update()
+    
+    def levelDraw(self, offset=(0, 0)):
+        if self.state:
+            self.level.levelToggleON.blit(self.image, (self.x+offset[0], self.y+offset[1]))
+            self.level.levelToggleOFF.blit(self.toggledImage, (self.x+offset[0], self.y+offset[1]))
+        else:
+            self.level.levelToggleOFF.blit(self.image, (self.x+offset[0], self.y+offset[1]))
+            self.level.levelToggleON.blit(self.toggledImage, (self.x+offset[0], self.y+offset[1]))
+            
+class ToggleSwitch(DynamicTile):
+    def __init__(self, x, y, tileID, image=pygame.Surface((0, 0)), offset=(0, 0), state = True):
+        super().__init__(x, y, tileID, image, offset)
+        self.state = state
+    def playerCollision(self, collider) -> bool:
+        if not self.popped:
+            self.level.toggleBlockState = not self.level.toggleBlockState
+        return self.popped
+    def update(self):
+        self.popped = self.state == self.level.toggleBlockState
+    
+        return super().update()
+    
+    def levelDraw(self, offset=(0, 0)):
+        if self.state:
+            self.level.levelToggleOFF.blit(self.image, (self.x+offset[0], self.y+offset[1]))
+        else:
+            self.level.levelToggleON.blit(self.image, (self.x+offset[0], self.y+offset[1]))
         
 
 class PowerUp:

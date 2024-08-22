@@ -1,0 +1,91 @@
+         664677 function calls in 3.420 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    1.167    1.167    3.420    3.420 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1204(changeLevel)
+    32831    0.585    0.000    0.864    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1460(getTileImage)
+    37588    0.400    0.000    0.400    0.000 {built-in method pygame.event.get}
+    74396    0.368    0.000    0.368    0.000 {method 'blit' of 'pygame.surface.Surface' objects}
+      101    0.267    0.003    0.267    0.003 {built-in method pygame.display.update}
+    37588    0.053    0.000    0.250    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:50(createTile)
+    32682    0.099    0.000    0.174    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:272(__init__)
+    33784    0.031    0.000    0.151    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:154(levelDraw)
+    33505    0.118    0.000    0.118    0.000 {method 'convert_alpha' of 'pygame.surface.Surface' objects}
+        8    0.086    0.011    0.086    0.011 {method 'fill' of 'pygame.surface.Surface' objects}
+    33784    0.026    0.000    0.077    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:242(__init__)
+    37588    0.058    0.000    0.058    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:114(__init__)
+     3688    0.006    0.000    0.036    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:593(levelDraw)
+        1    0.007    0.007    0.030    0.030 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1189(loadBG)
+     3688    0.006    0.000    0.018    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:582(__init__)
+    98493    0.017    0.000    0.017    0.000 {method 'get' of 'dict' objects}
+       15    0.016    0.001    0.016    0.001 {built-in method pygame.image.load}
+      101    0.013    0.000    0.013    0.000 {built-in method pygame.draw.rect}
+     3804    0.006    0.000    0.013    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:246(__init__)
+    75380    0.012    0.000    0.012    0.000 {built-in method builtins.len}
+    75780    0.012    0.000    0.012    0.000 {method 'append' of 'list' objects}
+        2    0.000    0.000    0.011    0.006 c:\Users\ruby_\Desktop\python\ReallyFastRat\jsonParse.py:3(parseJsonFile)
+        1    0.011    0.011    0.011    0.011 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1719(__init__)
+        2    0.000    0.000    0.010    0.005 C:\Users\ruby_\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:274(load)
+        1    0.000    0.000    0.009    0.009 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:172(resliceImages)
+        1    0.008    0.008    0.008    0.008 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1584(getSpawn)
+      104    0.008    0.000    0.008    0.000 {method 'render' of 'pygame.font.Font' objects}
+        2    0.000    0.000    0.008    0.004 C:\Users\ruby_\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:299(loads)
+        2    0.000    0.000    0.008    0.004 C:\Users\ruby_\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:332(decode)
+        2    0.008    0.004    0.008    0.004 C:\Users\ruby_\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py:343(raw_decode)
+        1    0.005    0.005    0.005    0.005 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1433(<listcomp>)
+       12    0.001    0.000    0.004    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\resources.py:94(sliceTilemap)
+        1    0.004    0.004    0.004    0.004 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1709(playMusic)
+    37588    0.004    0.000    0.004    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:197(start)
+      834    0.001    0.000    0.003    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:359(__init__)
+      956    0.001    0.000    0.003    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:346(__init__)
+        1    0.003    0.003    0.003    0.003 {method 'convert' of 'pygame.surface.Surface' objects}
+        1    0.003    0.003    0.003    0.003 {built-in method pygame.display.flip}
+        2    0.001    0.000    0.002    0.001 {method 'read' of '_io.TextIOWrapper' objects}
+      537    0.002    0.000    0.002    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1033(__init__)
+     8747    0.002    0.000    0.002    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:131(checkDelete)
+        2    0.000    0.000    0.001    0.001 C:\Users\ruby_\AppData\Local\Programs\Python\Python311\Lib\encodings\cp1252.py:22(decode)
+        2    0.001    0.001    0.001    0.001 {built-in method _codecs.charmap_decode}
+        1    0.000    0.000    0.001    0.001 c:\Users\ruby_\Desktop\python\ReallyFastRat\UI.py:114(updateText)
+        2    0.001    0.000    0.001    0.001 {built-in method io.open}
+      324    0.001    0.000    0.001    0.000 {method 'subsurface' of 'pygame.surface.Surface' objects}
+        1    0.000    0.000    0.001    0.001 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1542(trimLevel)
+       56    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:254(levelDraw)
+       60    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:614(levelDraw)
+       60    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:602(__init__)
+       45    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:363(__init__)
+       52    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:440(__init__)
+       55    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:377(__init__)
+        5    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1059(trimTiles)
+      265    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1075(posToString)
+        2    0.000    0.000    0.000    0.000 {method '__exit__' of '_io._IOBase' objects}
+       27    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:279(__init__)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:540(reset)
+       16    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:540(__init__)
+        1    0.000    0.000    0.000    0.000 C:\Users\ruby_\AppData\Local\Programs\Python\Python311\Lib\random.py:367(choice)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\UI.py:172(updateSize)
+        4    0.000    0.000    0.000    0.000 {method 'match' of 're.Pattern' objects}
+        1    0.000    0.000    0.000    0.000 C:\Users\ruby_\AppData\Local\Programs\Python\Python311\Lib\random.py:235(_randbelow_with_getrandbits)
+        6    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\UI.py:19(getElementByTag)
+        4    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:457(__init__)
+        2    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:487(__init__)
+        2    0.000    0.000    0.000    0.000 <frozen codecs>:260(__init__)
+       39    0.000    0.000    0.000    0.000 {method 'get_width' of 'pygame.surface.Surface' objects}
+        2    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\UI.py:87(resetPosition)
+       15    0.000    0.000    0.000    0.000 {method 'get_height' of 'pygame.surface.Surface' objects}
+        2    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\UI.py:79(startLerp)
+        2    0.000    0.000    0.000    0.000 {method 'startswith' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 {method 'play' of 'pygame.mixer.Channel' objects}
+        1    0.000    0.000    0.000    0.000 {method 'stop' of 'pygame.mixer.Channel' objects}
+        1    0.000    0.000    0.000    0.000 {method 'set_volume' of 'pygame.mixer.Sound' objects}
+        2    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:298(reset)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    0.000    0.000 {method 'fadeout' of 'pygame.mixer.Channel' objects}
+        4    0.000    0.000    0.000    0.000 {method 'end' of 're.Match' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.abs}
+        2    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+        1    0.000    0.000    0.000    0.000 {method 'getrandbits' of '_random.Random' objects}
+        1    0.000    0.000    0.000    0.000 {method 'bit_length' of 'int' objects}
+
+

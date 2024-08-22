@@ -1,6 +1,18 @@
 {
-    "name": "First",
+    "name": "FIRST LEVEL",
     "tileMapType": "Test",
     "music": "first.wav",
-    "bgType" : "test"
+    "bgType" : "test",
+    "ranks" : {
+        "s": 31,
+        "a": 35,
+        "b": 45,
+        "c": 60,
+        "d": 90
+    },
+    "canRun": true,
+    "nextLevel": {
+        "x": 1,
+        "y": 2
+    }
 }
