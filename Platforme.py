@@ -533,6 +533,7 @@ class Player:
         
         self.bounce = False
         
+        self.hat = "top"
         
     def die(self):
         self.reset(False)
@@ -1017,6 +1018,11 @@ class Player:
 
         # Blit the animated character onto the screen
         win.blit(self.animate(), (blitPosX, blitPosY+1))
+        if self.hat != "none":
+            if self.isRight:
+                win.blit(hats[self.hat], (blitPosX+13, blitPosY-9))
+            else:
+                win.blit(pygame.transform.flip(hats[self.hat], True, False), (blitPosX+1, blitPosY-9))
 
 
         for y, powerUp in enumerate(self.powerUps):
@@ -2014,7 +2020,7 @@ uiPauseSettings.addElement(UIButton((w-210, 650), "controls", gameManager.showCo
 
 uiMainMenu = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiMainMenu.addElement(UIText((100,100), "TITLE", "Really Fast Rat", 60, GREY, 0))
-uiMainMenu.addElement(UIText((100,200), "SUBTITLE", "INDEV VERSION - 0.0.2 - GAME TEST I-A", 20, GREY, 0))
+uiMainMenu.addElement(UIText((100,200), "SUBTITLE", "INDEV VERSION - 0.0.3 - INDEV 2", 20, GREY, 0))
 uiMainMenu.addElement(UIButton((100, 350), "Start Button", gameManager.toggleLevelSelect, "Start", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
 uiMainMenu.addElement(UIButton((100, 450), "Settings Button", gameManager.openSettingsMainMenu, "Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
 uiMainMenu.addElement(UIButton((100, 550), "Feedback Button", gameManager.openFeedback, "Feedback", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
@@ -2289,6 +2295,7 @@ def main():
     
     # Set the framerate
     deltaTime = clock.tick(targetFrames)* 0.001 * 60
+    deltaTime = 1
     if deltaTime >= 5: deltaTime = 5
 
     

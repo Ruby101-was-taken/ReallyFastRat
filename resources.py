@@ -90,6 +90,13 @@ uiAnimations = {
     }
 }
 
+hats = {
+    "top": pygame.image.load("player/hats/top.png").convert_alpha(),
+    "fire": pygame.image.load("player/hats/fire.png").convert_alpha(),
+    "flower": pygame.image.load("player/hats/flower.png").convert_alpha(),
+    "propeller": pygame.image.load("player/hats/propeller.png").convert_alpha(),
+    "hard": pygame.image.load("player/hats/hard.png").convert_alpha(),
+}
 
 def sliceTilemap(sheet, w, h):
     spliedImages = []  # This list will hold your individual tiles
