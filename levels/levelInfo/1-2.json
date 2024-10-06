@@ -1,18 +1,18 @@
 {
     "name": "SECOND LEVEL",
     "tileMapType": "Factory",
-    "music": "factory.wav",
+    "music": "factoryNew.wav",
     "bgType" : "test",
     "ranks" : {
-        "s": 31,
-        "a": 35,
-        "b": 45,
-        "c": 60,
-        "d": 90
+        "s": 46,
+        "a": 55,
+        "b": 75,
+        "c": 100,
+        "d": 150
     },
     "canRun": true,
     "nextLevel": {
-        "x": 0,
-        "y": 0
+        "x": 1,
+        "y": 3
     }
 }

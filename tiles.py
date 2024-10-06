@@ -2,6 +2,7 @@ import pygame
 from resources import *
 from colours import *
 from entity import *
+from entities.enemy.AlarmProjectile.AlarmProjectile import AlarmProjectile
 
 from sign import sign
 
@@ -107,6 +108,16 @@ def createTile(x, y, tileID, image=pygame.Surface((0, 0))):
             return ToggleSwitch(x,y,tileID, state=True)
         case 30:
             return ToggleSwitch(x,y,tileID, state=False)
+        case 31:
+            return StopLessThanX(x,y,tileID, 0)
+        case 32:
+            return StopLessThanY(x,y,tileID, 0)
+        case 33:
+            return StopMoreThanX(x,y,tileID, 0)
+        case 34:
+            return StopMoreThanY(x,y,tileID, 0)
+        case 35:
+            return Alarm(x,y,tileID, 20, 20, {}, entityImages["evilRat"][0])
         case _:
             return StaticTile(x,y,tileID)
 #
@@ -560,8 +571,18 @@ class Spawner(StaticTile):
     
     def spawn(self):
         self.chunk.entities.append(self.entityType(self.x, self.y+177, self.w, self.h, self.entityImage, self.args))
-        self.chunk.entities[-1].level = self.level
-        self.chunk.entities[-1].gameManager = self.gameManager
+        self.setParams()
+        
+    def setParams(self, entity=None):
+        if entity is None:
+            entity = self.chunk.entities[-1]
+        entity.level = self.level
+        entity.gameManager = self.gameManager
+        entity.player = self.player
+        entity.chunk = self.chunk
+        entity.trigger = self
+        
+        entity.start()
         
 
 class InstantSpawner(Spawner):
@@ -617,6 +638,88 @@ class ToggleSwitch(DynamicTile):
         else:
             self.level.levelToggleON.blit(self.image, (self.x+offset[0], self.y+offset[1]))
         
+    
+class ScrollStop(StaticTile):
+    def __init__(self, x, y, tileID, stopPos, image=pygame.Surface((0, 0)), offset=(0, 0)):
+        super().__init__(x, y, tileID, image, offset)
+        self.stopPos = stopPos
+    
+class StopLessThanX(ScrollStop):
+    def __init__(self, x, y, tileID, stopPos, image=pygame.Surface((0, 0)), offset=(0, 0)):
+        super().__init__(x, y, tileID, stopPos, image, offset)
+        
+    def singleUpdate(self):
+        if self.player.x < self.x:
+            if self.gameManager.camera.y < self.y < self.gameManager.camera.y + 720:
+                self.gameManager.camera.setMaxX(self.x-1280)#
+                return True
+        return False
+    
+class StopMoreThanX(ScrollStop):
+    def __init__(self, x, y, tileID, stopPos, image=pygame.Surface((0, 0)), offset=(0, 0)):
+        super().__init__(x, y, tileID, stopPos, image, offset)
+        
+    def singleUpdate(self):
+        if self.player.x > self.x:
+            if self.gameManager.camera.y < self.y < self.gameManager.camera.y + 720:
+                self.gameManager.camera.setMinX(self.x)
+                return True
+        return False
+    
+class StopLessThanY(ScrollStop):
+    def __init__(self, x, y, tileID, stopPos, image=pygame.Surface((0, 0)), offset=(0, 0)):
+        super().__init__(x, y, tileID, stopPos, image, offset)
+        
+    def singleUpdate(self):
+        if self.player.y-175 < self.y:
+            if self.gameManager.camera.x < self.x < self.gameManager.camera.x + 1280:
+                self.gameManager.camera.setMaxY(self.y-720)
+                return True
+        return False
+    
+class StopMoreThanY(ScrollStop):
+    def __init__(self, x, y, tileID, stopPos, image=pygame.Surface((0, 0)), offset=(0, 0)):
+        super().__init__(x, y, tileID, stopPos, image, offset)
+        
+    def singleUpdate(self):
+        if self.player.y-175 > self.y:
+            if self.gameManager.camera.x < self.x < self.gameManager.camera.x + 1280:
+                self.gameManager.camera.setMinY(self.y)
+                return True
+        return False
+
+class Alarm(Spawner):
+    def __init__(self, x, y, tileID, w, h, args={}, entityImage=pygame.Surface((0, 0))):
+        super().__init__(x, y, tileID, AlarmProjectile, w, h, args, entityImage)
+        
+    def playerCollision(self, collider) -> None:
+        self.popped = True
+        self.spawn()
+        return super().playerCollision(collider)
+
+    def shoot(self, x, y):
+        entity = AlarmProjectile(x, y, self.w, self.h, self.entityImage, self.args)
+        self.chunk.entities.append(entity)
+        
+        self.setParams(entity)
+        
+    # def spawn
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class PowerUp:
     def __init__(self, powerType, time = 120):

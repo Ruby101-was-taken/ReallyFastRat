@@ -1,0 +1,65 @@
+SplineFontDB: 3.2
+FontName: Untitled1
+FullName: Untitled1
+FamilyName: Untitled1
+Weight: Regular
+Copyright: Copyright (c) 2024, ruby_
+UComments: "2024-9-8: Created with FontForge (http://fontforge.org)"
+Version: 001.000
+ItalicAngle: 0
+UnderlinePosition: -100
+UnderlineWidth: 50
+Ascent: 800
+Descent: 200
+InvalidEm: 0
+LayerCount: 2
+Layer: 0 0 "Back" 1
+Layer: 1 0 "Fore" 0
+XUID: [1021 828 481243259 21209]
+StyleMap: 0x0000
+FSType: 0
+OS2Version: 0
+OS2_WeightWidthSlopeOnly: 0
+OS2_UseTypoMetrics: 1
+CreationTime: 1725816206
+ModificationTime: 1725816408
+OS2TypoAscent: 0
+OS2TypoAOffset: 1
+OS2TypoDescent: 0
+OS2TypoDOffset: 1
+OS2TypoLinegap: 90
+OS2WinAscent: 0
+OS2WinAOffset: 1
+OS2WinDescent: 0
+OS2WinDOffset: 1
+HheadAscent: 0
+HheadAOffset: 1
+HheadDescent: 0
+HheadDOffset: 1
+DEI: 91125
+Encoding: ISO8859-1
+UnicodeInterp: none
+NameList: AGL For New Fonts
+DisplaySize: -48
+AntiAlias: 1
+FitToEm: 0
+WinInfo: 0 65 16
+BeginChars: 256 1
+
+StartChar: A
+Encoding: 65 65 0
+Width: 1000
+LayerCount: 2
+Back
+Image2: image/png 261 0 800 33.3333 33.3333
+M,6r;%14!\!!!!.8Ou6I!!!!?!!!!?"9SW(!6H:gOT5@]*`,O07K<Df5X9Rb4&S(!BS%g@,9oE;
+5Bg%)QiI*d!!!#S*NQdP!!!%A;GL0jD<*YA!!!"a8OPjD(`@1P5n\\j$j4sV%fH@E-:%eT4!%MP
+ZpBYWE8pY(i4\gbH1M_8^+1J%$AdUVND-koRF,-rbTrP%4PNS6UiuS\ZJ9qMfs#R_#/70mB%cGC
+KVH2J$-CES]Jdj7&Sbq[l)j\tG$p/uL\\['P.1DDIe)Yb<T!d,s.*dd(Mp0<q`MQ*JD'ecT<'id
+?;+H*[s)<S<WE+"!(fUS7'8jaJcGcN
+EndImage2
+Fore
+Validated: 1
+EndChar
+EndChars
+EndSplineFont

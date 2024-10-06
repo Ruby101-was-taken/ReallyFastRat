@@ -1,5 +1,5 @@
 {
-    "musicVolume": 30,
+    "musicVolume": 0,
     "sfxVolume": 100,
     "backgroundDetail": 2,
     "animatedTile": true,
@@ -7,5 +7,6 @@
     "simpleUI": false,
     "particles": true,
     "drawOnThread": false,
-    "bgType": "test"
+    "bgType": "test",
+    "hwaccel": false
 }

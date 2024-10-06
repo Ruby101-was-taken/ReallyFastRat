@@ -12,7 +12,8 @@ class Settings:
             "simpleUI": False,
             "particles": True,
             "drawOnThread": False,
-            "bgType": "test"
+            "bgType": "test",
+            "hwaccel": False
         }
         self.loadSettings()
         
@@ -47,5 +48,16 @@ class Settings:
         
     def toggleDrawThread(self):
         self.settings["drawOnThread"] = not self.settings["drawOnThread"]
+        
+    def toggleParticles(self):
+        self.settings["particles"] = not self.settings["particles"]
+        
+        
+    def increaseSoundVolume(self):
+        self.settings["sfxVolume"] += 5
+        if self.settings["sfxVolume"] > 100: self.settings["sfxVolume"] = 100
+    def decreaseSoundVolume(self):
+        self.settings["sfxVolume"] -= 5
+        if self.settings["sfxVolume"] < 0: self.settings["sfxVolume"] = 0
             
 s = Settings()

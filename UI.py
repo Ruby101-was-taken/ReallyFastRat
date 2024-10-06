@@ -4,6 +4,11 @@ from resources import *
 from colours import *
 from profiler import *
 
+
+testMap = {
+    "start": {"up": "settings", "down": "quit"}
+}
+
 class UICanvas:
     def __init__(self, canScroll=False, audioPlayer = None, inputs=None) -> None:
         self.UIComponents = {}
@@ -12,6 +17,18 @@ class UICanvas:
         self.scrollPos = 0
         self.audioPlayer = audioPlayer
         self.input = inputs
+
+        self.highlightedElement = ""
+        self.hasMap = False
+    def makeMap(self, addMap):
+        self.hasMap = True
+        self.highlightedElement = list(addMap.keys())[0]
+        self.UIMap = UIMap()
+        
+        for currentElement, connections in addMap.items():
+            for direction, element in connections.items():
+                self.UIMap.createLink(currentElement, element, direction)
+                
     def addElement(self, element):
         self.UIComponents[element.tag] = element
         self.UIComponents[element.tag].canvas = self
@@ -22,14 +39,28 @@ class UICanvas:
         if self.show:
             for element in self.UIComponents:
                 self.UIComponents[element].draw(win)
+            if self.hasMap:
+                self.getElementByTag(self.highlightedElement).drawHighlight(win)
     def update(self):
-        if self.canScroll: 
-            self.scrollPos += self.input.scrolly*20
-            if self.scrollPos > 0: self.scrollPos = 0
-            
         if self.show:
-            for element in self.UIComponents:
-                self.UIComponents[element].update()
+            if self.hasMap:
+                self.highlightedElement = self.UIMap.move(self.input, self)
+            
+                if self.input.inputEvent("UIACCEPT", False):
+                    if type(self.getElementByTag(self.highlightedElement)) in [UIButton, UILevelSelect]:
+                        self.getElementByTag(self.highlightedElement).press()
+                        
+                elif self.input.inputEvent("UIBACK", False):
+                    if self.UIMap.hasBack():
+                        self.getElementByTag("back").press()
+                
+            if self.canScroll: 
+                self.scrollPos += self.input.scrolly*20
+                if self.scrollPos > 0: self.scrollPos = 0
+                
+            if self.show:
+                for element in self.UIComponents:
+                    self.UIComponents[element].update()
                 
     def resetScroll(self):
         self.scrollPos = 0
@@ -68,6 +99,12 @@ class UIElement:
             blitSurf = self.surface
         if self.show:
             surf.blit(blitSurf, (int(screenPos[0]+padding[0]), screenPos[1]+padding[1]))
+    def drawHighlight(self, surf,padding=(0,0),screenPos=None):
+        screenPosWasNone = screenPos==None
+        if screenPos==None:
+            screenPos = self.screenPos
+        if self.show:
+            surf.blit(playerImages[0], (int(screenPos[0]+padding[0]), screenPos[1]+padding[1]))
     def update(self):
         if not self.lockScroll:
             self.screenPos = (self.pos[0], self.pos[1] + self.canvas.scrollPos)
@@ -166,13 +203,14 @@ class UIRect(UIElement):
         self.surface = pygame.Surface((w, h), pygame.SRCALPHA)
         if colour != None:
             self.colour = colour
-        self.surface.fill(colour)
+        pygame.draw.rect(self.surface, colour, self.rect, 0, 20)
+        # self.surface.fill(colour)
     def updateSurface(self):
-        self.surface.fill(self.colour)
+        pygame.draw.rect(self.surface, self.colour, self.rect, 0, 20)
     def updateSize(self, w, h):
         self.w, self.h = w, h
         self.surface = pygame.Surface((w if w > 0 else 1, h), pygame.SRCALPHA)
-        self.surface.fill(self.colour)
+        self.updateSurface()
     def updatePos(self, x,y):
         self.screenPos = (x,y)
         
@@ -192,17 +230,20 @@ class UIButton(UIText):
             # pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
             if self.input.clicked[0] and not self.input.clickDown[0]:
                 self.input.clickDown[0] = True
-                self.setBG(self.buttonColours[2])
-                if not self.held:
-                    self.held = not self.canHold
-                    self.canvas.playClick()
-                    self.clickAction()
+                self.press()
         if not tempRect.collidepoint(self.input.posx, self.input.posy):
             self.setBG(self.buttonColours[0])
 
         self.held = self.input.clicked[0] or self.canHold
 
         return super().update()
+    
+    def press(self):
+        self.setBG(self.buttonColours[2])
+        if not self.held:
+            self.held = not self.canHold
+            self.canvas.playClick()
+            self.clickAction()
     
     def clickAction(self):
         self.onClick()
@@ -222,3 +263,40 @@ class UILevelSelect(UIButton):
         
         self.level.lvlSelectChangeLevel()
         
+        
+        
+class UIMap:
+    def __init__(self) -> None:
+        self.links = {}
+        
+    def createLink(self, start, end, direction):
+        if start not in self.links:
+            self.links[start] = {}
+        self.links[start][direction] = end
+        
+    def hasBack(self) -> bool:
+        return "back" in self.links
+        
+    def move(self, inputs, canvas):
+        try:
+            if inputs.inputEvent("UIUP", False):
+                if "up" in self.links[canvas.highlightedElement]:
+                    canvas.audioPlayer.playSound(sounds["menuMove"])
+                    return self.links[canvas.highlightedElement]["up"]
+            elif inputs.inputEvent("UIDOWN", False):
+                if "down" in self.links[canvas.highlightedElement]:
+                    canvas.audioPlayer.playSound(sounds["menuMove"])
+                    return self.links[canvas.highlightedElement]["down"]
+            elif inputs.inputEvent("UILEFT", False):
+                if "left" in self.links[canvas.highlightedElement]:
+                    canvas.audioPlayer.playSound(sounds["menuMove"])
+                    return self.links[canvas.highlightedElement]["left"]
+            elif inputs.inputEvent("UIRIGHT", False):
+                if "right" in self.links[canvas.highlightedElement]:
+                    canvas.audioPlayer.playSound(sounds["menuMove"])
+                    return self.links[canvas.highlightedElement]["right"]
+        except KeyError:
+            print("no menu item in this direction")
+            
+        
+        return canvas.highlightedElement

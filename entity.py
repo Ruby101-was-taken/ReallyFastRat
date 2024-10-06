@@ -23,6 +23,15 @@ class Entity:
     
     def reset(self):
         self.x, self.y = self.startX, self.startY
+    def start(self): #called when tile spawns entity in
+        pass
+    
+    def checkCollision(self, obj):
+        if self.charRect.colliderect(obj.charRect):
+            return self.rectCollision(obj)
+    
+    def rectCollision(self, obj):
+        return True
     
     def update(self):
         self.moveRect()
@@ -32,7 +41,11 @@ class Entity:
     def draw(self, win, showHitBoxes = False):
         if showHitBoxes:
             pygame.draw.rect(win, (255, 255, 255), self.charRect)
-        win.blit(self.image, (self.x - self.level.camX - self.drawOffset[0] - 10 + self.manualDrawOffset[0], self.y - self.level.camY + self.drawOffset[1]-185 + self.manualDrawOffset[1]))
+        win.blit(self.image, (self.x - self.gameManager.camera.x - 5, self.y - self.gameManager.camera.y - 175))
+    
+    def destroy(self):
+        self.chunk.entities.remove(self)
+        del self
         
      
         
