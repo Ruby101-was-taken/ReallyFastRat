@@ -2,9 +2,9 @@
     "name": "SECOND LEVEL",
     "tileMapType": "Factory",
     "music": "factoryNew.wav",
-    "bgType" : "test",
+    "bgType" : "city",
     "ranks" : {
-        "s": 46,
+        "s": 41,
         "a": 55,
         "b": 75,
         "c": 100,

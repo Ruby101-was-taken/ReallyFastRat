@@ -28,6 +28,6 @@ facts = [
     "Fun Fact: A RAT could also be a \"Rodent Athletics Team\"!"
     "Fun Fact: Your rat is being loaded as we speak!",
     "Fun Fact: Rats are so :3",
-    "Fun Fact: Rats have their own game called \"Really Fast Human\"."
+    "Fun Fact: Rats have their own game called \"Really Fast Human\".",
     "!!sdrawkcab si tcaf sihT :tcaF nuF"
 ]

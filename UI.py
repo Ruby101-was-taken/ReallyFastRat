@@ -9,6 +9,12 @@ testMap = {
     "start": {"up": "settings", "down": "quit"}
 }
 
+class UIBorderStyle:
+    def __init__(self, colour=(0,0,0), width=0, radius = 0) -> None:
+        self.colour = colour
+        self.width = width
+        self.radius = radius
+
 class UICanvas:
     def __init__(self, canScroll=False, audioPlayer = None, inputs=None) -> None:
         self.UIComponents = {}
@@ -141,12 +147,14 @@ class UIText(UIElement):
         self.text = text
         self.fontSize = fontSize
         self.colour = colour
-        self.font = pygame.font.SysFont("arial", self.fontSize)
+        # self.font = pygame.font.SysFont("arial", self.fontSize)
+        self.font = pygame.font.Font("rubfont.ttf", fontSize)
         self.padding = padding
 
         self.setBG(CLEAR)
 
         self.updateText(text)
+        
     #@profile
     def updateText(self, newText: str, fontSize=None, colour=None):
         # Update font size and colour if provided
@@ -183,8 +191,8 @@ class UIText(UIElement):
         self.surface.blit(textSurface, (self.padding, self.padding))
 
         
-    def setBG(self, colour):
-        self.bg = UIRect((0,0), "textBG", self.surface.get_width(),self.surface.get_height(), colour)
+    def setBG(self, colour, border = UIBorderStyle(BLACK, 0, 0)):
+        self.bg = UIRect((0,0), "textBG", self.surface.get_width(),self.surface.get_height(), colour, border = border)
         self.updateText(self.text)
     def removeBG(self):
         self.bg.tag = "textBGEmpty"
@@ -194,52 +202,54 @@ class UIText(UIElement):
         self.updateText(self.text)
 
 class UIRect(UIElement):
-    def __init__(self, screenPos, tag:str, w:int, h:int, colour=(0,0,0), lockScroll = False) -> None:
+    def __init__(self, screenPos, tag:str, w:int, h:int, colour=(0,0,0), lockScroll = False, border = UIBorderStyle(BLACK, 0, 0)) -> None:
         super().__init__(screenPos, tag, lockScroll)
+        self.border = border
         self.updateRect(w, h, colour)
     def updateRect(self, w:int, h:int, colour=None):
         self.w, self.h = w, h
-        self.rect = pygame.Rect(0, 0, self.w, self.h)
-        self.surface = pygame.Surface((w, h), pygame.SRCALPHA)
         if colour != None:
             self.colour = colour
-        pygame.draw.rect(self.surface, colour, self.rect, 0, 20)
-        # self.surface.fill(colour)
+        self.updateSurface()
     def updateSurface(self):
-        pygame.draw.rect(self.surface, self.colour, self.rect, 0, 20)
+        self.rect = pygame.Rect(0, 0, self.w, self.h)
+        self.surface = pygame.Surface((self.w, self.h), pygame.SRCALPHA)
+        pygame.draw.rect(self.surface, self.colour, self.rect, 0, self.border.radius)
+        if self.border.width > 0:
+            pygame.draw.rect(self.surface, self.border.colour, self.rect, self.border.width, self.border.radius)
     def updateSize(self, w, h):
         self.w, self.h = w, h
-        self.surface = pygame.Surface((w if w > 0 else 1, h), pygame.SRCALPHA)
         self.updateSurface()
     def updatePos(self, x,y):
         self.screenPos = (x,y)
         
 class UIButton(UIText):
-    def __init__(self, screenPos, tag:str, onClick, text="", fontSize=10, padding=20, textColour=(0, 0, 0), buttonColours=((255,255,255), (127,127,127), (0,0,0)), canHold=False, lockScroll = False) -> None:
+    def __init__(self, screenPos, tag:str, onClick, text="", fontSize=10, padding=20, textColour=(0, 0, 0), buttonColours=((255,255,255), (127,127,127), (0,0,0)), canHold=False, lockScroll = False, border = UIBorderStyle(BLACK, 0, 0)) -> None:
         super().__init__(screenPos, tag, text, fontSize, textColour, padding, lockScroll)
-        self.setBG(buttonColours[0])
+        self.setBG(buttonColours[0], border)
         self.onClick = onClick
         self.held = False
         self.canHold = canHold
         self.buttonColours = buttonColours
+        self.border = border
     def update(self):
         tempRect = self.surface.get_rect()
         tempRect.x, tempRect.y = self.screenPos[0], self.screenPos[1]
         if tempRect.collidepoint(self.input.posx, self.input.posy):
-            self.setBG(self.buttonColours[1])
+            self.setBG(self.buttonColours[1], self.border)
             # pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
             if self.input.clicked[0] and not self.input.clickDown[0]:
                 self.input.clickDown[0] = True
                 self.press()
         if not tempRect.collidepoint(self.input.posx, self.input.posy):
-            self.setBG(self.buttonColours[0])
+            self.setBG(self.buttonColours[0], self.border)
 
         self.held = self.input.clicked[0] or self.canHold
 
         return super().update()
     
     def press(self):
-        self.setBG(self.buttonColours[2])
+        self.setBG(self.buttonColours[2], self.border)
         if not self.held:
             self.held = not self.canHold
             self.canvas.playClick()

@@ -4,7 +4,7 @@ from colours import *
 from entity import *
 from entities.enemy.AlarmProjectile.AlarmProjectile import AlarmProjectile
 
-from sign import sign
+from generalMaths import *
 
 
 

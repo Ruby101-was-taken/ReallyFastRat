@@ -20,7 +20,7 @@ from colours import *
 from ratFacts import facts
 
 from jsonParse import *
-from sign import *
+from generalMaths import *
 
 from settings import s
 
@@ -256,7 +256,7 @@ class GameManager:
         self.inGame = False
         self.settingsMenu = False
         
-        self.bgDetailLevels = ["None", "Min", "Max"]
+        self.bgDetailLevels = ["Off", "Min", "Max"]
         
         self.timer = 0
         self.timeString = ""
@@ -353,7 +353,6 @@ class GameManager:
         hud.show = not self.pause
         uiPauseButtons.show = self.pause
         if self.pause:
-            uiPause.getElementByTag("WorldText").updateText(f"{worldX} - {worldY}")
             pygame.mixer.Channel(7).pause()
         else:
             pygame.mixer.Channel(7).unpause()
@@ -373,6 +372,17 @@ class GameManager:
     
     def openFeedback(self):
         webbrowser.open("https://forms.gle/Uez6tRceadLUjGgXA") 
+        
+    def returnToMainMenu(self):
+        uiPauseButtons.show = False
+        uiPause.show = False
+        hud.show = False
+        self.inGame = False
+        self.toggleMainMenu()
+        uiLevelTitle.show = False
+        uiResults.show = False
+        pygame.mixer.Channel(7).unpause()
+        audioPlayer.playMusic(MusicSource(f"title.wav"), s.settings["musicVolume"]/100)
         
 #region OPEN/CLOSE SETTINGS
     
@@ -474,6 +484,11 @@ class GameManager:
     
         if not s.settings['particles']:
             self.particles = []
+            
+    def toggleQuickRestart(self):
+        s.toggleQuickRestart()
+        uiSettings.getElementByTag("quickRestartToggleStatus").updateText(f"{'On' if s.settings['quickRestartButton'] else 'Off'}")
+    
     
 #endregion SETTINGS
 
@@ -493,26 +508,28 @@ class GameManager:
         audioPlayer.playSound(sounds["menuChange"])
         audioPlayer.playSound(sounds["rat"])
         uiControls.show = True
-        uiSettings.show = False
         uiControlsXbox.show = True
     def hideControls(self):
         audioPlayer.playSound(sounds["menuChange"])
         audioPlayer.playSound(sounds["rat"])
         uiControls.show = False
-        uiSettings.show = True
         uiControlsXbox.show = False
         
     def showControlsMainMenu(self):
+        uiMainMenu.show = False
         
         self.showControls()
     def hideControlsMainMenu(self):
+        uiMainMenu.show = True
         
         self.hideControls()
         
     def showControlsPauseMenu(self):
+        uiPauseButtons.show = False
         
         self.showControls()
     def hideControlsPauseMenu(self):
+        uiPauseButtons.show = True
         
         self.hideControls()
         
@@ -534,10 +551,13 @@ class GameManager:
         
     def quickRestart(self):
         self.closeResults()
+        uiPause.show = False
+        uiPauseButtons.show = False
         player.lastSpawn = self.ogSpawn
         level.reloadTiles()
         player.reset(True) 
         self.timerOn = True
+        pygame.mixer.Channel(7).unpause()
         
                 
     def toggleFlyMode(self):
@@ -628,7 +648,7 @@ class Player:
         
         self.bounce = False
         
-        self.hat = "top"
+        self.hat = "none"
         
         self.speedParticleCoolDown = 5
         
@@ -1040,7 +1060,7 @@ class Player:
 
         self.resetFrame = False
 
-
+        inputs.inputEvent("UIACCEPT", False)
         if inputs.inputEvent("Jump", False):
             self.jump()
             
@@ -1491,223 +1511,215 @@ class Level:
         self.activeChunks = []
         
         #self.quickDraw = True
-        if self.worldXLast != worldX or reloadLevel:
-            self.worldXLast, self.worldYLast = worldX, worldY
-            self.levels = []
-            
-            self.levelInfo = parseJsonFile(f"levels/levelInfo/{worldX}-{worldY}.json")
-            
-            
-            levelJson = parseJsonFile(f"levels/levels/{worldX}-{worldY}.json")
-            
-            self.loading = False
-            
-            
-            
-            resliceImages(self.levelInfo["tileMapType"])
-            
-            
-            #loads the background into memory
-            self.loadBG(self.levelInfo['bgType'])        
-            
-            self.lowestPoint = 0
-            self.highestPoint = float('inf')
-            
-            
-            levelMap = {}
-            
-            chunksTemp = []
-            
-            self.indexOffset = 0
-            
-            largestX = 0
-            for layer in levelJson["layers"]:
-                for chunk in layer["chunks"]:
-                    chunkX = chunk["x"]
-                    chunkY = chunk["y"]
-                    if(not f"{chunkX}-{chunkY}" in self.chunks):
-                        chunksTemp.append(LevelChunk(int(chunkX), int(chunkY)))
-                    for y in range(16):
-                        for x in range(16):
-                            if chunk["data"][(y*16) + x] != 0:
-                                newTile = createTile((chunkX + x)*tileSize, (chunkY + y)*tileSize, int(chunk["data"][(y*16) + x])-1, tileSize)
-                                self.levels.append(newTile)
-                                
-                                
-                                
-                                
-                                if (chunkX + x)  > largestX:
-                                    largestX = (chunkX + x)
-                                
-                                #set vars needed for tiles
-                                newTile.index = len(self.levels)
-                                newTile.level = self
-                                newTile.player = player
-                                newTile.gameManager = gameManager
-                                newTile.win = win
-                                if layer["name"] == "Main":
-                                    if (chunkY + y)*tileSize < self.highestPoint:
-                                        self.highestPoint = (chunkY + y)*tileSize
-                                    
-                                    elif (chunkY+y)*tileSize > self.lowestPoint:
-                                        self.lowestPoint = (chunkY+y)*tileSize
-                                #(int(chunk["data"][(y*16) + x])-1) 
-                                
-            
-            
-            self.tileHightOffset = -self.highestPoint
-                
-            for chunk in chunksTemp:
-                chunk.y+=int(self.tileHightOffset)
-                self.chunks[chunk.posToString()] = chunk
-                
-            del chunksTemp
-                
-            
-            for tile in self.levels:
-                tile.y += int(self.tileHightOffset)
-                tilex = int((tile.x/tileSize)/16)*16
-                tiley = int((tile.y/tileSize)/16)*16
-                if not f"{int(tilex)}-{int(tiley)}" in self.chunks:
-                    self.chunks[f"{int(tilex)}-{int(tiley)}"] = LevelChunk(tilex, tiley)
-                self.chunks[f"{int(tilex)}-{int(tiley)}"].tiles.append(tile)
-                self.chunks[f"{int(tilex)}-{int(tiley)}"].tiles[-1].chunk = self.chunks[f"{int(tilex)}-{int(tiley)}"]
-                
-            
-            for tile in self.levels: # adds tiles to the level map with it's type as they key, done after offsetting so values are not changed
-                idStr = str(tile.tileID)
-                if not idStr in levelMap:
-                    levelMap[idStr] = {}
-                
-                levelMap[idStr][f"{tile.x}, {tile.y}"] = True
-            
-            self.lowestPoint += self.tileHightOffset+tileSize
-            
-            self.levelVis = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
-            self.levelVis.fill((0,0,0,0))
-            
-            self.levelBG = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
-            self.levelBG.fill((0,0,0,0))
-            
-            self.levelInteract = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
-            self.levelInteract.fill((0,0,0,0))
-            
-            self.levelToggleON = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
-            self.levelToggleON.fill((0,0,0,0))
-            self.levelToggleOFF = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
-            self.levelToggleOFF.fill((0,0,0,0))
-            
-            
-            for layer in levelJson["layers"]:
-                if layer["name"] == "Main":
-                    self.lowestPoint = layer["height"]*tileSize
-            
-            gameManager.camXLim = self.levelVis.get_width() - w
-            gameManager.camYLim = self.levelVis.get_height() - h
-            
-            gameManager.camXMin = 0
-            gameManager.camYMin = 0
-            
-            gameManager.camera.setMaxes(gameManager.camXLim, gameManager.camYLim)
-            gameManager.camera.setMins(0, 0)
+        self.worldXLast, self.worldYLast = worldX, worldY
+        self.levels = []
         
-
-            
-            animateLoadFrame = 0
-            tilesLoaded = 0
-            if not self.quickDraw:
-                loadingText = ""
-                for tile in self.levels:
-                    if tile.tileID == 3 and resetPlayerPos:
-                        spawnPos = self.getSpawn()
-                        gameManager.ogSpawn = spawnPos
-                        self.levelPosx, self.levelPosy = spawnPos[0], spawnPos[1]
-                        player.x, player.y = spawnPos[0], spawnPos[1]
-                        player.lastSpawn = (self.levelPosx, self.levelPosy)
-                    if tile.tileID != "-1":
-                        if loadingText !=  f"{str(int((tilesLoaded/len(self.levels))*100))}%":
-                            pygame.draw.rect(win, BLACK, pygame.Rect(0, 0, w, h/2))
-                            win.blit(bigFont.render(f"Loading Level: {str(int((tilesLoaded/len(self.levels))*100))}%", True, WHITE), (0,90))
-                            animateLoadFrame += 1
-                            if animateLoadFrame > 15:
-                                animateLoadFrame = 0
-                            pygame.draw.rect(win, BLACK, (1190, 630, 90, 90))
-                            win.blit(pygame.transform.scale(playerImages[int(animateLoadFrame/5) + 14], (90, 90)), (1190, 630))
-                            window.blit(win, (0,0))
-                            pygame.display.update()
-                            loadingText = f"{str(int((tilesLoaded/len(self.levels))*100))}%"
-                        for event in pygame.event.get():
-                            if event.type == pygame.QUIT:
-                                pygame.quit()
-                                run = False
-                                quit()
-                        
-                        #tile.image = slope
-                        
-                        if tile.tileID == 0:
-                            self.getTileImage(tile, levelMap, "0", tilesLoaded, tileImages.groundImages)
-                        elif tile.tileID == 1:
-                            self.getTileImage(tile, levelMap, "1", tilesLoaded, tileImages.bridgeImages, ["0", "1", "15", "16", "17"])
-                        elif tile.tileID == 2:
-                            self.getTileImage(tile, levelMap, "2", tilesLoaded, tileImages.spikeImages, ["0", "2", "15", "16", "17"])
-                        elif tile.tileID == 4:
-                            tile.image = tileImages.objectImages[1]
-                        elif tile.tileID == 5:
-                           tile.image = tileImages.objectImages[3]
-                        elif tile.tileID == 6:
-                            tile.image = tileImages.objectImages[0]
-                        elif tile.tileID == 7:
-                            tile.image = tileImages.objectImages[4]
-                        elif tile.tileID == 8:
-                            tile.image = tileImages.objectImages[2]
-                        elif tile.tileID == 10:
-                            tile.image = tileImages.objectImages[5]
-                        elif tile.tileID == 14:
-                            tile.image = tileImages.objectImages[6]
-                        elif tile.tileID == 15:
-                            self.getTileImage(tile, levelMap, "15", tilesLoaded, tileImages.groundBImages)
-                        elif tile.tileID == 16:
-                            self.getTileImage(tile, levelMap, "16", tilesLoaded, tileImages.groundCImages, ["16", "17"])
-                        elif tile.tileID == 17:
-                            self.getTileImage(tile, levelMap, "17", tilesLoaded, tileImages.groundDImages, ["16", "17"])
+        self.levelInfo = parseJsonFile(f"levels/levelInfo/{worldX}-{worldY}.json")
+        
+        
+        levelJson = parseJsonFile(f"levels/levels/{worldX}-{worldY}.json")
+        
+        self.loading = False
+        
+        
+        
+        resliceImages(self.levelInfo["tileMapType"])
+        
+        
+        #loads the background into memory
+        self.loadBG(self.levelInfo['bgType'])        
+        
+        self.lowestPoint = 0
+        self.highestPoint = float('inf')
+        
+        
+        levelMap = {}
+        
+        chunksTemp = []
+        
+        self.indexOffset = 0
+        
+        largestX = 0
+        for layer in levelJson["layers"]:
+            for chunk in layer["chunks"]:
+                chunkX = chunk["x"]
+                chunkY = chunk["y"]
+                if(not f"{chunkX}-{chunkY}" in self.chunks):
+                    chunksTemp.append(LevelChunk(int(chunkX), int(chunkY)))
+                for y in range(16):
+                    for x in range(16):
+                        if chunk["data"][(y*16) + x] != 0:
+                            newTile = createTile((chunkX + x)*tileSize, (chunkY + y)*tileSize, int(chunk["data"][(y*16) + x])-1, tileSize)
+                            self.levels.append(newTile)
                             
-                        elif tile.tileID == 18:
-                            self.getTileImage(tile, levelMap, "18", tilesLoaded, tileImages.backGroundAImages, ["0", "15", "16", "17", "18", "19"])
-                        elif tile.tileID == 19:
-                            self.getTileImage(tile, levelMap, "19", tilesLoaded, tileImages.backGroundBImages, ["0", "15", "16", "17", "18", "19"])
-                        elif tile.tileID == 20:
-                            self.getTileImage(tile, levelMap, "20", tilesLoaded, tileImages.backGroundCImages, ["0", "15", "16", "17", "20", "21"])
-                        elif tile.tileID == 21:
-                            self.getTileImage(tile, levelMap, "21", tilesLoaded, tileImages.backGroundDImages, ["0", "15", "16", "17", "20", "21"])
-                        elif tile.tileID == 22:
-                            self.getTileImage(tile, levelMap, "22", tilesLoaded, tileImages.movingPlatformImages, ["22"])
-                        elif tile.tileID == 23:
-                            tile.image = tileImages.objectImages[11]
-                        elif tile.tileID == 27:
-                            tile.image = tileImages.objectImages[12]
-                        elif tile.tileID == 28:
-                            tile.image = tileImages.objectImages[13]
-                        elif tile.tileID == 29:
-                            tile.image = tileImages.objectImages[14]
-                        elif tile.tileID == 30:
-                            tile.image = tileImages.objectImages[15]
-                        elif tile.tileID == 35:
-                            tile.image = tileImages.objectImages[18]
-                        tilesLoaded+=1
-                    
-            else:
-                for tile in self.levels:
-                    pass
-                print("pretty sure this never runs")
-                    
+                            
+                            
+                            
+                            if (chunkX + x)  > largestX:
+                                largestX = (chunkX + x)
+                            
+                            #set vars needed for tiles
+                            newTile.index = len(self.levels)
+                            newTile.level = self
+                            newTile.player = player
+                            newTile.gameManager = gameManager
+                            newTile.win = win
+                            if layer["name"] == "Main":
+                                if (chunkY + y)*tileSize < self.highestPoint:
+                                    self.highestPoint = (chunkY + y)*tileSize
+                                
+                                elif (chunkY+y)*tileSize > self.lowestPoint:
+                                    self.lowestPoint = (chunkY+y)*tileSize
+                            #(int(chunk["data"][(y*16) + x])-1) 
+                            
+        
+        
+        self.tileHightOffset = -self.highestPoint
+            
+        for chunk in chunksTemp:
+            chunk.y+=int(self.tileHightOffset)
+            self.chunks[chunk.posToString()] = chunk
+            
+        del chunksTemp
+            
+        
+        for tile in self.levels:
+            tile.y += int(self.tileHightOffset)
+            tilex = int((tile.x/tileSize)/16)*16
+            tiley = int((tile.y/tileSize)/16)*16
+            if not f"{int(tilex)}-{int(tiley)}" in self.chunks:
+                self.chunks[f"{int(tilex)}-{int(tiley)}"] = LevelChunk(tilex, tiley)
+            self.chunks[f"{int(tilex)}-{int(tiley)}"].tiles.append(tile)
+            self.chunks[f"{int(tilex)}-{int(tiley)}"].tiles[-1].chunk = self.chunks[f"{int(tilex)}-{int(tiley)}"]
+            
+        
+        for tile in self.levels: # adds tiles to the level map with it's type as they key, done after offsetting so values are not changed
+            idStr = str(tile.tileID)
+            if not idStr in levelMap:
+                levelMap[idStr] = {}
+            
+            levelMap[idStr][f"{tile.x}, {tile.y}"] = True
+        
+        self.lowestPoint += self.tileHightOffset+tileSize
+        
+        self.levelVis = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
+        self.levelVis.fill((0,0,0,0))
+        
+        self.levelBG = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
+        self.levelBG.fill((0,0,0,0))
+        
+        self.levelInteract = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
+        self.levelInteract.fill((0,0,0,0))
+        
+        self.levelToggleON = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
+        self.levelToggleON.fill((0,0,0,0))
+        self.levelToggleOFF = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
+        self.levelToggleOFF.fill((0,0,0,0))
+        
+        
+        for layer in levelJson["layers"]:
+            if layer["name"] == "Main":
+                self.lowestPoint = layer["height"]*tileSize
+        
+        gameManager.camXLim = self.levelVis.get_width() - w
+        gameManager.camYLim = self.levelVis.get_height() - h
+        
+        gameManager.camXMin = 0
+        gameManager.camYMin = 0
+        
+        gameManager.camera.setMaxes(gameManager.camXLim, gameManager.camYLim)
+        gameManager.camera.setMins(0, 0)
+    
 
+        
+        animateLoadFrame = 0
+        tilesLoaded = 0
+        if not self.quickDraw:
+            loadingText = ""
+            for tile in self.levels:
+                if tile.tileID == 3 and resetPlayerPos:
+                    spawnPos = self.getSpawn()
+                    gameManager.ogSpawn = spawnPos
+                    self.levelPosx, self.levelPosy = spawnPos[0], spawnPos[1]
+                    player.x, player.y = spawnPos[0], spawnPos[1]
+                    player.lastSpawn = (self.levelPosx, self.levelPosy)
+                if tile.tileID != "-1":
+                    if loadingText !=  f"{str(int((tilesLoaded/len(self.levels))*100))}%":
+                        pygame.draw.rect(win, BLACK, pygame.Rect(0, 0, w, h/2))
+                        win.blit(bigFont.render(f"Loading Level: {str(int((tilesLoaded/len(self.levels))*100))}%", True, WHITE), (0,90))
+                        animateLoadFrame += 1
+                        if animateLoadFrame > 15:
+                            animateLoadFrame = 0
+                        pygame.draw.rect(win, BLACK, (1190, 630, 90, 90))
+                        win.blit(pygame.transform.scale(playerImages[int(animateLoadFrame/5) + 14], (90, 90)), (1190, 630))
+                        window.blit(win, (0,0))
+                        pygame.display.update()
+                        loadingText = f"{str(int((tilesLoaded/len(self.levels))*100))}%"
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            run = False
+                            quit()
+                    
+                    #tile.image = slope
+                    
+                    if tile.tileID == 0:
+                        self.getTileImage(tile, levelMap, "0", tilesLoaded, tileImages.groundImages)
+                    elif tile.tileID == 1:
+                        self.getTileImage(tile, levelMap, "1", tilesLoaded, tileImages.bridgeImages, ["0", "1", "15", "16", "17"])
+                    elif tile.tileID == 2:
+                        self.getTileImage(tile, levelMap, "2", tilesLoaded, tileImages.spikeImages, ["0", "2", "15", "16", "17"])
+                    elif tile.tileID == 4:
+                        tile.image = tileImages.objectImages[1]
+                    elif tile.tileID == 5:
+                        tile.image = tileImages.objectImages[3]
+                    elif tile.tileID == 6:
+                        tile.image = tileImages.objectImages[0]
+                    elif tile.tileID == 7:
+                        tile.image = tileImages.objectImages[4]
+                    elif tile.tileID == 8:
+                        tile.image = tileImages.objectImages[2]
+                    elif tile.tileID == 10:
+                        tile.image = tileImages.objectImages[5]
+                    elif tile.tileID == 14:
+                        tile.image = tileImages.objectImages[6]
+                    elif tile.tileID == 15:
+                        self.getTileImage(tile, levelMap, "15", tilesLoaded, tileImages.groundBImages)
+                    elif tile.tileID == 16:
+                        self.getTileImage(tile, levelMap, "16", tilesLoaded, tileImages.groundCImages, ["16", "17"])
+                    elif tile.tileID == 17:
+                        self.getTileImage(tile, levelMap, "17", tilesLoaded, tileImages.groundDImages, ["16", "17"])
+                        
+                    elif tile.tileID == 18:
+                        self.getTileImage(tile, levelMap, "18", tilesLoaded, tileImages.backGroundAImages, ["0", "15", "16", "17", "18", "19"])
+                    elif tile.tileID == 19:
+                        self.getTileImage(tile, levelMap, "19", tilesLoaded, tileImages.backGroundBImages, ["0", "15", "16", "17", "18", "19"])
+                    elif tile.tileID == 20:
+                        self.getTileImage(tile, levelMap, "20", tilesLoaded, tileImages.backGroundCImages, ["0", "15", "16", "17", "20", "21"])
+                    elif tile.tileID == 21:
+                        self.getTileImage(tile, levelMap, "21", tilesLoaded, tileImages.backGroundDImages, ["0", "15", "16", "17", "20", "21"])
+                    elif tile.tileID == 22:
+                        self.getTileImage(tile, levelMap, "22", tilesLoaded, tileImages.movingPlatformImages, ["22"])
+                    elif tile.tileID == 23:
+                        tile.image = tileImages.objectImages[11]
+                    elif tile.tileID == 27:
+                        tile.image = tileImages.objectImages[12]
+                    elif tile.tileID == 28:
+                        tile.image = tileImages.objectImages[13]
+                    elif tile.tileID == 29:
+                        tile.image = tileImages.objectImages[14]
+                    elif tile.tileID == 30:
+                        tile.image = tileImages.objectImages[15]
+                    elif tile.tileID == 35:
+                        tile.image = tileImages.objectImages[18]
+                    tilesLoaded+=1
+                
         else:
             for tile in self.levels:
-                tile.reload()
-            if resetPlayerPos:
-                spawnPos = self.getSpawn()
-                player.x, player.y = spawnPos[0], spawnPos[1]
-                
+                pass
+            print("pretty sure this never runs")
+                    
+
         pygame.draw.rect(win, BLACK, pygame.Rect(0, 0, w, h/2))
         win.blit(bigFont.render("Almost Done...", True, WHITE), (0,90))
         pygame.draw.rect(win, BLACK, (1190, 630, 90, 90))
@@ -1886,7 +1898,7 @@ class Level:
                     self.onScreenLevel.append(tile)
                     
     
-    
+#region rendering 
     def drawEntities(self):
         for chunk in self.entityChunks:
             if len(chunk.entities) > 0:
@@ -1958,7 +1970,7 @@ class Level:
         # full level view
         #win.blit(pygame.transform.scale(self.levelVis, (w,h)), (0,0))
        
-        
+#endregion Rendering    
 
 class semiLevel:
     def __init__(self):
@@ -2007,10 +2019,7 @@ class AudioPlayer:
         self.music = musicSrc.sound
         self.music.set_volume(volume if volume != 2 else s.settings["musicVolume"]/100)
         pygame.mixer.Channel(7).play(self.music, -1)
-        
-        
-    
-        
+             
 class MusicSource:
     def __init__(self, soundPath:str) -> None:
         self.sound = pygame.mixer.Sound("sound/music/" + soundPath)
@@ -2022,13 +2031,6 @@ audioPlayer.playMusic(MusicSource(f"title.wav"), s.settings["musicVolume"]/100)
 jump = AudioSource("jump.mp3")
 music = AudioSource("music/music.mp3")
 
-
-
-
-def getPercentage(num, full):
-    return (num/full)*100
-def getIntPercentage(num, full):
-    return int((num/full)*100)
   
 def redrawScreen():
     global win
@@ -2077,10 +2079,10 @@ def redrawScreen():
     uiMainMenu.draw(win)
     uiLevelTitle.draw(win)
     uiResults.draw(win)
+    uiControls.draw(win)
+    uiControlsXbox.draw(win)
     if gameManager.settingsMenu:
         uiSettings.draw(win)
-        uiControls.draw(win)
-        uiControlsXbox.draw(win)
 
     
     for y, log in enumerate(debugLog):
@@ -2261,7 +2263,6 @@ inputs.setAxis(0, (0.8, 2), "UIRIGHT")
 inputs.setKey(pygame.K_RETURN, "UIACCEPT")
 inputs.setButton(0, "UIACCEPT")
 
-# inputs.setKey(pygame.K_RETURN, "UIACCEPT")
 inputs.setButton(1, "UIBACK")
 
 
@@ -2271,11 +2272,11 @@ slashHeld = False
 
 #endregion INPUTS
 
-
+defaultButtonStyle = order=UIBorderStyle(DARK_RAT, 10, 20)
 #region UI
 #region DEBUGUI
 debugUi = UICanvas()
-debugUi.addElement(UIText((0,h-66), "FPSText", "FPS:", 20, (0,0,0), 0))
+debugUi.addElement(UIText((0,0), "FPSText", "FPS:", 20, (0,0,0), 8))
 debugUi.getElementByTag("FPSText").setBG((255,255,255))
 
 
@@ -2297,7 +2298,7 @@ fullDebugUi.getElementByTag("tframes").setBG((255,255,255))
 fullDebugUi.addElement(UIText((0,180), "tiles", "Tiles:", 20, (0,0,0), 0))
 fullDebugUi.getElementByTag("tiles").setBG((255,255,255))
 
-fullDebugUi.addElement(UIButton((100, 350), "fly mode", gameManager.toggleFlyMode, "FLY MODE", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+fullDebugUi.addElement(UIButton((100, 350), "fly mode", gameManager.toggleFlyMode, "FLY MODE", 30, 20, (0,0,0), DEFAULT_BUTTON_COLOURS))
 
 #endregion DEBUG UI
 
@@ -2321,47 +2322,47 @@ hud.getElementByTag("coins").setBG((255,255,255))
 uiPause = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiPause.show = False
 uiPause.addElement(UIRect((0,0), "PauseBG", w, h, (100,100,100,100)))
-uiPause.addElement(UIText((0,h-85), "PauseText", "PAUSE", 50, (0,0,0), 20))
-uiPause.getElementByTag("PauseText").setBG((255,255,255))
 
-uiPause.addElement(UIText((w-100,0), "WorldText", "0-0", 50, (0,0,0), 0))
 
 
 uiPauseButtons = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiPauseButtons.show = False
-uiPauseButtons.addElement(UIButton((175, h-70), "back", gameManager.togglePause, "Play", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiPauseButtons.addElement(UIButton((273, h-70), "Settings Button", gameManager.openSettingsPause, "Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiPauseButtons.addElement(UIButton((412, h-70), "Feedback Button", gameManager.openFeedback, "Feedback", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-
-uiPauseButtons.addElement(UILevelSelect((0, 0), "0-0", level, (0, 0),"Dash Tutorial", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiPauseButtons.addElement(UILevelSelect((0, 75), "1-1", level, (1, 1),"First Level", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiPauseButtons.addElement(UILevelSelect((0, 150), "1-2", level, (1, 2),"Second Level", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-
+uiPauseButtons.addElement(UIText((100,130), "PauseText", "PAUSE", 50, WHITE, 20))
+uiPauseButtons.getElementByTag("PauseText").setBG(PINK_RAT, UIBorderStyle(radius=10))
+uiPauseButtons.addElement(UIButton((100, 250), "back", gameManager.togglePause, "Continue", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
+uiPauseButtons.addElement(UIButton((100, 320), "Restart Button", gameManager.quickRestart, "Restart", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
+uiPauseButtons.addElement(UIButton((100, 390), "Settings Button", gameManager.openSettingsPause, "Settings", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
+uiPauseButtons.addElement(UIButton((100, 460), "Controls Button", gameManager.showControlsPauseMenu, "Controls", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
+uiPauseButtons.addElement(UIButton((100, 530), "MainMenu Button", gameManager.returnToMainMenu, "Main Menu", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
+uiPauseButtons.addElement(UIButton((100, 600), "Feedback Button", gameManager.openFeedback, "Feedback", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
 
 
 uiPauseButtons.makeMap({
-    "back": {"right": "Settings Button", "left": "Feedback Button", "up": "1-2"},
-    "Settings Button": {"right": "Feedback Button", "left": "back", "up": "1-1"},
-    "Feedback Button": {"left": "Settings Button", "right": "back", "up": "0-0"},
-    "1-2": {"down": "back", "up": "1-1"},
-    "1-1": {"down": "1-2", "up": "0-0"},
-    "0-0": {"down": "1-1"}
+    "back": {"down": "Restart Button", "up": "Feedback Button"},
+    "Restart Button": {"down": "Settings Button", "up": "back"},
+    "Settings Button": {"down": "Controls Button", "up": "Restart Button"},
+    "Controls Button": {"down": "MainMenu Button", "up": "Settings Button"},
+    "MainMenu Button": {"down": "Feedback Button", "up": "Controls Button"},
+    "Feedback Button": {"down": "back", "up": "MainMenu Button"}
 })
 
 #endregion PAUSE
 
 #region MAINMENU
 uiMainMenu = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
+uiMainMenu.show = True
 uiMainMenu.addElement(UIText((100,100), "TITLE", "Really Fast Rat", 60, GREY, 0))
 uiMainMenu.addElement(UIText((100,200), "SUBTITLE", "INDEV VERSION - 0.0.4 - INDEV 3", 20, GREY, 0))
-uiMainMenu.addElement(UIButton((100, 350), "Start Button", gameManager.toggleLevelSelect, "Start", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiMainMenu.addElement(UIButton((100, 450), "Settings Button", gameManager.openSettingsMainMenu, "Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiMainMenu.addElement(UIButton((100, 550), "Feedback Button", gameManager.openFeedback, "Feedback", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiMainMenu.addElement(UIButton((100, 350), "Start Button", gameManager.toggleLevelSelect, "Start", 20, 20, WHITE, DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
+uiMainMenu.addElement(UIButton((100, 450), "Settings Button", gameManager.openSettingsMainMenu, "Settings", 20, 20, WHITE, DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
+uiMainMenu.addElement(UIButton((100, 550), "controls", gameManager.whichShowControls, "Controls", 20, 20, WHITE, DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
+uiMainMenu.addElement(UIButton((100, 650), "Feedback Button", gameManager.openFeedback, "Feedback", 20, 20, WHITE, DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
 
 uiMainMenu.makeMap({
     "Start Button": {"up": "Feedback Button", "down": "Settings Button"},
-    "Settings Button": {"up": "Start Button", "down": "Feedback Button"},
-    "Feedback Button": {"up": "Settings Button", "down": "Start Button"}
+    "Settings Button": {"up": "Start Button", "down": "controls"},
+    "controls": {"up": "Settings Button", "Down": "Feedback Button"},
+    "Feedback Button": {"up": "controls", "down": "Start Button"}
 })
 
 #https://forms.gle/Uez6tRceadLUjGgXA
@@ -2373,39 +2374,45 @@ uiMainMenu.addElement(UIImage((w-140, h-50), "ruby logo", [logo[2]]))
 #region SETTINGS
 uiSettings = UICanvas(True, inputs=inputs, audioPlayer=audioPlayer)
 uiSettings.show = False
-uiSettings.addElement(UIText((150, 10), "TITLE", "Really Fast Rat Settings", 30, GREY, 0))
-uiSettings.addElement(UIButton((10, 60), "MusicUp", gameManager.increaseMusicVolume, "Increase Music Volume", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiSettings.addElement(UIText((310,60), "musicVolume", f"{s.settings['musicVolume']}%", 30, GREY, 20))
-uiSettings.addElement(UIButton((410, 60), "MusicDown", gameManager.decreaseMusicVolume, "Decrease Music Volume", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiSettings.addElement(UIText((150, 00), "TITLE", "Really Fast Rat Settings", 20, GREY, 0))
+uiSettings.addElement(UIButton((10, 60), "MusicUp", gameManager.increaseMusicVolume, "Increase Music Volume", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
+uiSettings.addElement(UIText((460,95), "musicVolume", f"{s.settings['musicVolume']}%", 17, WHITE, 20))
+uiSettings.getElementByTag("musicVolume").setBG(DARK_RAT, defaultButtonStyle)
+uiSettings.addElement(UIButton((10, 130), "MusicDown", gameManager.decreaseMusicVolume, "Decrease Music Volume", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
 
-uiSettings.addElement(UIButton((10, 260), "bgToggle", gameManager.toggleBG, "Background Detail", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiSettings.addElement(UIText((310,260), "bgDetail", f"{gameManager.bgDetailLevels[s.settings['backgroundDetail']]}", 30, GREY, 20))
+uiSettings.addElement(UIButton((10, 230), "SFXUp", gameManager.increaseSoundVolume, "Increase Sound Volume", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
+uiSettings.addElement(UIText((460,265), "soundVolume", f"{s.settings['sfxVolume']}%", 17, WHITE, 20))
+uiSettings.getElementByTag("soundVolume").setBG(DARK_RAT, defaultButtonStyle)
+uiSettings.addElement(UIButton((10, 300), "SFXDown", gameManager.decreaseSoundVolume, "Decrease Sound Volume", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
 
-uiSettings.addElement(UIButton((10, 160), "SFXUp", gameManager.increaseSoundVolume, "Increase Sound Volume", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiSettings.addElement(UIText((310,160), "soundVolume", f"{s.settings['sfxVolume']}%", 30, GREY, 20))
-uiSettings.addElement(UIButton((410, 160), "SFXDown", gameManager.decreaseSoundVolume, "Decrease Sound Volume", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiSettings.addElement(UIButton((10, 400), "bgToggle", gameManager.toggleBG, "Background Detail", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
+uiSettings.addElement(UIText((460,400), "bgDetail", f"{gameManager.bgDetailLevels[s.settings['backgroundDetail']]}", 17, WHITE, 20))
+uiSettings.getElementByTag("bgDetail").setBG(DARK_RAT, defaultButtonStyle)
 
+uiSettings.addElement(UIButton((10, 500), "particleToggle", gameManager.toggleParticles, "Show Particles", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
+uiSettings.addElement(UIText((460,500), "particleToggleStatus", f"{'On' if s.settings['particles'] else 'Off'}", 17, WHITE, 20))
+uiSettings.getElementByTag("particleToggleStatus").setBG(DARK_RAT, defaultButtonStyle)
 
-uiSettings.addElement(UIButton((10, 360), "particleToggle", gameManager.toggleParticles, "Show Particles", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiSettings.addElement(UIText((310,360), "particleToggleStatus", f"{'On' if s.settings['particles'] else 'Off'}", 30, GREY, 20))
+uiSettings.addElement(UIButton((10, 600), "quickRestartToggle", gameManager.toggleQuickRestart, "Quick Restart Input", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
+uiSettings.addElement(UIText((460,600), "quickRestartToggleStatus", f"{'On' if s.settings['quickRestartButton'] else 'Off'}", 17, WHITE, 20))
+uiSettings.getElementByTag("quickRestartToggleStatus").setBG(DARK_RAT, defaultButtonStyle)
 
-uiSettings.addElement(UIButton((w-210, 60), "back", gameManager.whichCloseSettings, "Save Settings", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiSettings.addElement(UIButton((w-410, 60), "back", gameManager.whichCloseSettings, "Save Settings", 17, 20, WHITE, DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
 
  
 uiSettings.addElement(UIImage((w-90,160), "ratBluePrints", uiAnimations["bluePrints"], 6, lockScroll=True))
 
-uiSettings.addElement(UIButton((w-210, 650), "controls", gameManager.whichShowControls, "Controls", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
 
 
 uiSettings.makeMap({
-    "back": {"left": "MusicDown", "down": "controls"},
-    "MusicUp": {"up": "particleToggle", "down": "SFXUp", "right": "MusicDown"},
-    "MusicDown": {"up": "particleToggle", "down": "SFXDown", "left": "MusicUp", "right": "back"},
-    "SFXUp": {"up": "MusicUp", "down": "bgToggle", "right": "SFXDown"},
-    "SFXDown": {"up": "MusicDown", "down": "bgToggle", "left": "SFXUp", "right": "back"},
-    "bgToggle": {"up": "SFXUp", "down": "particleToggle", "right": "back"},
-    "particleToggle": {"up": "bgToggle", "down": "controls", "right": "controls"},
-    "controls": {"up": "back", "left": "particleToggle"}
+    "back": {"left": "MusicUp"},
+    "MusicUp": {"up": "quickRestartToggle", "down": "MusicDown", "right": "back"},
+    "MusicDown": {"up": "MusicUp", "down": "SFXUp", "right": "back"},
+    "SFXUp": {"up": "MusicDown", "down": "SFXDown", "right": "back"},
+    "SFXDown": {"up": "SFXUp", "down": "bgToggle", "right": "back"},
+    "bgToggle": {"up": "SFXDown", "down": "particleToggle", "right": "back"},
+    "particleToggle": {"up": "bgToggle", "down": "quickRestartToggle", "right": "back"},
+    "quickRestartToggle": {"up": "particleToggle", "down": "MusicUp", "right": "back"}
 })
 
 #endregion Settings
@@ -2414,8 +2421,8 @@ uiSettings.makeMap({
 #region CONTROLS
 uiControls = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiControls.show = False
-uiControls.addElement(UIButton((115, 0), "reload", reloadController, "Reload Controller", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiControls.addElement(UIButton((w-210, 0), "back", gameManager.whichCloseControls, "Back", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiControls.addElement(UIButton((115, 0), "reload", reloadController, "Reload Controller", 10, 20, (0,0,0), DEFAULT_BUTTON_COLOURS))
+uiControls.addElement(UIButton((w-210, 0), "back", gameManager.whichCloseControls, "Back", 10, 20, (0,0,0), DEFAULT_BUTTON_COLOURS))
 
 uiControls.makeMap({
     "back": {"left": "reload", "right": "reload"},
@@ -2426,12 +2433,12 @@ uiControls.makeMap({
 uiControlsXbox = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiControlsXbox.show = False
 uiControlsXbox.addElement(UIImage((0,0), "xbox", [uiAnimations["controlLayouts"]["xbox"]], 6))
-uiControlsXbox.addElement(UIText((289, 69), "climb", "CLIMB (HOLD)", 30, GREY, 0))
-uiControlsXbox.addElement(UIText((860, 69), "run", "RUN (HOLD)", 30, GREY, 0))
-uiControlsXbox.addElement(UIText((220, 400), "move", "MOVE", 30, GREY, 0))
-uiControlsXbox.addElement(UIText((940, 250), "dash", "DASH", 30, GREY, 0))
-uiControlsXbox.addElement(UIText((1180, 250), "stomp", "STOMP", 30, GREY, 0))
-uiControlsXbox.addElement(UIText((1065, 440), "jump", "JUMP", 30, GREY, 0))
+uiControlsXbox.addElement(UIText((289, 69), "climb", "CLIMB (HOLD)", 10, GREY, 0))
+uiControlsXbox.addElement(UIText((860, 69), "run", "RUN (HOLD)", 10, GREY, 0))
+uiControlsXbox.addElement(UIText((220, 400), "move", "MOVE", 10, GREY, 0))
+uiControlsXbox.addElement(UIText((940, 250), "dash", "DASH", 10, GREY, 0))
+uiControlsXbox.addElement(UIText((1180, 250), "stomp", "STOMP", 10, GREY, 0))
+uiControlsXbox.addElement(UIText((1065, 440), "jump", "JUMP", 10, GREY, 0))
 
 #endregion CONTROLS
 
@@ -2448,28 +2455,29 @@ uiLevelTitle.addElement(UIText((100, h+400), "lvlName", "LEVEL NAME", 40, BLACK)
 uiResults = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiResults.show = False
 uiResults.addElement(UIRect((0,0), "resultBG", w, h, (100,100,100,100)))
-uiResults.addElement(UIText((0,0), "ResultText", "RESULTS:", 50, (0,0,0), 20))
-uiResults.getElementByTag("ResultText").setBG((255,255,255))
-
+uiResults.addElement(UIText((0,0), "ResultText", "RESULTS:", 50, WHITE, 20))
+uiResults.getElementByTag("ResultText").setBG(PINK_RAT, UIBorderStyle(radius=10))
 uiResults.addElement(UIRect((w-400,0), "timesBG", 400, 277, (100,100,100,100)))
 
-uiResults.addElement(UIText((w-400,0), "s", "S RANK: 00:00", 30, (0,0,0), 20))
-uiResults.addElement(UIText((w-400,50), "a", "A RANK: 00:00", 30, (0,0,0), 20))
-uiResults.addElement(UIText((w-400,100), "b", "B RANK: 00:00", 30, (0,0,0), 20))
-uiResults.addElement(UIText((w-400,150), "c", "C RANK: 00:00", 30, (0,0,0), 20))
-uiResults.addElement(UIText((w-400,200), "d", "D RANK: 00:00", 30, (0,0,0), 20))
+uiResults.addElement(UIText((w-400,0), "s", "S RANK: 00:00", 10, (0,0,0), 20))
+uiResults.addElement(UIText((w-400,50), "a", "A RANK: 00:00", 10, (0,0,0), 20))
+uiResults.addElement(UIText((w-400,100), "b", "B RANK: 00:00", 10, (0,0,0), 20))
+uiResults.addElement(UIText((w-400,150), "c", "C RANK: 00:00", 10, (0,0,0), 20))
+uiResults.addElement(UIText((w-400,200), "d", "D RANK: 00:00", 10, (0,0,0), 20))
 
 uiResults.addElement(UIImage((w-400, 338), "rank", [uiAnimations["rankings"]["s"]], 1))
 
-uiResults.addElement(UIButton((w-600, 550), "continue", gameManager.nextLevel, "Continue", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
-uiResults.addElement(UIButton((w-600, 650), "try again", gameManager.quickRestart, "Try Again", 30, 20, (0,0,0), (RED, GREEN, BLUE)))
+uiResults.addElement(UIButton((w-600, 450), "continue", gameManager.nextLevel, "Continue", 10, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
+uiResults.addElement(UIButton((w-600, 550), "try again", gameManager.quickRestart, "Try Again", 10, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
+uiResults.addElement(UIButton((w-600, 650), "main menu", gameManager.returnToMainMenu, "Main Menu", 10, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
 
-uiResults.addElement(UIText((429,300), "timer", "00:00.00", 60, (0,0,0), 0))
+uiResults.addElement(UIText((0,300), "timer", "00:00.00", 40, (0,0,0), 10))
 uiResults.getElementByTag("timer").setBG((255,255,255, 150))
 
 uiResults.makeMap({
-    "continue": {"down": "try again", "up": "try again"},
-    "try again": {"down": "continue", "up": "continue"}
+    "continue": {"down": "try again", "up": "main menu"},
+    "try again": {"down": "main menu", "up": "continue"},
+    "main menu": {"down": "continue", "up": "try again"}
 })
 
 #endregion RESULTS
@@ -2564,9 +2572,9 @@ def main():
                 player.xVel+=player.decelSpeed
                 player.changeXVel(0, False)
                 player.boostDirection = 0
-            
-            if inputs.inputEvent("Restart1") and inputs.inputEvent("Restart2"):
-                gameManager.quickRestart()
+            if s.settings['quickRestartButton']:
+                if inputs.inputEvent("Restart1") and inputs.inputEvent("Restart2"):
+                    gameManager.quickRestart()
 
 
         if keys[pygame.K_r]:
@@ -2601,19 +2609,20 @@ def main():
     elif gameManager.mainMenu:
         
         uiMainMenu.update()
+        uiControls.update()
     
     elif gameManager.settingsMenu:
         
         uiSettings.update()
         
         
-        uiControls.update()
         
     elif gameManager.pause:
         
         uiPause.update()
         
         uiPauseButtons.update()
+        uiControls.update()
         
         if keys[pygame.K_r]:
             reloadController()

@@ -13,7 +13,8 @@ class Settings:
             "particles": True,
             "drawOnThread": False,
             "bgType": "test",
-            "hwaccel": False
+            "hwaccel": False,
+            "quickRestartButton": True
         }
         self.loadSettings()
         
@@ -51,6 +52,9 @@ class Settings:
         
     def toggleParticles(self):
         self.settings["particles"] = not self.settings["particles"]
+        
+    def toggleQuickRestart(self):
+        self.settings["quickRestartButton"] = not self.settings["quickRestartButton"]
         
         
     def increaseSoundVolume(self):

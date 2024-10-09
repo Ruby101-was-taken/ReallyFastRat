@@ -2,7 +2,7 @@
     "name": "FIRST LEVEL",
     "tileMapType": "City",
     "music": "first.wav",
-    "bgType" : "test",
+    "bgType" : "city",
     "ranks" : {
         "s": 31,
         "a": 35,
