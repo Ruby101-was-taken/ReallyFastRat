@@ -25,9 +25,10 @@ facts = [
     "Fun Fact: You can now walljump. You could before. Not very well, BUT YOU COULD",
     "Fun Fact: This game isn't called \"Rat Game\". But you'd sure think it was.",
     "Fun Fact: Nobody knows who Dave is.",
-    "Fun Fact: A RAT could also be a \"Rodent Athletics Team\"!"
+    "Fun Fact: A RAT could also be a \"Rodent Athletics Team\"!",
     "Fun Fact: Your rat is being loaded as we speak!",
     "Fun Fact: Rats are so :3",
     "Fun Fact: Rats have their own game called \"Really Fast Human\".",
-    "!!sdrawkcab si tcaf sihT :tcaF nuF"
+    "!!sdrawkcab si tcaf sihT :tcaF nuF",
+    "Fun Fact: Despite being a game about rats, this game was made with a snake!"
 ]

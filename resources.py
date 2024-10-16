@@ -91,17 +91,30 @@ sounds = {
 
 uiAnimations = {
     "bluePrints": [
-        pygame.image.load("ui/playerBluePrints/playerBluePrints00.png").convert_alpha(),
-        pygame.image.load("ui/playerBluePrints/playerBluePrints01.png").convert_alpha(),
-        pygame.image.load("ui/playerBluePrints/playerBluePrints02.png").convert_alpha(),
-        pygame.image.load("ui/playerBluePrints/playerBluePrints03.png").convert_alpha(),
-        pygame.image.load("ui/playerBluePrints/playerBluePrints04.png").convert_alpha(),
-        pygame.image.load("ui/playerBluePrints/playerBluePrints05.png").convert_alpha(),
-        pygame.image.load("ui/playerBluePrints/playerBluePrints06.png").convert_alpha(),
-        pygame.image.load("ui/playerBluePrints/playerBluePrints07.png").convert_alpha(),
-        pygame.image.load("ui/playerBluePrints/playerBluePrints08.png").convert_alpha(),
-        pygame.image.load("ui/playerBluePrints/playerBluePrints09.png").convert_alpha(),
-        pygame.image.load("ui/playerBluePrints/playerBluePrints10.png").convert_alpha()
+        pygame.image.load("ui/rat/playerBluePrints/playerBluePrints00.png").convert_alpha(),
+        pygame.image.load("ui/rat/playerBluePrints/playerBluePrints01.png").convert_alpha(),
+        pygame.image.load("ui/rat/playerBluePrints/playerBluePrints02.png").convert_alpha(),
+        pygame.image.load("ui/rat/playerBluePrints/playerBluePrints03.png").convert_alpha(),
+        pygame.image.load("ui/rat/playerBluePrints/playerBluePrints04.png").convert_alpha(),
+        pygame.image.load("ui/rat/playerBluePrints/playerBluePrints05.png").convert_alpha(),
+        pygame.image.load("ui/rat/playerBluePrints/playerBluePrints06.png").convert_alpha(),
+        pygame.image.load("ui/rat/playerBluePrints/playerBluePrints07.png").convert_alpha(),
+        pygame.image.load("ui/rat/playerBluePrints/playerBluePrints08.png").convert_alpha(),
+        pygame.image.load("ui/rat/playerBluePrints/playerBluePrints09.png").convert_alpha(),
+        pygame.image.load("ui/rat/playerBluePrints/playerBluePrints10.png").convert_alpha()
+        ],
+    
+    "sad": [
+        pygame.transform.scale(pygame.image.load("ui/rat/sad/sad00.png"), (300, 300)).convert_alpha(),
+        pygame.transform.scale(pygame.image.load("ui/rat/sad/sad01.png"), (300, 300)).convert_alpha(),
+        pygame.transform.scale(pygame.image.load("ui/rat/sad/sad02.png"), (300, 300)).convert_alpha(),
+        pygame.transform.scale(pygame.image.load("ui/rat/sad/sad03.png"), (300, 300)).convert_alpha(),
+        pygame.transform.scale(pygame.image.load("ui/rat/sad/sad04.png"), (300, 300)).convert_alpha(),
+        pygame.transform.scale(pygame.image.load("ui/rat/sad/sad05.png"), (300, 300)).convert_alpha(),
+        pygame.transform.scale(pygame.image.load("ui/rat/sad/sad06.png"), (300, 300)).convert_alpha(),
+        pygame.transform.scale(pygame.image.load("ui/rat/sad/sad07.png"), (300, 300)).convert_alpha(),
+        pygame.transform.scale(pygame.image.load("ui/rat/sad/sad08.png"), (300, 300)).convert_alpha(),
+        pygame.transform.scale(pygame.image.load("ui/rat/sad/sad09.png"), (300, 300)).convert_alpha()
         ],
     
     "bgDetail": [
@@ -111,7 +124,8 @@ uiAnimations = {
     ],
     
     "controlLayouts": {
-        "xbox": pygame.image.load("ui/controls/controller/xbox.png").convert_alpha()
+        "xbox": pygame.image.load("ui/controls/controller/xbox.png").convert_alpha(),
+        "ps": pygame.image.load("ui/controls/controller/playstation.png").convert_alpha()
     }, 
     
     "rankings": {
@@ -128,10 +142,14 @@ uiAnimations = {
     },
     
     "HUD": {
-        "fullBoost": pygame.image.load("ui/HUD/fullBoost.png")
+        "fullBoost": pygame.image.load("ui/HUD/fullBoost.png").convert_alpha()
     }
 }
 
+uiAssets = {
+    "pointer": pygame.image.load("ui/HUD/pointer.png").convert_alpha(),
+    "sad": pygame.transform.scale(pygame.image.load("ui/rat/sad.png"), (300, 300)).convert_alpha()
+}
 
 def sliceTilemap(sheet, w, h):
     spliedImages = []  # This list will hold your individual tiles

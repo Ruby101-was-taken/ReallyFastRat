@@ -1,12 +1,12 @@
 
 
-worldX, worldY = 1,2
+worldX, worldY = 0,0
 
 collisionTiles = 0
 
 
 
-import pygame, random, os, csv, copy, time
+import pygame, random, os, csv, copy, time, sys
 import math as maths
 import threading
 import webbrowser
@@ -65,6 +65,8 @@ window = pygame.display.set_mode((w, h), pygame.SCALED | pygame.HIDDEN | pygame.
 coolerWindow = pygame.Window.from_display_module()  # these
 #coolerWindow.set_fullscreen(useFullScreen)  # three
 coolerWindow.show()  # lines :)
+
+coolerWindow.resizable = True
     
     
 from resources import * #load all images from the external python file
@@ -84,19 +86,25 @@ class noJoystick:
 def reloadController():
     global joystick, win
     num_joysticks = pygame.joystick.get_count()
-    print(num_joysticks)
     if num_joysticks > 0:
         if num_joysticks == 1:
             joystick = pygame.joystick.Joystick(0)
-            print(joystick.get_name())
             joystick.rumble(1, 1, 1000)
         else:
             from extraControllers import getController
             joystick = pygame.joystick.Joystick(getController(num_joysticks, pygame.joystick))
             joystick.rumble(1, 1, 1000)
+            pygame.display.set_caption("Really Fast Rat")
         joystick.init()
+        try:
+            debugLog.append(DebugLogText(f"{joystick.get_name()} connected!", 240, "controller"))
+        except NameError:
+            print(joystick.get_name())
     else:
-        print("No controllers found.")
+        try:
+            debugLog.append(DebugLogText("No Controllers Detected. Reconnect it and try again.", 240, "warning"))
+        except NameError:
+            print("No Controller")
         joystick = noJoystick()
         
     
@@ -132,29 +140,35 @@ bigFont = pygame.font.SysFont("arial", 45)
 
 loadingFactFont = pygame.font.SysFont("arial", 30)
 
+
+def quitGame():
+    pygame.quit()
+    sys.exit()
+
 # Set up timer
 clock = pygame.time.Clock()
 
 win = pygame.Surface((w, h))
 
+
+#region logo
 logoPos = 0
 logoSubPos = pygame.math.Vector2()
 logoSubPos.x = -401
 logoSubPos.y = h+146
 
 
-showLogo:bool = True
+showLogo:bool = False
+run:bool = True
 
 if showLogo:
     logoScreen = True
     delay = 60
-    while logoScreen:
+    while logoScreen and run:
         win.fill(LOGORED)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
                 run = False
-                quit()
             elif event.type == pygame.VIDEORESIZE:
                 # This event is triggered when the win is resized
                 w, h = event.w, event.h
@@ -176,7 +190,10 @@ if showLogo:
     del delay, logoScreen, logoPos, logoSubPos
 
 
-
+if not run:
+    quitGame()
+    
+#endregion logo
 
 
 def resliceImages(tileType:str):
@@ -237,9 +254,7 @@ smallFont = pygame.font.SysFont("arial", 20)
 smallerFont = pygame.font.SysFont("arial", 15)
 bigFont = pygame.font.SysFont("arial", 45)
 
-textBoxFont = pygame.font.Font("rat.ttf", 25)
-endTitle = pygame.font.Font("rat.ttf", 50)
-endSubTitle = pygame.font.Font("rat.ttf", 25)
+debugLogFont = pygame.font.Font("ui/fonts/debug.ttf")
 
 # Set up timer
 clock = pygame.time.Clock()
@@ -277,6 +292,8 @@ class GameManager:
         self.camYMin = 0
         
         self.particles = []
+        
+        self.useFullScreen = False
         
     def update(self):
         
@@ -372,6 +389,7 @@ class GameManager:
     
     def openFeedback(self):
         webbrowser.open("https://forms.gle/Uez6tRceadLUjGgXA") 
+        debugLog.append(DebugLogText("Link Opened", 120, "link"))
         
     def returnToMainMenu(self):
         uiPauseButtons.show = False
@@ -489,6 +507,15 @@ class GameManager:
         s.toggleQuickRestart()
         uiSettings.getElementByTag("quickRestartToggleStatus").updateText(f"{'On' if s.settings['quickRestartButton'] else 'Off'}")
     
+    def toggleFullscreen(self):
+        self.useFullScreen = not self.useFullScreen
+        # Set up the display
+        if not self.useFullScreen:
+            coolerWindow.set_windowed()
+        else:
+            coolerWindow.set_fullscreen(False)
+            
+        uiSettings.getElementByTag("fullscreenToggleStatus").updateText(f"{'On' if self.useFullScreen else 'Off'}")
     
 #endregion SETTINGS
 
@@ -508,12 +535,12 @@ class GameManager:
         audioPlayer.playSound(sounds["menuChange"])
         audioPlayer.playSound(sounds["rat"])
         uiControls.show = True
-        uiControlsXbox.show = True
+        uiControlsPlaystation.show = True
     def hideControls(self):
         audioPlayer.playSound(sounds["menuChange"])
         audioPlayer.playSound(sounds["rat"])
         uiControls.show = False
-        uiControlsXbox.show = False
+        uiControlsPlaystation.show = False
         
     def showControlsMainMenu(self):
         uiMainMenu.show = False
@@ -532,6 +559,11 @@ class GameManager:
         uiPauseButtons.show = True
         
         self.hideControls()
+        
+        
+    def toggleShowQuit(self):
+        uiMainMenu.show = not uiMainMenu.show
+        uiMainMenuQuit.show = not uiMainMenuQuit.show
         
 #endregion OPEN/CLOSE CONTROLS
         
@@ -566,9 +598,6 @@ class GameManager:
 #endregion CHANGE LEVEL
         
     
-
-        
-
 
 class Player:
     def __init__(self):
@@ -1042,7 +1071,7 @@ class Player:
                 
         elif self.superBoostCoolDown>0:
             if self.kTime == 10: self.superBoostCoolDown-=1
-            hud.getElementByTag("boostBar").colour = RED
+            hud.getElementByTag("boostBar").style.colour = RED
             hud.getElementByTag("boostBar").updateSurface()
             
             self.dashInputBuffer -= 1 if self.dashInputBuffer > 0 else 0
@@ -1051,11 +1080,11 @@ class Player:
                 self.dashInputBuffer = 10
             
         elif self.superBoostCoolDown<=-self.maxBoostCoolDown:
-            hud.getElementByTag("boostBar").colour = ORANGE
+            hud.getElementByTag("boostBar").style.colour = ORANGE
             hud.getElementByTag("boostBar").updateSurface()
 
         elif self.superBoostCoolDown<=0:
-            hud.getElementByTag("boostBar").colour = YELLOW
+            hud.getElementByTag("boostBar").style.colour = YELLOW
             hud.getElementByTag("boostBar").updateSurface()
 
         self.resetFrame = False
@@ -1258,7 +1287,7 @@ class Player:
         
         self.hatOffset = (0,0)
         
-        if not waiting:
+        if not waiting and not uiPause.show:
             self.currentFrames = self.animate()
         
         # Blit the animated character onto the screen
@@ -1657,9 +1686,7 @@ class Level:
                         loadingText = f"{str(int((tilesLoaded/len(self.levels))*100))}%"
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
-                            pygame.quit()
-                            run = False
-                            quit()
+                            quitGame()
                     
                     #tile.image = slope
                     
@@ -1989,15 +2016,18 @@ class semiLevel:
 
 
 class DebugLogText:
-    def __init__(self, text, showTime = 60):
+    def __init__(self, text, showTime = 60, icon="good"):
         self.text = text
         self.showTime = showTime
         self.bg = pygame.Surface((w, 26), pygame.SRCALPHA)
         self.bg.fill((255,255,255,200))
+        
+        self.icon = pygame.image.load(f"ui/debug/icons/{icon}.png").convert_alpha()
     
     def draw(self, y):
         win.blit(self.bg, (0, (y*26)))
-        win.blit(smallFont.render(self.text, True, BLACK), (0, ((y*26)+3)))
+        win.blit(self.icon, (0, (y*26)))
+        win.blit(debugLogFont.render(self.text, True, BLACK), (32, ((y*26)+3)))
         self.showTime-=1
         if self.showTime<=0:
             debugLog.remove(self)
@@ -2052,8 +2082,10 @@ def redrawScreen():
         level.drawBG(False)
 
     if(debug > 0):
+        debugUi.show = True
         debugUi.getElementByTag("FPSText").updateText("FPS: " + str(int(clock.get_fps())))
         if(debug > 1):
+            fullDebugUi.show = True
             fullDebugUi.getElementByTag("x").updateText("X: " + str(level.levelPosx))
             fullDebugUi.getElementByTag("y").updateText("Y: " + str(level.levelPosy))
             fullDebugUi.getElementByTag("ctiles").updateText("Collision Tiles: " + str(collisionTiles))
@@ -2063,35 +2095,37 @@ def redrawScreen():
             fullDebugUi.getElementByTag("tiles").updateText("Tiles: " + str(len(level.levels)))
             
             fullDebugUi.update()
-            fullDebugUi.draw(win)
-        
-        debugUi.draw(win)
+            
+    else:
+        debugUi.show = False
+        fullDebugUi.show = False
         
     
     gameManager.drawParticles(win)
 
     hud.getElementByTag("boostBar").updateSize(getIntPercentage(player.maxBoostCoolDown-player.superBoostCoolDown, player.maxBoostCoolDown), 20)
     hud.getElementByTag("boostBarCoins").updateSize(getIntPercentage(player.maxBoostCoolDown-player.superBoostCoolDownCoins, player.maxBoostCoolDown), 20)
-    hud
     hud.draw(win)
     uiPause.draw(win)
     uiPauseButtons.draw(win)
     uiMainMenu.draw(win)
+    uiMainMenuQuit.draw(win)
     uiLevelTitle.draw(win)
     uiResults.draw(win)
     uiControls.draw(win)
-    uiControlsXbox.draw(win)
+    uiControlsPlaystation.draw(win)
     if gameManager.settingsMenu:
         uiSettings.draw(win)
-
+    
+    fullDebugUi.draw(win)
+    
+    debugUi.draw(win)
     
     for y, log in enumerate(debugLog):
         log.draw(y)
     
-    window.blit(win, (0,0))
-    # win.blit(pygame.transform.scale(win, (w, h)), (0,0))    
     
-    # testEntity.draw(win)
+    window.blit(win, (0,0))
     
     pygame.display.flip()
     
@@ -2119,6 +2153,7 @@ class InputSystem:
         self.inputDict = {}
         self.controllerDict = {}
         self.axisDict = {}
+        self.hatDict = {}
         self.posx = 0
         self.posy = 0
         self.worldX = 0
@@ -2130,6 +2165,9 @@ class InputSystem:
         self.heldEvents = []
         
         self.controlType = -1 # -1=unknown 0=key 1=controller
+        self.lastControlType = 0 # does not reset upon new frame
+        self.careForMouse = True
+        self.lastPosx = self.lastPosy = 0
     def setKey(self, keyEnum, inputName:str):
         if inputName in self.inputDict:
             self.inputDict[inputName].append(keyEnum)
@@ -2145,6 +2183,11 @@ class InputSystem:
             self.axisDict[inputName].append([axis, axisRange])
         else:
             self.axisDict[inputName] = [[axis, axisRange]]
+    def setHat(self, axis, direction, inputName):
+        if inputName in self.hatDict:
+            self.hatDict[inputName].append([axis, direction])
+        else:
+            self.hatDict[inputName] = [[axis, direction]]
     def inputEvent(self, inputName:str, canHold=True) -> bool:
         inputted = False
         careForHold = (not inputName in self.heldEvents or canHold)
@@ -2154,30 +2197,54 @@ class InputSystem:
                     if keys[keyEnum]:
                         inputted = True
                         self.controlType = 0
+                        self.careForMouse = False
                  
         if self.controlType == -1 or self.controlType == 1:   
             if joystick.get_init():
                 if not inputted and inputName in self.controllerDict and careForHold:
                     for button in self.controllerDict[inputName]:
-                        if joystick.get_button(button):
-                            inputted = True
-                            self.controlType = 1
+                        if button < joystick.get_numbuttons():
+                            if joystick.get_button(button):
+                                inputted = True
+                                self.controlType = 1
+                                self.careForMouse = False
                 if not inputted and inputName in self.axisDict and careForHold:
                     for axis in self.axisDict[inputName]:
-                        if joystick.get_axis(axis[0]) > axis[1][0] and joystick.get_axis(axis[0]) < axis[1][1]:
-                            inputted = True
-                            self.controlType = 1
+                        if axis[0] < joystick.get_numaxes():
+                            if joystick.get_axis(axis[0]) > axis[1][0] and joystick.get_axis(axis[0]) < axis[1][1]:
+                                inputted = True
+                                self.controlType = 1
+                                self.careForMouse = False
+                if not inputted and inputName in self.hatDict and careForHold:
+                    for hat in self.hatDict[inputName]:
+                        if hat[0] < 2:
+                            if joystick.get_hat(0)[hat[0]] == hat[1]:
+                                inputted = True
+                                self.controlType = 1
+                                self.careForMouse = False
                         
         if inputted and not canHold:
             self.heldEvents.append(inputName)
         return inputted
+    
+    def update(self):
+        self.resetHeldInputs()
+        if self.lastControlType!=-1: self.lastControlType = self.controlType
+        self.controlType = -1
+        
+        self.lastPosx = self.posx
+        self.lastPosy = self.posy
+        self.posx, self.posy = pygame.mouse.get_pos()
+        
+        if not self.careForMouse:
+            self.careForMouse = self.posx!=self.lastPosx or self.posy!=self.lastPosy or self.clicked[0] or self.scrolly != 0
+        
     def resetHeldInputs(self):
         heldEventAfter = []
         for event in self.heldEvents:
             if self.inputEvent(event, True):
                 heldEventAfter.append(event)
         self.heldEvents = copy.copy(heldEventAfter)
-        self.controlType = -1
     def rumble(self, lf, hf, dur):
         if joystick.get_init():
             joystick.rumble(lf, hf, dur)
@@ -2191,20 +2258,22 @@ inputs.setKey(pygame.K_SPACE, "Jump")
 inputs.setButton(0, "Jump")
 
 inputs.setKey(pygame.K_LEFT, "MoveLeft")
-inputs.setKey(pygame.K_a, "MoveLeft")
+# inputs.setKey(pygame.K_a, "MoveLeft")
 inputs.setButton(13, "MoveLeft")
 inputs.setAxis(0, (-2, -0.1), "MoveLeft")
+inputs.setHat(0, -1, "MoveLeft")
 
 inputs.setKey(pygame.K_RIGHT, "MoveRight")
-inputs.setKey(pygame.K_d, "MoveRight")
+# inputs.setKey(pygame.K_d, "MoveRight")
 inputs.setButton(14, "MoveRight")
 inputs.setAxis(0, (0.1, 2), "MoveRight")
+inputs.setHat(0, 1, "MoveRight")
 
 inputs.setButton(1, "Stomp")
-inputs.setKey(pygame.K_DOWN, "Stomp")
-inputs.setKey(pygame.K_s, "Stomp")
+inputs.setKey(pygame.K_a, "Stomp")
 
 inputs.setKey(pygame.K_RCTRL, "Dash")
+inputs.setKey(pygame.K_d, "Dash")
 inputs.setButton(2, "Dash")
 
 inputs.setKey(pygame.K_LSHIFT, "Boost") 
@@ -2216,20 +2285,22 @@ inputs.setAxis(4, (-0.5, 2), "Climb")
 inputs.setAxis(1, (-2, -0.5), "ClimbUp")
 inputs.setButton(11, "ClimbUp")
 inputs.setKey(pygame.K_UP, "ClimbUp")
-inputs.setKey(pygame.K_w, "ClimbUp")
+# inputs.setKey(pygame.K_w, "ClimbUp")
+inputs.setHat(1, 1, "ClimbUp")
 
 inputs.setAxis(1, (0.5, 2), "ClimbDown")
 inputs.setButton(12, "ClimbDown")
 inputs.setKey(pygame.K_DOWN, "ClimbDown")
+# inputs.setKey(pygame.K_s, "ClimbDown")
+inputs.setHat(1, -1, "ClimbDown")
 
 inputs.setButton(4, "Restart1")
-inputs.setKey(pygame.K_TAB, "Restart1")
-inputs.setButton(5, "Restart2")
-inputs.setKey(pygame.K_RSHIFT, "Restart2")
 inputs.setButton(9, "Restart1")
-inputs.setKey(pygame.K_TAB, "Restart1")
+inputs.setKey(pygame.K_s, "Restart1")
+
+inputs.setButton(5, "Restart2")
 inputs.setButton(10, "Restart2")
-inputs.setKey(pygame.K_RSHIFT, "Restart2")
+inputs.setKey(pygame.K_DOWN, "Restart2")
 
 inputs.setButton(6, "Pause")
 inputs.setKey(pygame.K_ESCAPE, "Pause")
@@ -2247,18 +2318,22 @@ inputs.setKey(pygame.K_F9, "toggleBlocks")
 inputs.setKey(pygame.K_UP, "UIUP")
 inputs.setAxis(1, (-2, -0.8), "UIUP")
 inputs.setButton(11, "UIUP")
+inputs.setHat(1, 1, "UIUP")
 
 inputs.setKey(pygame.K_DOWN, "UIDOWN")
 inputs.setAxis(1, (0.8, 2), "UIDOWN")
 inputs.setButton(12, "UIDOWN")
+inputs.setHat(1, -1, "UIDOWN")
 
 inputs.setKey(pygame.K_LEFT, "UILEFT")
 inputs.setButton(13, "UILEFT")
 inputs.setAxis(0, (-2, -0.8), "UILEFT")
+inputs.setHat(0, -1, "UILEFT")
 
 inputs.setKey(pygame.K_RIGHT, "UIRIGHT")
 inputs.setButton(14, "UIRIGHT")
 inputs.setAxis(0, (0.8, 2), "UIRIGHT")
+inputs.setHat(0, 1, "UIRIGHT")
 
 inputs.setKey(pygame.K_RETURN, "UIACCEPT")
 inputs.setButton(0, "UIACCEPT")
@@ -2272,69 +2347,66 @@ slashHeld = False
 
 #endregion INPUTS
 
-defaultButtonStyle = order=UIBorderStyle(DARK_RAT, 10, 20)
 #region UI
+# defaultButtonStyle = UISTYLE(DARK_RAT, 10, 20)
 #region DEBUGUI
 debugUi = UICanvas()
-debugUi.addElement(UIText((0,0), "FPSText", "FPS:", 20, (0,0,0), 8))
+debugUi.addElement(UIText((0,0), "FPSText", "FPS:", style=UISTYLE(font="debug.ttf", fontSize=10, fontColour=BLACK, hasBackground=True, colour=WHITE, padding=8, borderColour=DARK_RAT)))
 debugUi.getElementByTag("FPSText").setBG((255,255,255))
 
+debugButtonStyle = UIBUTTONSTYLE(UISTYLE(True, DEFAULT_BUTTON_COLOURS[0], 10, 20, fontSize=10, fontColour=WHITE, padding=20))
 
+debugStyle = UISTYLE(font="debug.ttf", fontSize=20, fontColour=BLACK, hasBackground=True, colour=WHITE, padding=0)
 fullDebugUi = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
-fullDebugUi.addElement(UIText((0,20), "x", "X:", 20, (0,0,0), 0))
-fullDebugUi.getElementByTag("x").setBG((255,255,255))
-fullDebugUi.addElement(UIText((0,40), "y", "Y:", 20, (0,0,0), 0))
-fullDebugUi.getElementByTag("y").setBG((255,255,255))
-fullDebugUi.addElement(UIText((0,60), "ctiles", "Collision Tiles:", 20, (0,0,0), 0))
-fullDebugUi.getElementByTag("ctiles").setBG((255,255,255))
-fullDebugUi.addElement(UIText((0,80), "stomp", "Stomp:", 20, (0,0,0), 0))
-fullDebugUi.getElementByTag("stomp").setBG((255,255,255))
-fullDebugUi.addElement(UIText((0,100), "dtime", "DeltaTime:", 20, (0,0,0), 0))
-fullDebugUi.getElementByTag("dtime").setBG((255,255,255))
-fullDebugUi.addElement(UIText((0,120), "speed", "Speed:", 20, (0,0,0), 0))
-fullDebugUi.getElementByTag("speed").setBG((255,255,255))
-fullDebugUi.addElement(UIText((0,160), "tframes", "Target Frames:", 20, (0,0,0), 0))
-fullDebugUi.getElementByTag("tframes").setBG((255,255,255))
-fullDebugUi.addElement(UIText((0,180), "tiles", "Tiles:", 20, (0,0,0), 0))
-fullDebugUi.getElementByTag("tiles").setBG((255,255,255))
+fullDebugUi.show = False
+fullDebugUi.addElement(UIText((0,20), "x", "X:", style=debugStyle))
+fullDebugUi.addElement(UIText((0,40), "y", "Y:", style=debugStyle))
+fullDebugUi.addElement(UIText((0,60), "ctiles", "Collision Tiles:", style=debugStyle))
+fullDebugUi.addElement(UIText((0,80), "stomp", "Stomp:", style=debugStyle))
+fullDebugUi.addElement(UIText((0,100), "dtime", "DeltaTime:", style=debugStyle))
+fullDebugUi.addElement(UIText((0,120), "speed", "Speed:", style=debugStyle))
+fullDebugUi.addElement(UIText((0,160), "tframes", "Target Frames:", style=debugStyle))
+fullDebugUi.addElement(UIText((0,180), "tiles", "Tiles:", style=debugStyle))
 
-fullDebugUi.addElement(UIButton((100, 350), "fly mode", gameManager.toggleFlyMode, "FLY MODE", 30, 20, (0,0,0), DEFAULT_BUTTON_COLOURS))
+fullDebugUi.addElement(UIButton((100, 350), "fly mode", gameManager.toggleFlyMode, "FLY MODE", style=debugButtonStyle))
 
 #endregion DEBUG UI
 
 #region HUD
+timerStyle = UISTYLE(font="rattimer.ttf", colour=(255,255,255, 150), hasBackground=True, fontSize=5, fontColour=BLACK)
 hud = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 hud.show = False
-hud.addElement(UIRect((0, h-20), "fullBoostBar", 200, 20, GREY))
-hud.addElement(UIRect((0, h-20), "boostBar", 100, 20, YELLOW))
-hud.addElement(UIRect((100, h-20), "boostBarCoins", 100, 20, ORANGE))
-hud.addElement(UIText((589,26), "timer", "00:00.00", 35, (0,0,0), 0))
-hud.getElementByTag("timer").setBG((255,255,255, 150))
+hud.addElement(UIRect((0, h-20), "fullBoostBar", 200, 20, style=UISTYLE(colour=GREY, hasBackground=True)))
+hud.addElement(UIRect((0, h-20), "boostBar", 100, 20, style=UISTYLE(colour=YELLOW)))
+hud.addElement(UIRect((100, h-20), "boostBarCoins", 100, 20, style=UISTYLE(colour=ORANGE)))
+hud.addElement(UIText((589,26), "timer", "00:00.00", style=timerStyle))
 hud.addElement(UIImage((84, 683), "fullBoost", [uiAnimations["HUD"]["fullBoost"]]))
 hud.addElement(UIImage((184, 683), "secondFullBoost", [uiAnimations["HUD"]["fullBoost"]]))
-hud
-hud.addElement(UIText((0,h-43), "coins", "Coins: 0/20", 20, (0,0,0), 0))
-hud.getElementByTag("coins").setBG((255,255,255))
+
+hud.addElement(UIText((0,h-150), "coins", "Coins: 0/20", style=UISTYLE(fontSize=20, fontColour=BLACK, hasBackground=True, colour=WHITE, padding=6)))
 
 #endregion HUD
 
 #region PAUSE
 uiPause = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiPause.show = False
-uiPause.addElement(UIRect((0,0), "PauseBG", w, h, (100,100,100,100)))
+uiPause.addElement(UIRect((0,0), "PauseBG", w, h, style=UISTYLE(colour=(100,100,100,100))))
 
 
-
+pauseMenuButtonStyle = UIBUTTONSTYLE(
+    UISTYLE(True, DEFAULT_BUTTON_COLOURS[0], 10, 20, fontSize=10, fontColour=WHITE, padding=20, borderColour=DARK_RAT),
+    UISTYLE(True, DEFAULT_BUTTON_COLOURS[1], 10, 20, fontSize=10, fontColour=WHITE, padding=20, borderColour=PINK_RAT),
+    UISTYLE(True, DEFAULT_BUTTON_COLOURS[2], 10, 20, fontSize=10, fontColour=WHITE, padding=20, borderColour=DARK_RAT)
+    )
 uiPauseButtons = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiPauseButtons.show = False
-uiPauseButtons.addElement(UIText((100,130), "PauseText", "PAUSE", 50, WHITE, 20))
-uiPauseButtons.getElementByTag("PauseText").setBG(PINK_RAT, UIBorderStyle(radius=10))
-uiPauseButtons.addElement(UIButton((100, 250), "back", gameManager.togglePause, "Continue", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
-uiPauseButtons.addElement(UIButton((100, 320), "Restart Button", gameManager.quickRestart, "Restart", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
-uiPauseButtons.addElement(UIButton((100, 390), "Settings Button", gameManager.openSettingsPause, "Settings", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
-uiPauseButtons.addElement(UIButton((100, 460), "Controls Button", gameManager.showControlsPauseMenu, "Controls", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
-uiPauseButtons.addElement(UIButton((100, 530), "MainMenu Button", gameManager.returnToMainMenu, "Main Menu", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
-uiPauseButtons.addElement(UIButton((100, 600), "Feedback Button", gameManager.openFeedback, "Feedback", 10, 20, WHITE, DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
+uiPauseButtons.addElement(UIText((100,130), "PauseText", "PAUSE", style=UISTYLE(fontSize=50, padding=20, fontColour=WHITE, colour=PINK_RAT, borderRadius=10, hasBackground=True)))
+uiPauseButtons.addElement(UIButton((100, 250), "back", gameManager.togglePause, "Continue", style=pauseMenuButtonStyle))
+uiPauseButtons.addElement(UIButton((100, 320), "Restart Button", gameManager.quickRestart, "Restart", style=pauseMenuButtonStyle))
+uiPauseButtons.addElement(UIButton((100, 390), "Settings Button", gameManager.openSettingsPause, "Settings", style=pauseMenuButtonStyle))
+uiPauseButtons.addElement(UIButton((100, 460), "Controls Button", gameManager.showControlsPauseMenu, "Controls", style=pauseMenuButtonStyle))
+uiPauseButtons.addElement(UIButton((100, 530), "MainMenu Button", gameManager.returnToMainMenu, "Main Menu", style=pauseMenuButtonStyle))
+uiPauseButtons.addElement(UIButton((100, 600), "Feedback Button", gameManager.openFeedback, "Feedback", style=pauseMenuButtonStyle))
 
 
 uiPauseButtons.makeMap({
@@ -2349,58 +2421,110 @@ uiPauseButtons.makeMap({
 #endregion PAUSE
 
 #region MAINMENU
+mainMenuButtonStyle = UIBUTTONSTYLE(
+    UISTYLE(True, DEFAULT_BUTTON_COLOURS[0], 10, 20, fontSize=20, fontColour=WHITE, padding=20, borderColour=DARK_RAT),
+    UISTYLE(True, DEFAULT_BUTTON_COLOURS[1], 10, 20, fontSize=20, fontColour=WHITE, padding=20, borderColour=PINK_RAT),
+    UISTYLE(True, DEFAULT_BUTTON_COLOURS[2], 10, 20, fontSize=20, fontColour=WHITE, padding=20, borderColour=DARK_RAT)
+    )
+
+subtitleStyle = UISTYLE(fontSize=30, fontColour=WHITE, hasShadow=True, shadowOffset=6)
+
 uiMainMenu = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiMainMenu.show = True
-uiMainMenu.addElement(UIText((100,100), "TITLE", "Really Fast Rat", 60, GREY, 0))
-uiMainMenu.addElement(UIText((100,200), "SUBTITLE", "INDEV VERSION - 0.0.4 - INDEV 3", 20, GREY, 0))
-uiMainMenu.addElement(UIButton((100, 350), "Start Button", gameManager.toggleLevelSelect, "Start", 20, 20, WHITE, DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
-uiMainMenu.addElement(UIButton((100, 450), "Settings Button", gameManager.openSettingsMainMenu, "Settings", 20, 20, WHITE, DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
-uiMainMenu.addElement(UIButton((100, 550), "controls", gameManager.whichShowControls, "Controls", 20, 20, WHITE, DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
-uiMainMenu.addElement(UIButton((100, 650), "Feedback Button", gameManager.openFeedback, "Feedback", 20, 20, WHITE, DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
+uiMainMenu.addElement(UIText((100,70), "TITLE", "Really Fast Rat", style=UISTYLE(fontSize=60, fontColour=WHITE, hasShadow=True, shadowOffset=12)))
+uiMainMenu.addElement(UIText((100,170), "SUBTITLE", "INDEV VERSION - 0.0.5 - PLAYTEST I-B",  style=subtitleStyle))
+uiMainMenu.addElement(UIButton((100, 250), "Start Button", gameManager.toggleLevelSelect, "Start", style = mainMenuButtonStyle))
+uiMainMenu.addElement(UIButton((100, 350), "Settings Button", gameManager.openSettingsMainMenu, "Settings", style = mainMenuButtonStyle))
+uiMainMenu.addElement(UIButton((100, 450), "controls", gameManager.whichShowControls, "Controls", style = mainMenuButtonStyle))
+uiMainMenu.addElement(UIText((100, 550), "hats", "Hats - (Coming Soon)", style =  UISTYLE(fontSize=17, fontColour=WHITE, padding=20, borderWidth=10, borderRadius=20, hasBackground=True, colour=SILVER, borderColour=GREY)))
+uiMainMenu.addElement(UIButton((100, 650), "back", gameManager.toggleShowQuit, "Quit Game", style = mainMenuButtonStyle))
+uiMainMenu.addElement(UIButton((1000, 550), "Feedback Button", gameManager.openFeedback, "Feedback", style = mainMenuButtonStyle))
 
 uiMainMenu.makeMap({
-    "Start Button": {"up": "Feedback Button", "down": "Settings Button"},
-    "Settings Button": {"up": "Start Button", "down": "controls"},
-    "controls": {"up": "Settings Button", "Down": "Feedback Button"},
-    "Feedback Button": {"up": "controls", "down": "Start Button"}
+    "Start Button": {"up": "back", "down": "Settings Button", "right": "Feedback Button"},
+    "Settings Button": {"up": "Start Button", "down": "controls", "right": "Feedback Button"},
+    "controls": {"up": "Settings Button", "down": "back", "right": "Feedback Button"},
+    "back": {"up": "controls", "down": "Start Button", "right": "Feedback Button"},
+    "Feedback Button": {"left": "Start Button"}
 })
 
 #https://forms.gle/Uez6tRceadLUjGgXA
 
 uiMainMenu.addElement(UIImage((w-140, h-50), "ruby logo", [logo[2]]))
 
+
+uiMainMenuQuit = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
+uiMainMenuQuit.show = False
+uiMainMenuQuit.addElement(UIText((100,100), "TITLE", "Are you sure you want to quit??", style=subtitleStyle))
+uiMainMenuQuit.addElement(UIButton((100, 350), "quit", quitGame, "Quit Game", style = UIBUTTONSTYLE(
+    UISTYLE(True, RED, 10, 20, fontSize=20, fontColour=WHITE, padding=20, borderColour=WHITE),
+    UISTYLE(True, PINK, 10, 20, fontSize=20, fontColour=BLACK, padding=20, borderColour=RED),
+    UISTYLE(True, DEFAULT_BUTTON_COLOURS[2], 10, 20, fontSize=20, fontColour=WHITE, padding=20, borderColour=DARK_RAT)
+    )))
+uiMainMenuQuit.addElement(UIButton((100, 450), "back", gameManager.toggleShowQuit, "Back To Game", style = mainMenuButtonStyle))
+
+uiMainMenuQuit.addElement(UIImage((600, 400), "sad", uiAnimations["sad"], fps = 10, style=UISTYLE(hasShadow=True, shadowColour=BLACK, shadowOffset=20)))
+
+uiMainMenuQuit.makeMap({
+    "quit": {"up": "back", "down": "back"},
+    "back": {"up": "quit", "down": "quit"}
+})
+
+
 #endregion MAINMENU
 
 #region SETTINGS
-uiSettings = UICanvas(True, inputs=inputs, audioPlayer=audioPlayer)
+settingsTextStyle = UISTYLE(fontSize=17, fontColour=WHITE, padding=20, borderWidth=10, borderRadius=20, hasBackground=True, colour=DARK_RAT, borderColour=LIGHT_RAT)
+settingsTitleStyle = UISTYLE(fontSize=17, fontColour=WHITE, padding=20, hasBackground=False, hasShadow=True, shadowOffset=4)
+settingBackgroundStyleA = UISTYLE(colour=LIGHT_RAT_TRANS, borderRadius=20)
+settingBackgroundStyleB = UISTYLE(colour=PINK_RAT_TRANS, borderRadius=20)
+settingHeaderStyleA = UISTYLE(colour=PINK_RAT, borderRadius=20)
+settingHeaderStyleB = UISTYLE(colour=DARK_RAT, borderRadius=20)
+settingsButtonStyle = UIBUTTONSTYLE(
+    UISTYLE(fontSize=17, fontColour=WHITE, padding=20, borderWidth=10, borderRadius=20, hasBackground=True, colour=DEFAULT_BUTTON_COLOURS[0], borderColour=DARK_RAT),
+    UISTYLE(fontSize=17, fontColour=WHITE, padding=20, borderWidth=10, borderRadius=20, hasBackground=True, colour=DEFAULT_BUTTON_COLOURS[1], borderColour=PINK_RAT),
+    UISTYLE(fontSize=17, fontColour=WHITE, padding=20, borderWidth=10, borderRadius=20, hasBackground=True, colour=DEFAULT_BUTTON_COLOURS[2], borderColour=DARK_RAT),
+    )
+uiSettings = UICanvas(True, inputs=inputs, audioPlayer=audioPlayer, maxScroll=490)
 uiSettings.show = False
-uiSettings.addElement(UIText((150, 00), "TITLE", "Really Fast Rat Settings", 20, GREY, 0))
-uiSettings.addElement(UIButton((10, 60), "MusicUp", gameManager.increaseMusicVolume, "Increase Music Volume", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
-uiSettings.addElement(UIText((460,95), "musicVolume", f"{s.settings['musicVolume']}%", 17, WHITE, 20))
-uiSettings.getElementByTag("musicVolume").setBG(DARK_RAT, defaultButtonStyle)
-uiSettings.addElement(UIButton((10, 130), "MusicDown", gameManager.decreaseMusicVolume, "Decrease Music Volume", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
 
-uiSettings.addElement(UIButton((10, 230), "SFXUp", gameManager.increaseSoundVolume, "Increase Sound Volume", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
-uiSettings.addElement(UIText((460,265), "soundVolume", f"{s.settings['sfxVolume']}%", 17, WHITE, 20))
-uiSettings.getElementByTag("soundVolume").setBG(DARK_RAT, defaultButtonStyle)
-uiSettings.addElement(UIButton((10, 300), "SFXDown", gameManager.decreaseSoundVolume, "Decrease Sound Volume", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
+uiSettings.addElement(UIRect((0, 100), "soundBG", w, 409, style=settingBackgroundStyleA))
+uiSettings.addElement(UIText((40, 100), "soundTitle", "Sound Settings", style=settingsTitleStyle))
+uiSettings.addElement(UIButton((40, 170), "MusicUp", gameManager.increaseMusicVolume, "Increase Music Volume",style=settingsButtonStyle))
+uiSettings.addElement(UIText((490,205), "musicVolume", f"{s.settings['musicVolume']}%",style=settingsTextStyle))
+uiSettings.addElement(UIButton((40, 240), "MusicDown", gameManager.decreaseMusicVolume, "Decrease Music Volume",style=settingsButtonStyle))
 
-uiSettings.addElement(UIButton((10, 400), "bgToggle", gameManager.toggleBG, "Background Detail", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
-uiSettings.addElement(UIText((460,400), "bgDetail", f"{gameManager.bgDetailLevels[s.settings['backgroundDetail']]}", 17, WHITE, 20))
-uiSettings.getElementByTag("bgDetail").setBG(DARK_RAT, defaultButtonStyle)
+uiSettings.addElement(UIButton((40, 340), "SFXUp", gameManager.increaseSoundVolume, "Increase Sound Volume",style=settingsButtonStyle))
+uiSettings.addElement(UIText((490,375), "soundVolume", f"{s.settings['sfxVolume']}%",style=settingsTextStyle))
+uiSettings.addElement(UIButton((40, 410), "SFXDown", gameManager.decreaseSoundVolume, "Decrease Sound Volume",style=settingsButtonStyle))
 
-uiSettings.addElement(UIButton((10, 500), "particleToggle", gameManager.toggleParticles, "Show Particles", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
-uiSettings.addElement(UIText((460,500), "particleToggleStatus", f"{'On' if s.settings['particles'] else 'Off'}", 17, WHITE, 20))
-uiSettings.getElementByTag("particleToggleStatus").setBG(DARK_RAT, defaultButtonStyle)
+uiSettings.addElement(UIRect((0, 510), "graphicsBG", w, 499, style=settingBackgroundStyleB))
+uiSettings.addElement(UIText((40, 510), "graphicsTitle", "Graphics Settings", style=settingsTitleStyle))
 
-uiSettings.addElement(UIButton((10, 600), "quickRestartToggle", gameManager.toggleQuickRestart, "Quick Restart Input", 17, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
-uiSettings.addElement(UIText((460,600), "quickRestartToggleStatus", f"{'On' if s.settings['quickRestartButton'] else 'Off'}", 17, WHITE, 20))
-uiSettings.getElementByTag("quickRestartToggleStatus").setBG(DARK_RAT, defaultButtonStyle)
+uiSettings.addElement(UIButton((40, 610), "bgToggle", gameManager.toggleBG, "Background Detail",style=settingsButtonStyle))
+uiSettings.addElement(UIText((490,610), "bgDetail", f"{gameManager.bgDetailLevels[s.settings['backgroundDetail']]}",style=settingsTextStyle))
 
-uiSettings.addElement(UIButton((w-410, 60), "back", gameManager.whichCloseSettings, "Save Settings", 17, 20, WHITE, DEFAULT_BUTTON_COLOURS, border = defaultButtonStyle))
+uiSettings.addElement(UIButton((40, 710), "particleToggle", gameManager.toggleParticles, "Show Particles",style=settingsButtonStyle))
+uiSettings.addElement(UIText((490, 710), "particleToggleStatus", f"{'On' if s.settings['particles'] else 'Off'}",style=settingsTextStyle))
 
+uiSettings.addElement(UIButton((40, 810), "animationToggle", gameManager.toggleParticles, "Animate Tiles",style=settingsButtonStyle))
+uiSettings.addElement(UIText((490, 810), "animationToggleStatus", f"{'On' if s.settings['particles'] else 'Off'}",style=settingsTextStyle))
+
+uiSettings.addElement(UIButton((40, 910), "fullscreenToggle", gameManager.toggleFullscreen, "Fullscreen",style=settingsButtonStyle))
+uiSettings.addElement(UIText((490, 910), "fullscreenToggleStatus", f"{'Off'}",style=settingsTextStyle))
+
+uiSettings.addElement(UIRect((0, 1010), "gamplayBG", w, 200, style=settingBackgroundStyleA))
+uiSettings.addElement(UIText((40, 1010), "gameplayTitle", "Gameplay Settings", style=settingsTitleStyle))
+
+uiSettings.addElement(UIButton((40, 1110), "quickRestartToggle", gameManager.toggleQuickRestart, "Quick Restart Input",style=settingsButtonStyle))
+uiSettings.addElement(UIText((490, 1110), "quickRestartToggleStatus", f"{'On' if s.settings['quickRestartButton'] else 'Off'}",style=settingsTextStyle))
+
+uiSettings.addElement(UIButton((w-410, 100), "back", gameManager.whichCloseSettings, "Save Settings", lockScroll=True ,style=settingsButtonStyle))
+
+uiSettings.addElement(UIRect((0, 0), "titleBG", w, 99, lockScroll=True, style=settingHeaderStyleA))
+uiSettings.addElement(UIText((40, 10), "TITLE", "Settings", lockScroll=True, style=settingsTitleStyle))
  
-uiSettings.addElement(UIImage((w-90,160), "ratBluePrints", uiAnimations["bluePrints"], 6, lockScroll=True))
+uiSettings.addElement(UIImage((w-90,10), "ratBluePrints", uiAnimations["bluePrints"], 6, lockScroll=True))
 
 
 
@@ -2411,8 +2535,10 @@ uiSettings.makeMap({
     "SFXUp": {"up": "MusicDown", "down": "SFXDown", "right": "back"},
     "SFXDown": {"up": "SFXUp", "down": "bgToggle", "right": "back"},
     "bgToggle": {"up": "SFXDown", "down": "particleToggle", "right": "back"},
-    "particleToggle": {"up": "bgToggle", "down": "quickRestartToggle", "right": "back"},
-    "quickRestartToggle": {"up": "particleToggle", "down": "MusicUp", "right": "back"}
+    "particleToggle": {"up": "bgToggle", "down": "animationToggle", "right": "back"},
+    "animationToggle": {"up": "particleToggle", "down": "fullscreenToggle", "right": "back"},
+    "fullscreenToggle": {"up": "animationToggle", "down": "quickRestartToggle", "right": "back"},
+    "quickRestartToggle": {"up": "fullscreenToggle", "down": "MusicUp", "right": "back"}
 })
 
 #endregion Settings
@@ -2421,24 +2547,42 @@ uiSettings.makeMap({
 #region CONTROLS
 uiControls = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiControls.show = False
-uiControls.addElement(UIButton((115, 0), "reload", reloadController, "Reload Controller", 10, 20, (0,0,0), DEFAULT_BUTTON_COLOURS))
-uiControls.addElement(UIButton((w-210, 0), "back", gameManager.whichCloseControls, "Back", 10, 20, (0,0,0), DEFAULT_BUTTON_COLOURS))
+
+uiControls.addElement(UIRect((0, 100), "controlsBg", w, h-100, style=settingBackgroundStyleB))
+
+uiControls.addElement(UIRect((0, 0), "titleBG", w, 99, lockScroll=True, style=settingHeaderStyleB))
+uiControls.addElement(UIText((40, 10), "TITLE", "Controls", lockScroll=True, style=settingsTitleStyle))
+
+uiControls.addElement(UIButton((1158, 196), "back", gameManager.whichCloseControls, "Back",style=settingsButtonStyle))
+uiControls.addElement(UIButton((1035, 100), "reload", reloadController, "Connect\n\nController",style=settingsButtonStyle))
+ 
+uiControls.addElement(UIImage((w-90,10), "ratBluePrints", uiAnimations["bluePrints"], 6, lockScroll=True))
 
 uiControls.makeMap({
-    "back": {"left": "reload", "right": "reload"},
-    "reload": {"left": "back", "right": "back"}
+    "reload": {"up": "back", "down": "back"},
+    "back": {"down": "reload", "up": "reload"}
 })
 
 
 uiControlsXbox = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiControlsXbox.show = False
-uiControlsXbox.addElement(UIImage((0,0), "xbox", [uiAnimations["controlLayouts"]["xbox"]], 6))
-uiControlsXbox.addElement(UIText((289, 69), "climb", "CLIMB (HOLD)", 10, GREY, 0))
-uiControlsXbox.addElement(UIText((860, 69), "run", "RUN (HOLD)", 10, GREY, 0))
-uiControlsXbox.addElement(UIText((220, 400), "move", "MOVE", 10, GREY, 0))
-uiControlsXbox.addElement(UIText((940, 250), "dash", "DASH", 10, GREY, 0))
-uiControlsXbox.addElement(UIText((1180, 250), "stomp", "STOMP", 10, GREY, 0))
-uiControlsXbox.addElement(UIText((1065, 440), "jump", "JUMP", 10, GREY, 0))
+uiControlsXbox.addElement(UIImage((-170,80), "xbox", [uiAnimations["controlLayouts"]["xbox"]], 6))
+uiControlsXbox.addElement(UIText((159, 131), "climb", "CLIMB (HOLD)",style=settingsTextStyle))
+uiControlsXbox.addElement(UIText((707, 131), "run", "RUN (HOLD)",style=settingsTextStyle))
+uiControlsXbox.addElement(UIText((36, 457), "move", "MOVE",style=settingsTextStyle))
+uiControlsXbox.addElement(UIText((772, 305), "dash", "DASH",style=settingsTextStyle))
+uiControlsXbox.addElement(UIText((1013, 313), "stomp", "STOMP",style=settingsTextStyle))
+uiControlsXbox.addElement(UIText((892, 641), "jump", "JUMP",style=settingsTextStyle))
+
+uiControlsPlaystation = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
+uiControlsPlaystation.show = False
+uiControlsPlaystation.addElement(UIImage((-170,80), "ps", [uiAnimations["controlLayouts"]["ps"]], 6))
+uiControlsPlaystation.addElement(UIText((159, 131), "climb", "CLIMB (HOLD)",style=settingsTextStyle))
+uiControlsPlaystation.addElement(UIText((707, 131), "run", "RUN (HOLD)",style=settingsTextStyle))
+uiControlsPlaystation.addElement(UIText((36, 457), "move", "MOVE",style=settingsTextStyle))
+uiControlsPlaystation.addElement(UIText((772, 305), "dash", "DASH",style=settingsTextStyle))
+uiControlsPlaystation.addElement(UIText((1013, 313), "stomp", "STOMP",style=settingsTextStyle))
+uiControlsPlaystation.addElement(UIText((892, 641), "jump", "JUMP",style=settingsTextStyle))
 
 #endregion CONTROLS
 
@@ -2447,32 +2591,30 @@ uiControlsXbox.addElement(UIText((1065, 440), "jump", "JUMP", 10, GREY, 0))
 uiLevelTitle = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiLevelTitle.show = False
 uiLevelTitle.addElement(UIImage((-562, 125), "bg", [uiAnimations["levelName"]["bg"]], 1))
-uiLevelTitle.addElement(UIText((100, h+400), "lvlName", "LEVEL NAME", 40, BLACK))
+uiLevelTitle.addElement(UIText((100, h+400), "lvlName", "LEVEL NAME", style=UISTYLE(fontColour=BLACK, fontSize=40)))
 
 #endregion LEVELTITLE
 
 #region RESULTS
 uiResults = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
 uiResults.show = False
-uiResults.addElement(UIRect((0,0), "resultBG", w, h, (100,100,100,100)))
-uiResults.addElement(UIText((0,0), "ResultText", "RESULTS:", 50, WHITE, 20))
-uiResults.getElementByTag("ResultText").setBG(PINK_RAT, UIBorderStyle(radius=10))
-uiResults.addElement(UIRect((w-400,0), "timesBG", 400, 277, (100,100,100,100)))
+uiResults.addElement(UIRect((0,0), "resultBG", w, h, style=UISTYLE(colour=(100,100,100,100))))
+uiResults.addElement(UIText((0,0), "ResultText", "RESULTS:", style=UISTYLE(fontSize=50, padding=20, fontColour=WHITE, colour=PINK_RAT, borderRadius=10)))
+uiResults.addElement(UIRect((w-400,0), "timesBG", 400, 277, style=UISTYLE(colour=(100,100,100,100))))
 
-uiResults.addElement(UIText((w-400,0), "s", "S RANK: 00:00", 10, (0,0,0), 20))
-uiResults.addElement(UIText((w-400,50), "a", "A RANK: 00:00", 10, (0,0,0), 20))
-uiResults.addElement(UIText((w-400,100), "b", "B RANK: 00:00", 10, (0,0,0), 20))
-uiResults.addElement(UIText((w-400,150), "c", "C RANK: 00:00", 10, (0,0,0), 20))
-uiResults.addElement(UIText((w-400,200), "d", "D RANK: 00:00", 10, (0,0,0), 20))
+uiResults.addElement(UIText((w-400,0), "s", "S RANK: 00:00", style=UISTYLE(fontSize=10, padding=20, fontColour=BLACK)))
+uiResults.addElement(UIText((w-400,50), "a", "A RANK: 00:00", style=UISTYLE(fontSize=10, padding=20, fontColour=BLACK)))
+uiResults.addElement(UIText((w-400,100), "b", "B RANK: 00:00", style=UISTYLE(fontSize=10, padding=20, fontColour=BLACK)))
+uiResults.addElement(UIText((w-400,150), "c", "C RANK: 00:00", style=UISTYLE(fontSize=10, padding=20, fontColour=BLACK)))
+uiResults.addElement(UIText((w-400,200), "d", "D RANK: 00:00", style=UISTYLE(fontSize=10, padding=20, fontColour=BLACK)))
 
 uiResults.addElement(UIImage((w-400, 338), "rank", [uiAnimations["rankings"]["s"]], 1))
 
-uiResults.addElement(UIButton((w-600, 450), "continue", gameManager.nextLevel, "Continue", 10, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
-uiResults.addElement(UIButton((w-600, 550), "try again", gameManager.quickRestart, "Try Again", 10, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
-uiResults.addElement(UIButton((w-600, 650), "main menu", gameManager.returnToMainMenu, "Main Menu", 10, 20, (0,0,0), DEFAULT_BUTTON_COLOURS, border=defaultButtonStyle))
+uiResults.addElement(UIButton((w-600, 450), "continue", gameManager.nextLevel, "Continue", style=pauseMenuButtonStyle))
+uiResults.addElement(UIButton((w-600, 550), "try again", gameManager.quickRestart, "Try Again", style=pauseMenuButtonStyle))
+uiResults.addElement(UIButton((w-600, 650), "main menu", gameManager.returnToMainMenu, "Main Menu", style=pauseMenuButtonStyle))
 
-uiResults.addElement(UIText((0,300), "timer", "00:00.00", 40, (0,0,0), 10))
-uiResults.getElementByTag("timer").setBG((255,255,255, 150))
+uiResults.addElement(UIText((0,300), "timer", "00:00.00", style=UISTYLE(font="rubfont.ttf", colour=(255,255,255, 150), hasBackground=True, fontSize=35, fontColour=BLACK)))
 
 uiResults.makeMap({
     "continue": {"down": "try again", "up": "main menu"},
@@ -2516,13 +2658,11 @@ def main():
         if inputs.clickDown[clickState]:
             inputs.clickDown[clickState] = clicked[clickState]
                 
-    inputs.resetHeldInputs()
+    inputs.update()
     inputs.scrolly = scrolly
     
     #mouse getters
     clicked = pygame.mouse.get_pressed(num_buttons=3)
-    posx, posy = pygame.mouse.get_pos()
-    inputs.posx, inputs.posy = posx, posy
     inputs.clicked = clicked
 
     level.trimLevel()
@@ -2609,6 +2749,7 @@ def main():
     elif gameManager.mainMenu:
         
         uiMainMenu.update()
+        uiMainMenuQuit.update()
         uiControls.update()
     
     elif gameManager.settingsMenu:
@@ -2643,12 +2784,7 @@ def main():
             
     if keys[pygame.K_F11] and not debugHeld:
         debugHeld = True
-        useFullScreen = not useFullScreen
-        # Set up the display
-        if useFullScreen:
-            coolerWindow.set_windowed()
-        else:
-            coolerWindow.set_fullscreen(False)
+        gameManager.toggleFullscreen()
 
     
     if inputs.inputEvent("frateup", False):
@@ -2672,9 +2808,7 @@ def main():
             redrawScreen()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit()
-                    run = False
-                    quit()
+                    quitGame()
             keys = pygame.key.get_pressed()
             if keys[pygame.K_BACKSLASH] and not slashHeld:
                 waiting = False
@@ -2698,17 +2832,19 @@ def main():
         if not os.path.exists("screenshots"): os.makedirs("screenshots")
         screenshotName = str(int(time.time())) + ".png"
         pygame.image.save(win, f"screenshots/{screenshotName}")
-        debugLog.append(DebugLogText(f"Game Screenshotted -> {screenshotName}", 100))
+        debugLog.append(DebugLogText(f"Game Screenshotted -> {screenshotName}", 120, "cam"))
     
     if keys[pygame.K_F7]:
         p = Particle(player.x, player.y, 1, 1, 20, 20, 120, RED)
         gameManager.addParticle(p)
+    if keys[pygame.K_F8] and not debugHeld:
+        debugHeld = True
+        gameManager.collectables += 1
         
 
     gameManager.finalUpdate()
         
         
-run = True
 # Main game loop
 while run:
     drawOnThread = s.settings["drawOnThread"]
@@ -2718,5 +2854,4 @@ while run:
     if not drawOnThread:
         redrawScreen()
         
-    
-pygame.quit()
+quitGame()

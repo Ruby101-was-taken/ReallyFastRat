@@ -1,11 +1,11 @@
 {
     "musicVolume": 0,
-    "sfxVolume": 20,
+    "sfxVolume": 50,
     "backgroundDetail": 2,
     "animatedTile": true,
     "animateTilesAtSpeed": false,
     "simpleUI": false,
-    "particles": false,
+    "particles": true,
     "drawOnThread": false,
     "bgType": "city",
     "hwaccel": false,
