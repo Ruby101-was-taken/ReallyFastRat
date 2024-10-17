@@ -2227,7 +2227,7 @@ class InputSystem:
                                 self.careForMouse = False
                 if not inputted and inputName in self.hatDict and careForHold:
                     for hat in self.hatDict[inputName]:
-                        if hat[0] < 2:
+                        if joystick.get_numhats() > 0:
                             if joystick.get_hat(0)[hat[0]] == hat[1]:
                                 inputted = True
                                 self.controlType = 1
