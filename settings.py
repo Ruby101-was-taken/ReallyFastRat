@@ -12,7 +12,7 @@ class Settings:
             "simpleUI": False,
             "particles": True,
             "drawOnThread": False,
-            "bgType": "test",
+            "bgType": "city",
             "hwaccel": False,
             "quickRestartButton": True
         }

@@ -125,7 +125,8 @@ uiAnimations = {
     
     "controlLayouts": {
         "xbox": pygame.image.load("ui/controls/controller/xbox.png").convert_alpha(),
-        "ps": pygame.image.load("ui/controls/controller/playstation.png").convert_alpha()
+        "ps": pygame.image.load("ui/controls/controller/playstation.png").convert_alpha(),
+        "pc": pygame.image.load("ui/controls/keyboard/keyboard.png").convert_alpha()
     }, 
     
     "rankings": {

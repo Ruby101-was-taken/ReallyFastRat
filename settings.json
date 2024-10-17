@@ -1,6 +1,6 @@
 {
-    "musicVolume": 0,
-    "sfxVolume": 50,
+    "musicVolume": 50,
+    "sfxVolume": 100,
     "backgroundDetail": 2,
     "animatedTile": true,
     "animateTilesAtSpeed": false,

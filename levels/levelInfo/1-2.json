@@ -12,7 +12,7 @@
     },
     "canRun": true,
     "nextLevel": {
-        "x": 1,
-        "y": 3
+        "x": 0,
+        "y": 0
     }
 }

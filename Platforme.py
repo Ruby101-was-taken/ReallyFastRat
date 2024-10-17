@@ -158,7 +158,7 @@ logoSubPos.x = -401
 logoSubPos.y = h+146
 
 
-showLogo:bool = False
+showLogo:bool = True
 run:bool = True
 
 if showLogo:
@@ -294,6 +294,8 @@ class GameManager:
         self.particles = []
         
         self.useFullScreen = False
+        
+        self.showController = joystick.get_init()
         
     def update(self):
         
@@ -535,12 +537,19 @@ class GameManager:
         audioPlayer.playSound(sounds["menuChange"])
         audioPlayer.playSound(sounds["rat"])
         uiControls.show = True
-        uiControlsPlaystation.show = True
+        uiControlsXbox.show = self.showController
+        uiControlsPC.show = not self.showController
     def hideControls(self):
         audioPlayer.playSound(sounds["menuChange"])
         audioPlayer.playSound(sounds["rat"])
         uiControls.show = False
-        uiControlsPlaystation.show = False
+        uiControlsXbox.show = False
+        uiControlsPC.show = False
+        
+    def toggleControllerVisual(self):
+        self.showController = not self.showController
+        uiControlsXbox.show = self.showController
+        uiControlsPC.show = not self.showController
         
     def showControlsMainMenu(self):
         uiMainMenu.show = False
@@ -2113,7 +2122,8 @@ def redrawScreen():
     uiLevelTitle.draw(win)
     uiResults.draw(win)
     uiControls.draw(win)
-    uiControlsPlaystation.draw(win)
+    uiControlsPC.draw(win)
+    uiControlsXbox.draw(win)
     if gameManager.settingsMenu:
         uiSettings.draw(win)
     
@@ -2383,7 +2393,7 @@ hud.addElement(UIText((589,26), "timer", "00:00.00", style=timerStyle))
 hud.addElement(UIImage((84, 683), "fullBoost", [uiAnimations["HUD"]["fullBoost"]]))
 hud.addElement(UIImage((184, 683), "secondFullBoost", [uiAnimations["HUD"]["fullBoost"]]))
 
-hud.addElement(UIText((0,h-150), "coins", "Coins: 0/20", style=UISTYLE(fontSize=20, fontColour=BLACK, hasBackground=True, colour=WHITE, padding=6)))
+hud.addElement(UIText((0,653), "coins", "Coins: 0/20", style=UISTYLE(fontSize=20, fontColour=BLACK, hasBackground=True, colour=WHITE, padding=6)))
 
 #endregion HUD
 
@@ -2553,14 +2563,16 @@ uiControls.addElement(UIRect((0, 100), "controlsBg", w, h-100, style=settingBack
 uiControls.addElement(UIRect((0, 0), "titleBG", w, 99, lockScroll=True, style=settingHeaderStyleB))
 uiControls.addElement(UIText((40, 10), "TITLE", "Controls", lockScroll=True, style=settingsTitleStyle))
 
-uiControls.addElement(UIButton((1158, 196), "back", gameManager.whichCloseControls, "Back",style=settingsButtonStyle))
 uiControls.addElement(UIButton((1035, 100), "reload", reloadController, "Connect\n\nController",style=settingsButtonStyle))
+uiControls.addElement(UIButton((1158, 196), "back", gameManager.whichCloseControls, "Back",style=settingsButtonStyle))
+uiControls.addElement(UIButton((1158, 258), "toggle", gameManager.toggleControllerVisual, "Next",style=settingsButtonStyle))
  
 uiControls.addElement(UIImage((w-90,10), "ratBluePrints", uiAnimations["bluePrints"], 6, lockScroll=True))
 
 uiControls.makeMap({
-    "reload": {"up": "back", "down": "back"},
-    "back": {"down": "reload", "up": "reload"}
+    "reload": {"up": "toggle", "down": "back"},
+    "back": {"down": "toggle", "up": "reload"},
+    "toggle": {"up": "back", "down": "reload"}
 })
 
 
@@ -2583,6 +2595,16 @@ uiControlsPlaystation.addElement(UIText((36, 457), "move", "MOVE",style=settings
 uiControlsPlaystation.addElement(UIText((772, 305), "dash", "DASH",style=settingsTextStyle))
 uiControlsPlaystation.addElement(UIText((1013, 313), "stomp", "STOMP",style=settingsTextStyle))
 uiControlsPlaystation.addElement(UIText((892, 641), "jump", "JUMP",style=settingsTextStyle))
+
+uiControlsPC = UICanvas(inputs=inputs, audioPlayer=audioPlayer)
+uiControlsPC.show = False
+uiControlsPC.addElement(UIImage((-170,80), "pc", [uiAnimations["controlLayouts"]["pc"]], 6))
+uiControlsPC.addElement(UIText((320, 332), "climb", "CLIMB (HOLD)",style=settingsTextStyle))
+uiControlsPC.addElement(UIText((320, 232), "run", "RUN (HOLD)",style=settingsTextStyle))
+uiControlsPC.addElement(UIText((320, 132), "move", "MOVE",style=settingsTextStyle))
+uiControlsPC.addElement(UIText((320, 532), "dash", "DASH",style=settingsTextStyle))
+uiControlsPC.addElement(UIText((320, 632), "stomp", "STOMP",style=settingsTextStyle))
+uiControlsPC.addElement(UIText((320, 432), "jump", "JUMP",style=settingsTextStyle))
 
 #endregion CONTROLS
 
