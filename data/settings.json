@@ -1,0 +1,14 @@
+{
+    "musicVolume": 0,
+    "sfxVolume": 5,
+    "backgroundDetail": 2,
+    "animatedTile": true,
+    "animateTilesAtSpeed": false,
+    "simpleUI": false,
+    "particles": true,
+    "drawOnThread": false,
+    "bgType": "city",
+    "hwaccel": false,
+    "quickRestartButton": true,
+    "hat": "top"
+}

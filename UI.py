@@ -85,13 +85,15 @@ class UICanvas:
             
                 if self.input.inputEvent("UIACCEPT", False) and self.showHighlight:
                     self.showHighlight = True
-                    if type(self.getElementByTag(self.highlightedElement)) in [UIButton, UILevelSelect]:
+                    if type(self.getElementByTag(self.highlightedElement)) in [UIButton, UILevelSelect, UIHatSelect] and not self.getElementByTag(self.highlightedElement).locked:
                         self.getElementByTag(self.highlightedElement).press()
+                        self.input.inputEvent("Jump", False)
                         
                 elif self.input.inputEvent("UIBACK", False):
                     self.showHighlight = True
                     if self.UIMap.hasBack():
                         self.getElementByTag("back").press()
+                        self.input.inputEvent("Stomp", False)
                 
                 
                 if self.canScroll and not self.scrolling and not self.input.careForMouse:
@@ -123,7 +125,7 @@ class UICanvas:
         self.scrollPos = 0
     
     def playClick(self):
-        self.audioPlayer.playSound(sounds["click"])
+        self.audioPlayer.playSound(resources.sounds["click"])
         
 
 
@@ -156,16 +158,20 @@ class UIElement:
         self.screenPos = newPos
     def draw(self, surf,padding=(0,0),screenPos=None, blitSurf=None, drawShadow=True):
         screenPosWasNone = screenPos==None
-        if screenPos==None:
-            screenPos = self.screenPos
-        if blitSurf==None:
-            blitSurf = self.surface
-        
-        if self.style.hasShadow:
-            surf.blit(self.shadowSurf, (int(screenPos[0]+padding[0]+self.style.shadowOffset), screenPos[1]+padding[1]+self.style.shadowOffset))
-        
         if self.show:
-            surf.blit(blitSurf, (int(screenPos[0]+padding[0]), screenPos[1]+padding[1]))
+            if screenPos==None:
+                screenPos = self.screenPos
+            if blitSurf==None:
+                blitSurf = self.surface
+                
+            self.blitPosX = int(screenPos[0]+padding[0]+self.style.shadowOffset)
+            self.blitPosY = screenPos[1]+padding[1]+self.style.shadowOffset
+            
+            if self.style.hasShadow:
+                surf.blit(self.shadowSurf, (self.blitPosX, self.blitPosY))
+            
+            if self.show:
+                surf.blit(blitSurf, (int(screenPos[0]+padding[0]), screenPos[1]+padding[1]))
     def updateShadow(self):
         
         if self.style.hasShadow:
@@ -177,7 +183,7 @@ class UIElement:
         if screenPos==None:
             screenPos = self.screenPos
         if self.show:
-            surf.blit(uiAssets["pointer"], (int(screenPos[0]+padding[0])-42, screenPos[1]+padding[1] + (self.bg.h/2)-12))
+            surf.blit(resources.uiAssets["pointer"], (int(screenPos[0]+padding[0])-42, screenPos[1]+padding[1] + (self.bg.h/2)-12))
     def update(self):
         if not self.lockScroll:
             self.screenPos = (self.pos[0], self.pos[1] + self.canvas.scrollPos)
@@ -223,14 +229,13 @@ class UIText(UIElement):
 
         self.updateText(text)
         
-    def updateText(self, newText: str, fontSize=None, colour=None):
-        # Update font size and colour if provided
-        if fontSize is not None and fontSize != self.style.fontSize:
-            self.style.fontSize = fontSize
-            self.style.font = pygame.font.Font(f"ui/fonts/{self.style.fontName}", self.style.fontSize)
-        elif not hasattr(self, 'font'):
-            self.style.font = pygame.font.Font(f"ui/fonts/{self.style.fontName}", self.style.fontSize)
+    def updateText(self, newText: str = None, fontSize=None, colour=None):
 
+        if newText is None:
+            newText = self.text
+        else:
+            self.text = newText
+        
         if colour is not None:
             self.style.colour = colour
 
@@ -293,41 +298,53 @@ class UIRect(UIElement):
         self.screenPos = (x,y)
         
 class UIButton(UIText):
-    def __init__(self, screenPos, tag:str, onClick, text="", style=UIBUTTONSTYLE(UISTYLE()), canHold=False, lockScroll = False) -> None:
+    def __init__(self, screenPos, tag:str, onClick, text="", style=UIBUTTONSTYLE(UISTYLE()), canHold=False, lockScroll = False, onHover = None, locked = False, lockedStyle = UISTYLE()) -> None:
         super().__init__(screenPos, tag, text, style.styles[0], lockScroll)
         self.styles = style
         self.style = self.styles.styles[0]
         self.setBG(self.style.colour)
         self.onClick = onClick
+        self.onHover = onHover
         self.held = False
         self.canHold = canHold
         self.lastStyle = 0
+        self.locked = locked
+        self.lockedStyle = lockedStyle
     def update(self):
-        tempRect = self.surface.get_rect()
-        tempRect.x, tempRect.y = self.screenPos[0], self.screenPos[1]
-        if (tempRect.collidepoint(self.input.posx, self.input.posy) and self.input.careForMouse):
-            self.canvas.highlightedElement = self.tag
-            if self.lastStyle != 1:
-                self.style = self.styles.styles[1]
-                self.setBG(self.style.colour)
-            self.lastStyle = 1
-            
-            if self.input.clicked[0] and not self.input.clickDown[0]:
-                self.input.clickDown[0] = True
-                self.press()
+        if not self.locked:
+            tempRect = self.surface.get_rect()
+            tempRect.x, tempRect.y = self.screenPos[0], self.screenPos[1]
+            if (tempRect.collidepoint(self.input.posx, self.input.posy) and self.input.careForMouse):
+                self.canvas.highlightedElement = self.tag
+                if self.lastStyle != 1:
+                    self.style = self.styles.styles[1]
+                    self.setBG(self.style.colour)
+                self.hoverEvent()
+                self.lastStyle = 1
                 
-        elif self.canvas.highlightedElement == self.tag and self.lastStyle != 1 and not self.input.careForMouse:
-            self.style = self.styles.styles[1]
+                if self.input.clicked[0] and not self.input.clickDown[0]:
+                    self.input.clickDown[0] = True
+                    self.press()
+                    
+            elif self.canvas.highlightedElement == self.tag and not self.input.careForMouse:
+                if self.lastStyle != 1:
+                    self.style = self.styles.styles[1]
+                    self.setBG(self.style.colour)
+                    self.lastStyle = 1
+                self.hoverEvent()
+            elif self.canvas.highlightedElement != self.tag or self.input.careForMouse:
+                if self.lastStyle!=0:
+                    self.style = self.styles.styles[0]
+                    self.setBG(self.style.colour)
+                    self.lastStyle = 0
+
+            self.held = self.input.clicked[0] or self.canHold
+
+        elif self.lastStyle!=-1:
+            self.lastStyle = -1
+            self.style = self.lockedStyle
             self.setBG(self.style.colour)
-            self.lastStyle = 1
-        elif self.canvas.highlightedElement != self.tag or self.input.careForMouse:
-            if self.lastStyle!=0:
-                self.style = self.styles.styles[0]
-                self.setBG(self.style.colour)
-                self.lastStyle = 0
-
-        self.held = self.input.clicked[0] or self.canHold
-
+        
         return super().update()
     
     def press(self):
@@ -341,7 +358,12 @@ class UIButton(UIText):
             self.clickAction()
     
     def clickAction(self):
-        self.onClick()
+        if not self.onClick is None:
+            self.onClick()
+        
+    def hoverEvent(self):
+        if not self.onHover is None:
+            self.onHover()
         
         
     
@@ -350,8 +372,8 @@ class UIButton(UIText):
 
 
 class UILevelSelect(UIButton):
-    def __init__(self, screenPos, tag: str, level, lvl=(0,0), text="", style=UISTYLE(), buttonColours=((255, 255, 255), (127, 127, 127), (0, 0, 0)), canHold=False, lockScroll=False) -> None:
-        super().__init__(screenPos, tag, None, text, style, buttonColours, canHold, lockScroll)
+    def __init__(self, screenPos, tag: str, level, lvl=(0,0), text="", style=UISTYLE(), canHold=False, lockScroll=False, onHover = None) -> None:
+        super().__init__(screenPos, tag, None, text, style, canHold, lockScroll, onHover = None)
         self.lvl = lvl
         self.level = level
     
@@ -361,6 +383,21 @@ class UILevelSelect(UIButton):
         self.level.levelInfo["nextLevel"]["y"] = self.lvl[1]
         
         self.level.lvlSelectChangeLevel()
+   
+
+class UIHatSelect(UIButton):
+    def __init__(self, screenPos, tag: str, onClick=None, text="", style=UISTYLE(), canHold=False, lockScroll=False, onHover = None, hatType="top") -> None:
+        super().__init__(screenPos, tag, onClick, text, style, canHold, lockScroll, onHover)
+        self.hatType = hatType
+        
+    def draw(self, surf, padding=(0, 0), screenPos=None, blitSurf=None, drawShadow=True):
+        super().draw(surf, padding, screenPos, blitSurf, drawShadow)
+
+        
+    def clickAction(self):
+        self.onClick(self.hatType)
+    def hoverEvent(self):
+        self.onHover(self.hatType)
         
         
         
@@ -377,7 +414,7 @@ class UIMap:
         return "back" in self.links
     
     def successfulMove(self, canvas):
-        canvas.audioPlayer.playSound(sounds["menuMove"])
+        canvas.audioPlayer.playSound(resources.sounds["menuMove"])
         canvas.scrolling = False
         
     def move(self, inputs, canvas):

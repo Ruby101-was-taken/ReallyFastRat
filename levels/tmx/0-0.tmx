@@ -3,7 +3,7 @@
  <editorsettings>
   <export target="../levels/0-0.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" source="../../tilemap/ReallyFastRatTiles.tsx"/>
+ <tileset firstgid="1" source="../../levelAssets/ReallyFastRatTiles.tsx"/>
  <layer id="2" name="bg" width="480" height="30">
   <data encoding="csv">
    <chunk x="336" y="-48" width="16" height="16">

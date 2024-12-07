@@ -8,6 +8,16 @@ class Camera:
         
         self.maxX, self.maxY = 0, 0
         self.minX, self.minY = 0, 0
+        
+        self.levelEdgeMaxX, self.levelEdgeMaxY = 0, 0
+        
+        self.lerpSpeed = 0.1
+        
+        
+    def setLevelEdgeMaxes(self, x, y):
+        self.levelEdgeMaxX = x
+        self.levelEdgeMaxY = y
+        self.setMaxes(x, y)
     
     def setMaxes(self, x, y):
         self.setMaxX(x)
@@ -26,18 +36,58 @@ class Camera:
         self.minY = y
         
     def setPos(self, x, y):
-        self.x, self.y = int(x), int(y)-175
-    def lerpTo(self, x, y):
-        self.x, self.y = pygame.math.lerp(self.x, x, 0.2), pygame.math.lerp(self.y, y, 0.2)-175
+        
+        setX = True
+        setY = True
+        
+        
+        if x < self.minX:
+            setX = False
+            if self.minX == 0:
+                self.x = 0
+            else:
+                self.x = pygame.math.lerp(self.x, self.minX, self.lerpSpeed)
+            
+            
+        elif x > self.maxX:
+            setX = False
+            if self.maxX == self.levelEdgeMaxX:
+                self.x = self.levelEdgeMaxX
+            else:
+                self.x = pygame.math.lerp(self.x, self.maxX, self.lerpSpeed)
+            
+        
+        if y-175 < self.minY:
+            setY = False
+            if self.minY == 0:
+                self.y = 0
+            else:
+                self.y = pygame.math.lerp(self.y, self.minY, self.lerpSpeed)
+            
+            
+        elif y-175 > self.maxY:
+            setY = False
+            if self.maxY == self.levelEdgeMaxY:
+                self.y = self.levelEdgeMaxY
+            else:
+                self.y = pygame.math.lerp(self.y, self.maxY, self.lerpSpeed)
+            
+        
+        # if self.x < self.minX:
+        #     self.x = self.minX
+            
+        # elif self.x > self.maxX:
+        #     self.x = self.maxX
+        
+        
+        
+        if setX: self.x = int(x)
+        if setY: self.y = int(y)-175
+        
+            
         
     
     def update(self):
+        pass
         
-        if self.x < self.minX:
-            self.x = self.minX
-        elif self.x > self.maxX:
-            self.x = self.maxX
-        if self.y < self.minY:
-            self.y = self.minY
-        elif self.y > self.maxY:
-            self.y = self.maxY
+            

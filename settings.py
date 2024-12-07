@@ -1,5 +1,5 @@
 import os
-from jsonParse import *
+from scripts.jsonParse import *
 
 class Settings:
     def __init__(self) -> None:
@@ -14,21 +14,22 @@ class Settings:
             "drawOnThread": False,
             "bgType": "city",
             "hwaccel": False,
-            "quickRestartButton": True
+            "quickRestartButton": True,
+            "hat": "none"
         }
         self.loadSettings()
         
     def resetSettings(self):
-        dictToJson("settings.json", self.defaults)
+        dictToJson("data/settings.json", self.defaults)
         
     def updateSettings(self):
-        dictToJson("settings.json", self.settings)
+        dictToJson("data/settings.json", self.settings)
         
     def loadSettings(self):
-        if not os.path.isfile("settings.json"):
+        if not os.path.isfile("data/settings.json"):
             self.resetSettings()
         
-        self.settings = parseJsonFile("settings.json")
+        self.settings = parseJsonFile("data/settings.json")
         
         if self.settings.keys() == self.defaults.keys():
             print("settings are valid")

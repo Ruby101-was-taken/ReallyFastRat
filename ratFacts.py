@@ -2,7 +2,7 @@ facts = [
     "Fun Fact: Rats did not spread the plague. This is misinfo spread by rat haters!",
     "Fun Fact: This game was not tested with actual rats. Their hands are too small to press the buttons. :(",
     "Fun Fact: Rats can run at up to 7mph. Therefore this game is realistic!",
-    "Fun Fact: This is the forth fun fact stored in the list of fun facts!",
+    "Fun Fact: This is the fourth fun fact stored in the list of fun facts!",
     "Fun Fact: The rat's name is [REDACTED].",
     "Fun Fact: This is a video game!",
     "Fun Fact: Rats exist in real life, woah!",

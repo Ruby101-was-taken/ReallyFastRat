@@ -119,4 +119,10 @@
 # for a,b in d.items():
 #     print(f"{a} -> {b}")
 
+from scripts.jsonParse import combineDict
+
+a = {"one": 1, "two": 2, "three": 3}
+b = {"two": 1}
+
+print(combineDict(a, b))
 

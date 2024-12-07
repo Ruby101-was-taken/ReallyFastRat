@@ -1,6 +1,6 @@
 {
     "name": "FIRST LEVEL",
-    "tileMapType": "City",
+    "tileMapType": "Sewer",
     "music": "first.wav",
     "bgType" : "city",
     "ranks" : {

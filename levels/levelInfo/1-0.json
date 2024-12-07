@@ -1,6 +1,18 @@
 {
-    "name": "Test Level",
-    "tileMapType": "Test",
-    "music": "Music.mp3",
-    "bgType" : "test"
+    "name": "CITY HUB",
+    "tileMapType": "CityHub",
+    "music": "hub/city/discovered.wav",
+    "bgType" : "city",
+    "ranks" : {
+        "s": 16,
+        "a": 20,
+        "b": 25,
+        "c": 40,
+        "d": 60
+    },
+    "canRun": true,
+    "nextLevel": {
+        "x": 1,
+        "y": 0
+    }
 }

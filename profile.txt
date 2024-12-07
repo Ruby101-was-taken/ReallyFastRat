@@ -1,16 +1,67 @@
-         15 function calls in 0.001 seconds
+         981 function calls in 0.081 seconds
 
    Ordered by: cumulative time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-        1    0.000    0.000    0.001    0.001 c:\Users\ruby_\Desktop\python\ReallyFastRat\UI.py:207(updateText)
-        1    0.001    0.001    0.001    0.001 {method 'render' of 'pygame.font.Font' objects}
-        2    0.000    0.000    0.000    0.000 {method 'blit' of 'pygame.surface.Surface' objects}
-        1    0.000    0.000    0.000    0.000 {method 'fill' of 'pygame.surface.Surface' objects}
-        2    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
-        3    0.000    0.000    0.000    0.000 {method 'get_width' of 'pygame.surface.Surface' objects}
-        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\UI.py:153(updateShadow)
-        3    0.000    0.000    0.000    0.000 {method 'get_height' of 'pygame.surface.Surface' objects}
+        1    0.001    0.001    0.081    0.081 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:2734(main)
+        1    0.080    0.080    0.080    0.080 {built-in method pygame.event.get}
+        1    0.000    0.000    0.001    0.001 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1047(process)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:916(gravity)
+       14    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1512(checkCollision)
+       46    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1358(checkCollision)
+      169    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:139(update)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1940(trimLevel)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1496(updateTiles)
+       88    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:293(checkCollision)
+        4    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1385(update)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:302(update)
+       88    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:218(checkCollision)
+       11    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:2247(inputEvent)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1501(singleUpdateTiles)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:350(intToTime)
+        4    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1391(singleUpdate)
+        4    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1380(trimTiles)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\UI.py:277(updateSurface)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:2286(update)
+      169    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:144(checkDelete)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:2298(resetHeldInputs)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Camera.py:22(setMaxes)
+        1    0.000    0.000    0.000    0.000 {built-in method pygame.key.get_pressed}
+      101    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
+       81    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:157(singleUpdate)
+        1    0.000    0.000    0.000    0.000 {built-in method pygame.draw.rect}
+       88    0.000    0.000    0.000    0.000 {method 'colliderect' of 'pygame.rect.Rect' objects}
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:331(finalUpdate)
+        1    0.000    0.000    0.000    0.000 C:\Users\ruby_\AppData\Local\Programs\Python\Python311\Lib\copy.py:66(copy)
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.round}
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Camera.py:30(setMins)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:2058(checkCollision)
+        1    0.000    0.000    0.000    0.000 {method 'tick' of 'pygame.time.Clock' objects}
+        8    0.000    0.000    0.000    0.000 {method 'get_button' of 'pygame.joystick.Joystick' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method pygame.mouse.get_pos}
+        8    0.000    0.000    0.000    0.000 {method 'get_numbuttons' of 'pygame.joystick.Joystick' objects}
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1525(checkEntityCollision)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1506(updateCameraChanges)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Camera.py:38(setPos)
+       20    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\tiles.py:212(playerCollision)
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Camera.py:25(setMaxX)
+       11    0.000    0.000    0.000    0.000 {method 'get_init' of 'pygame.joystick.Joystick' objects}
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Camera.py:27(setMaxY)
+        9    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Camera.py:35(setMinY)
+        1    0.000    0.000    0.000    0.000 {built-in method pygame.mouse.get_pressed}
+        8    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1394(entityUpdate)
+        3    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\UI.py:69(getElementByTag)
+        4    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Platforme.py:1377(checkEntityCollision)
         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    0.000    0.000 {method 'get' of 'dict' objects}
+        3    0.000    0.000    0.000    0.000 {method 'get_axis' of 'pygame.joystick.Joystick' objects}
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Camera.py:33(setMinX)
+        1    0.000    0.000    0.000    0.000 {method 'copy' of 'list' objects}
+        2    0.000    0.000    0.000    0.000 {method 'get_numaxes' of 'pygame.joystick.Joystick' objects}
+        2    0.000    0.000    0.000    0.000 {method 'get_numhats' of 'pygame.joystick.Joystick' objects}
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\UI.py:77(update)
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.abs}
+        1    0.000    0.000    0.000    0.000 c:\Users\ruby_\Desktop\python\ReallyFastRat\Camera.py:89(update)
 
 

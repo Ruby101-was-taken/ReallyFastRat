@@ -1,5 +1,5 @@
 import pygame
-
+from resources import *
 
 
 class Entity:
@@ -23,11 +23,13 @@ class Entity:
     
     def reset(self):
         self.x, self.y = self.startX, self.startY
+        return True
     def start(self): #called when tile spawns entity in
         pass
     
     def checkCollision(self, obj):
         if self.charRect.colliderect(obj.charRect):
+            print("owakpoad")
             return self.rectCollision(obj)
     
     def rectCollision(self, obj):
@@ -39,9 +41,12 @@ class Entity:
         self.charRect.x = self.x-self.level.levelPosx+475
         self.charRect.y = self.y-self.level.levelPosy+288
     def draw(self, win, showHitBoxes = False):
-        if showHitBoxes:
-            pygame.draw.rect(win, (255, 255, 255), self.charRect)
-        win.blit(self.image, (self.x - self.gameManager.camera.x - 5, self.y - self.gameManager.camera.y - 175))
+        blitPosX, blitPosY = self.x - self.gameManager.camera.x - 5, self.y - self.gameManager.camera.y - 175
+        if -self.w < blitPosX < 1280 and -self.h < blitPosY < 720: 
+            if showHitBoxes:
+                pygame.draw.rect(win, (255, 255, 255), self.charRect)
+            win.blit(self.image, (blitPosX, blitPosY))
+        
     
     def destroy(self):
         self.chunk.entities.remove(self)
@@ -86,41 +91,15 @@ class GravityEntity(Entity):
 
         
     def gravity(self):
-       
-        
-        for i in range(int(self.yVel)):
-            self.y+=1
-            if self.level.checkCollision(self.charRect, False):
-                self.yVel = 0
-                break
-            
-        for i in range(-int(self.yVel)):
-            self.y-=1
-            self.checkCeiling()
-            
-        if not self.level.checkCollision(self.charRect, False):
-            self.yVel+=0.5
-            if self.yVel > self.terminalVelocity:
-                self.yVel = self.terminalVelocity
-        self.moveRect()
-        self.touchGround = self.level.checkCollision(self.charRect, False)
-        while self.touchGround:
-            if not self.level.checkCollision(self.charRect, False):
-                self.yVel=+1
-                self.y+=1
-                self.touchGround=False
-                self.moveRect()
-            else:
-                self.y-=0.1
-                self.touchGround = True
-                self.kTime = 20
-            self.moveRect()
+       self.yVel+=0.1
+       self.y+=self.yVel
 
 class EvilRat(GravityEntity):
     def __init__(self, x, y, w, h, image, args={}) -> None:
-        super().__init__(x, y, w, h, image, args)
+        super().__init__(x, y, w, h, resources.playerImages[0], args)
         self.jumpPower = 9
         self.manualDrawOffset = (0, -3)
+        
         
     def update(self):
         if self.kTime > 0: self.kTime-=1

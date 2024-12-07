@@ -7,3 +7,6 @@ __pycache__/tiles.cpython-311.pyc
 screenshots/
 concept art/
 letters/
+dist/
+*.exe
+*.spec

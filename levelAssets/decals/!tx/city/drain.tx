@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+ <object type="decal">
+  <properties>
+   <property name="img" type="file" value="../../city/drain.png"/>
+  </properties>
+  <point/>
+ </object>
+</template>

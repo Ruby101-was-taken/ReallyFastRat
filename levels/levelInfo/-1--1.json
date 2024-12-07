@@ -1,0 +1,21 @@
+{
+    "name": "UNAMED LEVEL",
+    "tileMapType": "Test",
+    "music": "gooSong.wav",
+    "bgType" : "test",
+    "ranks" : {
+        "s": 16,
+        "a": 20,
+        "b": 25,
+        "c": 40,
+        "d": 60
+    },
+    "canRun": true,
+    "nextLevel": {
+        "x": 1,
+        "y": 1
+    },
+    "hats": {
+        "sRank": "top"
+    }
+}

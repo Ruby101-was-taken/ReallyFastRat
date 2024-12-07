@@ -13,4 +13,5 @@ class Background:
         
     def draw(self, win, camx):
         pos = ((-camx / self.parallax) % self.w) - self.w
-        win.blit(self.surface, (pos, 0))
+        drawSurf = self.surface.subsurface((abs(pos), 0), (1280, 720))
+        win.blit(drawSurf, (0, 0))
