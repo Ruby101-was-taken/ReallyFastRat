@@ -975,7 +975,7 @@ class Player:
         maxSpeed = self.maxSpeed        
         maxBoost = self.maxBoost
         
-        boostButton = inputs.inputEvent("Boost") and level.levelInfo["canRun"]
+        boostButton = inputs.inputEvent("Boost") and level.levelInfo["canRun"] or self.lockMovement
         
         # if boostButton:
         #     maxSpeed = maxBoost
@@ -2323,6 +2323,7 @@ def redrawScreen():
     
     for y, log in enumerate(debugLog):
         log.draw(y)
+        
     
     
     window.blit(win, (0,0))
@@ -2986,7 +2987,7 @@ def main():
             
             player.jumpPower = 11
 
-            if (inputs.inputEvent("MoveLeft") and not inputs.inputEvent("MoveRight")) or (inputs.inputEvent("MoveRight") and not inputs.inputEvent("MoveLeft") and not player.lockMovement):
+            if ((inputs.inputEvent("MoveLeft") and not inputs.inputEvent("MoveRight")) or (inputs.inputEvent("MoveRight") and not inputs.inputEvent("MoveLeft")))  and not player.lockMovement:
                 if inputs.inputEvent("MoveLeft") and not inputs.inputEvent("MoveRight"):
                     player.changeXVel(gameManager.speed/10, False)
                 if inputs.inputEvent("MoveRight") and not inputs.inputEvent("MoveLeft"):
@@ -3140,5 +3141,6 @@ while run:
     # Set the framerate
     deltaTime = clock.tick(targetFrames)* 0.001 * 60
     if deltaTime >= 2: deltaTime = 2
+    deltaTime = 1
         
 quitGame()

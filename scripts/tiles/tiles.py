@@ -302,6 +302,10 @@ class SpringTile(StaticTile):
         else:
             self.addComponent(VerticalBounceComponent(self, self.power))
         return super().start()
+    def playerCollision(self, collider):
+        self.player.x = self.level.levelPosx = self.x
+        self.player.y = self.level.levelPosy = self.y+145
+        return super().playerCollision(collider)
         
     
         
