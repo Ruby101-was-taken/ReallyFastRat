@@ -23,6 +23,7 @@ class VerticalBounceComponent(TileComponent):
         self.tile.player.yVel = -self.power
         self.tile.player.xVel = 0
         self.tile.player.stomp = False
+        self.tile.player.kTime = 0
         
         return super().playerCollision()
     

@@ -1,7 +1,7 @@
 {
     "name": "CITY HUB",
     "tileMapType": "CityHub",
-    "music": "hub/city/discovered.wav",
+    "music": "hub/city/final.wav",
     "bgType" : "city",
     "ranks" : {
         "s": 16,

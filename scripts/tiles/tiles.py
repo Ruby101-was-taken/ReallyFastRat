@@ -312,7 +312,13 @@ class SpringTile(StaticTile):
 class BoosterTile(StaticTile):
     def __init__(self, x, y, tileID, power, image=pygame.Surface((0, 0))):
         super().__init__(x, y, tileID, image)
-        self.addComponent(HorizontalBoost(self, power))
+        self.power = power
+    def start(self):
+        if not self.hasObject():
+            self.addComponent(HorizontalBoost(self, self.power))
+        else:
+            self.addComponent(HorizontalBoost(self, self.object.getProperty("power") * sign(self.power)))
+        return super().start()
         
     
         
@@ -504,8 +510,8 @@ class Spawner(StaticTile):
         
         
     def start(self) -> None:
-        
-        self.entityType = getEntityList()[self.object.getProperty("entity")]
+        if self.object.hasProperty("entity"):
+            self.entityType = getEntityList()[self.object.getProperty("entity")]
         
         self.addComponent(SpawnEntity(self))
         

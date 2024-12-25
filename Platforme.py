@@ -8,7 +8,6 @@ collisionTiles = 0
 
 import pygame, random, os, csv, copy, time, sys
 import math as maths
-import threading
 import webbrowser
 
 from animation import Animation
@@ -26,9 +25,6 @@ from settings import s
 from scripts.hatLoader import hatManager
 
 from Camera import Camera
-
-
-
 
 
 from profiler import *
@@ -938,6 +934,7 @@ class Player:
                 self.bounce = False
                 self.yVel = 0
                 self.climbedLastFrame=True
+                self.kTime = 0
 
                 if inputs.inputEvent("ClimbUp"):
                     self.climbAnimateFrame+=0.2
@@ -1040,6 +1037,7 @@ class Player:
         
         level.levelPosy = round(level.levelPosy, 2)
         if level.levelPosy > level.lowestPoint:
+            print(level.lowestPoint, level.levelPosy, level.levelVis.get_height())
             self.die()
             pass
         
@@ -1843,10 +1841,8 @@ class Level:
         self.levelToggleOFF = pygame.Surface((largestX*tileSize, self.lowestPoint), pygame.SRCALPHA)
         self.levelToggleOFF.fill((0,0,0,0))
         
+        self.lowestPoint+=174
         
-        for layer in levelJson["layers"]:
-            if layer["name"] == "Main":
-                self.lowestPoint = layer["height"]*tileSize
         
         gameManager.camXLim = self.levelVis.get_width() - w
         gameManager.camYLim = self.levelVis.get_height() - h
@@ -2324,11 +2320,11 @@ def redrawScreen():
     for y, log in enumerate(debugLog):
         log.draw(y)
         
-    
+    #win.blit(pygame.image.load("ui/UI SAMPLES/hud02.png").convert_alpha())
     
     window.blit(win, (0,0))
     
-    pygame.display.flip()
+    pygame.display.update()
     
 
 gameManager = GameManager()
@@ -2467,13 +2463,11 @@ inputs.setKey(pygame.K_SPACE, "Jump")
 inputs.setButton(0, "Jump")
 
 inputs.setKey(pygame.K_LEFT, "MoveLeft")
-# inputs.setKey(pygame.K_a, "MoveLeft")
 inputs.setButton(13, "MoveLeft")
 inputs.setAxis(0, (-2, -0.1), "MoveLeft")
 inputs.setHat(0, -1, "MoveLeft")
 
 inputs.setKey(pygame.K_RIGHT, "MoveRight")
-# inputs.setKey(pygame.K_d, "MoveRight")
 inputs.setButton(14, "MoveRight")
 inputs.setAxis(0, (0.1, 2), "MoveRight")
 inputs.setHat(0, 1, "MoveRight")
@@ -2497,13 +2491,11 @@ inputs.setAxis(4, (-0.5, 2), "Climb")
 inputs.setAxis(1, (-2, -0.5), "ClimbUp")
 inputs.setButton(11, "ClimbUp")
 inputs.setKey(pygame.K_UP, "ClimbUp")
-# inputs.setKey(pygame.K_w, "ClimbUp")
 inputs.setHat(1, 1, "ClimbUp")
 
 inputs.setAxis(1, (0.5, 2), "ClimbDown")
 inputs.setButton(12, "ClimbDown")
 inputs.setKey(pygame.K_DOWN, "ClimbDown")
-# inputs.setKey(pygame.K_s, "ClimbDown")
 inputs.setHat(1, -1, "ClimbDown")
 
 inputs.setButton(4, "Restart1")
@@ -2515,6 +2507,7 @@ inputs.setButton(10, "Restart2")
 inputs.setKey(pygame.K_DOWN, "Restart2")
 
 inputs.setButton(6, "Pause")
+inputs.setButton(7, "Pause")
 inputs.setKey(pygame.K_ESCAPE, "Pause")
 
 
@@ -2889,7 +2882,6 @@ uiResults.addElement(UIText((w-400,200), "d", "D RANK: 00:00", style=UISTYLE(fon
 
 uiResults.addElement(UIImage((w-400, 338), "rank", [resources.uiAnimations["rankings"]["s"]], 1))
 
-uiResults.addElement(UIButton((w-600, 450), "continue", gameManager.nextLevel, "Continue", style=pauseMenuButtonStyle))
 uiResults.addElement(UIButton((w-600, 520), "try again", gameManager.quickRestart, "Try Again", style=pauseMenuButtonStyle))
 uiResults.addElement(UIButton((w-600, 590), "hub", gameManager.goToHub, "Return To Hub", style=pauseMenuButtonStyle))
 uiResults.addElement(UIButton((w-600, 660), "main menu", gameManager.returnToMainMenu, "Main Menu", style=pauseMenuButtonStyle))
@@ -2897,10 +2889,9 @@ uiResults.addElement(UIButton((w-600, 660), "main menu", gameManager.returnToMai
 uiResults.addElement(UIText((0,300), "timer", "00:00.00", style=UISTYLE(font="rubfont.ttf", colour=(255,255,255, 150), hasBackground=True, fontSize=35, fontColour=BLACK)))
 
 uiResults.makeMap({
-    "continue": {"down": "try again", "up": "main menu"},
-    "try again": {"down": "hub", "up": "continue"},
+    "try again": {"down": "hub", "up": "main menu"},
     "hub": {"down": "main menu", "up": "try again"},
-    "main menu": {"down": "continue", "up": "hub"}
+    "main menu": {"down": "try again", "up": "hub"}
 })
 
 #endregion RESULTS
@@ -2919,6 +2910,7 @@ waiting = False
 
 #@profile
 def main():
+    
     # pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
     global posx, posy, clicked, pauseHeld, scrolly, keys, debugHeld, targetFrames, frameAdvance, stompHeld, spaceHeld, titleLerpStall, titleLerpStage, debug, slashHeld, stallFrames, deltaTime, worldX, worldY, run, useFullScreen, waiting
     gameManager.update()
